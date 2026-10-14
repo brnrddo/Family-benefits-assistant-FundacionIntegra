@@ -63,3 +63,56 @@ Los tests construyen una DB de prueba en un directorio temporal (no tocan
 `e3.db`) y verifican: creación de las 23 tablas, conteos de filas, join
 familia↔integrantes, encoding UTF-8, versión vigente de BEN-001 (= V002),
 BEN-016 con 3 versiones, y que los vacíos quedan como NULL.
+
+---
+
+## M2 — Motor de elegibilidad (determinista)
+
+Responde **"¿esta familia califica a este beneficio?"** con lógica de tres
+valores (`SI` / `NO` / `INDETERMINADO`), nivel de confianza
+(`CONFIRMADO` / `PRELIMINAR`), traza regla-por-regla y entidad ganadora.
+**No decide estado de acceso** (eso es M3) ni usa IA.
+
+Módulos en `app/engine/`:
+- `model.py` — tipos (`Tri`, `Nivel`, `Hecho`, `TrazaRegla`, `ResultadoBeneficio`).
+- `operators.py` — operadores atómicos presentes en las reglas: `EQ, LT, LTE,
+  GT, GTE, IN, BETWEEN, ACTIVE_ON_DATE, RANGE_LOOKUP, COUNT_REL_GTE,
+  NOT_EXISTS_WITHIN` (+ `REF_EQ` parcial).
+- `facts.py` / `resolver.py` — mapa `campo_dato → origen` (directo / EAV /
+  derivado / faltante) y resolución de hechos por hogar/integrante con vigencia
+  semiabierta.
+- `evaluator.py` — agregación OR entre grupos, AND dentro, cuantificadores
+  HOUSEHOLD/EXISTS/COUNT, bindings por rol (misma persona), nivel, monto, traza.
+- `service.py` — API de alto nivel: `evaluar_familia(id)` (bajo demanda) y
+  `precalcular_todo()` (envoltorio 500×20, ~26 s).
+
+### Uso rápido
+```python
+from app.engine.service import evaluar_familia
+for r in evaluar_familia("FAM-SIM-E3-00100"):
+    print(r.id_beneficio, r.resultado.value, r.nivel)
+```
+
+### Supuestos sobre datos ausentes (IMPORTANTE)
+El dataset no trae algunos datos que ciertas reglas piden. Política:
+- **Sin evidencia** → `INDETERMINADO` (se convierte en pregunta para la tía):
+  `semanas_gestacion`, `parto_red_publica`, `control_prenatal_red_publica`,
+  `residencia_total_anios`, `residencia_ultimos20_anios`, `dias_desde_evento`,
+  `documento_terapia_dias`.
+- **Con evidencia indirecta** → se asume como `DECLARADO` (no acreditado) y el
+  beneficio puede dar `SI` con nivel **PRELIMINAR** (nunca CONFIRMADO). Banderas
+  en `config.py`, reversibles por variable de entorno:
+  - `SUPONER_ANTECEDENTE_EDAD` (default True): `antecedente_edad_vigente = true`
+    si el causante es menor de 18. Habilita **SUF (BEN-001)** y SUF Automático.
+  - `SUPONER_CONTROL_VIGENTE` (default True): `dias_desde_control` dentro de
+    ventana si el niño tiene control de salud infantil vigente. Habilita el
+    Bono Control Niño Sano (BEN-012).
+
+El nivel `PRELIMINAR` es la señal visible de que hubo un supuesto. La traza
+muestra siempre el detalle regla-por-regla para auditar la decisión.
+
+### Alcance de M2
+Resuelve elegibilidad. Los beneficios que dependen del cruce con accesos
+previos / gestiones (BEN-004 Aporte Familiar, BEN-016 Asignación Familiar) o de
+datos genuinamente ausentes (BEN-008, 019, 020) quedan `INDETERMINADO` aquí; se
+completan en M3 (estado de acceso).
