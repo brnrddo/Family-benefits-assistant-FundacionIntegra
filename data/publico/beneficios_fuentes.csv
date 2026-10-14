@@ -1,0 +1,41 @@
+id_beneficio,id_fuente,alcance,es_simplificacion,nota_sintesis
+BEN-001,F004,DESCRIPCION,false,Referencia contextual oficial.
+BEN-001,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-002,F004,DESCRIPCION,false,Referencia contextual oficial.
+BEN-002,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-003,F006,DESCRIPCION,false,Referencia contextual oficial.
+BEN-003,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-004,F007,DESCRIPCION,false,Referencia contextual oficial.
+BEN-004,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-005,F008,DESCRIPCION,false,Referencia contextual oficial.
+BEN-005,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-006,F009,DESCRIPCION,false,Referencia contextual oficial.
+BEN-006,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-007,F010,DESCRIPCION,false,Referencia contextual oficial.
+BEN-007,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-008,F012,DESCRIPCION,false,Referencia contextual oficial.
+BEN-008,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-009,F013,DESCRIPCION,false,Referencia contextual oficial.
+BEN-009,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-010,F014,DESCRIPCION,false,Referencia contextual oficial.
+BEN-010,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-011,F015,DESCRIPCION,false,Referencia contextual oficial.
+BEN-011,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-012,F016,DESCRIPCION,false,Referencia contextual oficial.
+BEN-012,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-013,F017,DESCRIPCION,false,Referencia contextual oficial.
+BEN-013,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-014,F018,DESCRIPCION,false,Referencia contextual oficial.
+BEN-014,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-015,F019,DESCRIPCION,false,Referencia contextual oficial.
+BEN-015,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-016,F020,DESCRIPCION,false,Referencia contextual oficial.
+BEN-016,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-017,F021,DESCRIPCION,false,Referencia contextual oficial.
+BEN-017,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-018,F900,DESCRIPCION,true,Programa enteramente sintético.
+BEN-018,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-019,F900,DESCRIPCION,true,Programa enteramente sintético.
+BEN-019,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.
+BEN-020,F900,DESCRIPCION,true,Programa enteramente sintético.
+BEN-020,F900,SINTESIS,true,Criterios y valores simplificados para la hackathon.

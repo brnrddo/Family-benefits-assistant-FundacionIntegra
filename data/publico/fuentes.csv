@@ -1,0 +1,23 @@
+id_fuente,categoria_origen,organismo_detalle,titulo,url,fecha_consulta,nota
+F001,VUS_CA,VUS,Ventanilla Única Social,https://www.ventanillaunicasocial.gob.cl/,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F002,VUS_CA,RSH,Registro Social de Hogares,https://www.ventanillaunicasocial.gob.cl/registro-social-hogares,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F003,VUS_CA,RSH,Orientaciones de Calificación Socioeconómica,https://www.registrosocial.gob.cl/docs/Orientaciones_para_el_calculo_de_la_Calificacion_Socieconomica.pdf,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F004,VUS_CA,CHILEATIENDE,Subsidio Familiar,https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F005,VUS_CA,VUS,Subsidio Familiar VUS,https://www.ventanillaunicasocial.gob.cl/ficha/97/subsidio-familiar,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F006,VUS_CA,VUS,Subsidio Maternal,https://www.ventanillaunicasocial.gob.cl/ficha/509/subsidio-maternal,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F007,VUS_CA,VUS,Aporte Familiar Permanente,https://www.ventanillaunicasocial.gob.cl/ficha/80/aporte-familiar-permanente,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F008,VUS_CA,CHILEATIENDE,Subsidio al consumo de agua,https://www.chileatiende.gob.cl/fichas/51314-subsidio-al-pago-del-consumo-de-agua-potable-y-servicio-de-alcantarillado,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F009,VUS_CA,VUS,Subsidio de discapacidad para menores,https://www.ventanillaunicasocial.gob.cl/ficha/96/subsidio-discapacidad-menores,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F010,VUS_CA,JUNAEB,Programa de Alimentación Escolar,https://www.junaeb.cl/programa-de-alimentacion-escolar/,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F011,VUS_CA,CHILE_CRECE_CONTIGO,Portal Chile Crece Contigo,https://www.crececontigo.gob.cl/,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F012,VUS_CA,VUS,Programa de Apoyo al Recién Nacido,https://www.ventanillaunicasocial.gob.cl/ficha/289/programa-apoyo-recien-nacido,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F013,VUS_CA,VUS,Programa de Apoyo al Desarrollo Biopsicosocial,https://www.ventanillaunicasocial.gob.cl/ficha/288/programa-apoyo-desarrollo-biopsicosocial,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F014,VUS_CA,VUS,Bono de Protección,https://www.ventanillaunicasocial.gob.cl/ficha/327/bono-proteccion-egreso,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F015,VUS_CA,VUS,Bono Base Familiar,https://www.ventanillaunicasocial.gob.cl/ficha/321/bono-base-familiar,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F016,VUS_CA,VUS,Bono Control Niño Sano,https://www.ventanillaunicasocial.gob.cl/ficha/325/bono-control-nino-sano,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F017,VUS_CA,VUS,Bono Asistencia Escolar,https://www.ventanillaunicasocial.gob.cl/ficha/320/bono-asistencia-escolar,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F018,VUS_CA,VUS,Bono por Logro Escolar,https://www.ventanillaunicasocial.gob.cl/ficha/324/bono-logro-escolar,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F019,VUS_CA,VUS_JUNAEB,Programa Útiles Escolares,https://www.ventanillaunicasocial.gob.cl/ficha/126/programa-utiles-escolares,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F020,VUS_CA,VUS_IPS,Asignación Familiar,https://www.ventanillaunicasocial.gob.cl/ficha/83/asignacion-familiar,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F021,VUS_CA,IPS,Bono por Hijo,https://www.ips.gob.cl/fichas/bono-por-hijo,2026-10-13,Fuente oficial para contexto; reglas y valores fueron simplificados.
+F900,SUPUESTO,HACKATHON,Supuestos sintéticos E-3,,2026-10-13,Fuente de todos los valores pedagógicos sintéticos.

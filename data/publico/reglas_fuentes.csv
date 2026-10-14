@@ -1,0 +1,279 @@
+id_version,id_regla,id_fuente,alcance,es_simplificacion,nota_sintesis
+V001,R00101,F900,FORMALIZACION,true,Átomo determinista sintético.
+V001,R00101,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V001,R00102,F900,FORMALIZACION,true,Átomo determinista sintético.
+V001,R00102,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V001,R00103,F900,FORMALIZACION,true,Átomo determinista sintético.
+V001,R00103,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V001,R00104,F900,FORMALIZACION,true,Átomo determinista sintético.
+V001,R00104,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V002,R00101,F900,FORMALIZACION,true,Átomo determinista sintético.
+V002,R00101,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V002,R00102,F900,FORMALIZACION,true,Átomo determinista sintético.
+V002,R00102,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V002,R00103,F900,FORMALIZACION,true,Átomo determinista sintético.
+V002,R00103,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V002,R00104,F900,FORMALIZACION,true,Átomo determinista sintético.
+V002,R00104,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V003,R00201,F900,FORMALIZACION,true,Átomo determinista sintético.
+V003,R00201,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V003,R00202,F900,FORMALIZACION,true,Átomo determinista sintético.
+V003,R00202,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V003,R00203,F900,FORMALIZACION,true,Átomo determinista sintético.
+V003,R00203,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V004,R00201,F900,FORMALIZACION,true,Átomo determinista sintético.
+V004,R00201,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V004,R00202,F900,FORMALIZACION,true,Átomo determinista sintético.
+V004,R00202,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V004,R00203,F900,FORMALIZACION,true,Átomo determinista sintético.
+V004,R00203,F004,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V005,R00301,F900,FORMALIZACION,true,Átomo determinista sintético.
+V005,R00301,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V005,R00302,F900,FORMALIZACION,true,Átomo determinista sintético.
+V005,R00302,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V005,R00303,F900,FORMALIZACION,true,Átomo determinista sintético.
+V005,R00303,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V006,R00301,F900,FORMALIZACION,true,Átomo determinista sintético.
+V006,R00301,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V006,R00302,F900,FORMALIZACION,true,Átomo determinista sintético.
+V006,R00302,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V006,R00303,F900,FORMALIZACION,true,Átomo determinista sintético.
+V006,R00303,F006,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00401,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00401,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00402,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00402,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00403,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00403,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00404,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00404,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00405,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00405,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00406,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00406,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00407,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00407,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00408,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00408,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V007,R00409,F900,FORMALIZACION,true,Átomo determinista sintético.
+V007,R00409,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00401,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00401,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00402,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00402,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00403,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00403,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00404,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00404,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00405,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00405,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00406,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00406,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00407,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00407,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00408,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00408,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V008,R00409,F900,FORMALIZACION,true,Átomo determinista sintético.
+V008,R00409,F007,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V009,R00501,F900,FORMALIZACION,true,Átomo determinista sintético.
+V009,R00501,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V009,R00502,F900,FORMALIZACION,true,Átomo determinista sintético.
+V009,R00502,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V009,R00503,F900,FORMALIZACION,true,Átomo determinista sintético.
+V009,R00503,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V010,R00501,F900,FORMALIZACION,true,Átomo determinista sintético.
+V010,R00501,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V010,R00502,F900,FORMALIZACION,true,Átomo determinista sintético.
+V010,R00502,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V010,R00503,F900,FORMALIZACION,true,Átomo determinista sintético.
+V010,R00503,F008,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V011,R00601,F900,FORMALIZACION,true,Átomo determinista sintético.
+V011,R00601,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V011,R00602,F900,FORMALIZACION,true,Átomo determinista sintético.
+V011,R00602,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V011,R00603,F900,FORMALIZACION,true,Átomo determinista sintético.
+V011,R00603,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V011,R00604,F900,FORMALIZACION,true,Átomo determinista sintético.
+V011,R00604,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V012,R00601,F900,FORMALIZACION,true,Átomo determinista sintético.
+V012,R00601,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V012,R00602,F900,FORMALIZACION,true,Átomo determinista sintético.
+V012,R00602,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V012,R00603,F900,FORMALIZACION,true,Átomo determinista sintético.
+V012,R00603,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V012,R00604,F900,FORMALIZACION,true,Átomo determinista sintético.
+V012,R00604,F009,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V013,R00701,F900,FORMALIZACION,true,Átomo determinista sintético.
+V013,R00701,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V013,R00702,F900,FORMALIZACION,true,Átomo determinista sintético.
+V013,R00702,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V013,R00703,F900,FORMALIZACION,true,Átomo determinista sintético.
+V013,R00703,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V014,R00701,F900,FORMALIZACION,true,Átomo determinista sintético.
+V014,R00701,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V014,R00702,F900,FORMALIZACION,true,Átomo determinista sintético.
+V014,R00702,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V014,R00703,F900,FORMALIZACION,true,Átomo determinista sintético.
+V014,R00703,F010,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V015,R00801,F900,FORMALIZACION,true,Átomo determinista sintético.
+V015,R00801,F012,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V015,R00802,F900,FORMALIZACION,true,Átomo determinista sintético.
+V015,R00802,F012,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V016,R00801,F900,FORMALIZACION,true,Átomo determinista sintético.
+V016,R00801,F012,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V016,R00802,F900,FORMALIZACION,true,Átomo determinista sintético.
+V016,R00802,F012,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V017,R00901,F900,FORMALIZACION,true,Átomo determinista sintético.
+V017,R00901,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V017,R00902,F900,FORMALIZACION,true,Átomo determinista sintético.
+V017,R00902,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V017,R00903,F900,FORMALIZACION,true,Átomo determinista sintético.
+V017,R00903,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V018,R00901,F900,FORMALIZACION,true,Átomo determinista sintético.
+V018,R00901,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V018,R00902,F900,FORMALIZACION,true,Átomo determinista sintético.
+V018,R00902,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V018,R00903,F900,FORMALIZACION,true,Átomo determinista sintético.
+V018,R00903,F013,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V019,R01001,F900,FORMALIZACION,true,Átomo determinista sintético.
+V019,R01001,F014,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V019,R01002,F900,FORMALIZACION,true,Átomo determinista sintético.
+V019,R01002,F014,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V020,R01001,F900,FORMALIZACION,true,Átomo determinista sintético.
+V020,R01001,F014,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V020,R01002,F900,FORMALIZACION,true,Átomo determinista sintético.
+V020,R01002,F014,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V021,R01101,F900,FORMALIZACION,true,Átomo determinista sintético.
+V021,R01101,F015,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V021,R01102,F900,FORMALIZACION,true,Átomo determinista sintético.
+V021,R01102,F015,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V022,R01101,F900,FORMALIZACION,true,Átomo determinista sintético.
+V022,R01101,F015,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V022,R01102,F900,FORMALIZACION,true,Átomo determinista sintético.
+V022,R01102,F015,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V023,R01201,F900,FORMALIZACION,true,Átomo determinista sintético.
+V023,R01201,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V023,R01202,F900,FORMALIZACION,true,Átomo determinista sintético.
+V023,R01202,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V023,R01203,F900,FORMALIZACION,true,Átomo determinista sintético.
+V023,R01203,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V024,R01201,F900,FORMALIZACION,true,Átomo determinista sintético.
+V024,R01201,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V024,R01202,F900,FORMALIZACION,true,Átomo determinista sintético.
+V024,R01202,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V024,R01203,F900,FORMALIZACION,true,Átomo determinista sintético.
+V024,R01203,F016,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V025,R01301,F900,FORMALIZACION,true,Átomo determinista sintético.
+V025,R01301,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V025,R01302,F900,FORMALIZACION,true,Átomo determinista sintético.
+V025,R01302,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V025,R01303,F900,FORMALIZACION,true,Átomo determinista sintético.
+V025,R01303,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V025,R01304,F900,FORMALIZACION,true,Átomo determinista sintético.
+V025,R01304,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V025,R01305,F900,FORMALIZACION,true,Átomo determinista sintético.
+V025,R01305,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V026,R01301,F900,FORMALIZACION,true,Átomo determinista sintético.
+V026,R01301,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V026,R01302,F900,FORMALIZACION,true,Átomo determinista sintético.
+V026,R01302,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V026,R01303,F900,FORMALIZACION,true,Átomo determinista sintético.
+V026,R01303,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V026,R01304,F900,FORMALIZACION,true,Átomo determinista sintético.
+V026,R01304,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V026,R01305,F900,FORMALIZACION,true,Átomo determinista sintético.
+V026,R01305,F017,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V027,R01401,F900,FORMALIZACION,true,Átomo determinista sintético.
+V027,R01401,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V027,R01402,F900,FORMALIZACION,true,Átomo determinista sintético.
+V027,R01402,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V027,R01403,F900,FORMALIZACION,true,Átomo determinista sintético.
+V027,R01403,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V027,R01404,F900,FORMALIZACION,true,Átomo determinista sintético.
+V027,R01404,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V028,R01401,F900,FORMALIZACION,true,Átomo determinista sintético.
+V028,R01401,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V028,R01402,F900,FORMALIZACION,true,Átomo determinista sintético.
+V028,R01402,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V028,R01403,F900,FORMALIZACION,true,Átomo determinista sintético.
+V028,R01403,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V028,R01404,F900,FORMALIZACION,true,Átomo determinista sintético.
+V028,R01404,F018,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V029,R01501,F900,FORMALIZACION,true,Átomo determinista sintético.
+V029,R01501,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V029,R01502,F900,FORMALIZACION,true,Átomo determinista sintético.
+V029,R01502,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V029,R01503,F900,FORMALIZACION,true,Átomo determinista sintético.
+V029,R01503,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V030,R01501,F900,FORMALIZACION,true,Átomo determinista sintético.
+V030,R01501,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V030,R01502,F900,FORMALIZACION,true,Átomo determinista sintético.
+V030,R01502,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V030,R01503,F900,FORMALIZACION,true,Átomo determinista sintético.
+V030,R01503,F019,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V031,R01601,F900,FORMALIZACION,true,Átomo determinista sintético.
+V031,R01601,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V031,R01602,F900,FORMALIZACION,true,Átomo determinista sintético.
+V031,R01602,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V031,R01603,F900,FORMALIZACION,true,Átomo determinista sintético.
+V031,R01603,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V032,R01601,F900,FORMALIZACION,true,Átomo determinista sintético.
+V032,R01601,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V032,R01602,F900,FORMALIZACION,true,Átomo determinista sintético.
+V032,R01602,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V032,R01603,F900,FORMALIZACION,true,Átomo determinista sintético.
+V032,R01603,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V033,R01601,F900,FORMALIZACION,true,Átomo determinista sintético.
+V033,R01601,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V033,R01602,F900,FORMALIZACION,true,Átomo determinista sintético.
+V033,R01602,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V033,R01603,F900,FORMALIZACION,true,Átomo determinista sintético.
+V033,R01603,F020,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01701,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01701,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01702,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01702,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01703,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01703,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01704,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01704,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01705,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01705,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V034,R01706,F900,FORMALIZACION,true,Átomo determinista sintético.
+V034,R01706,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01701,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01701,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01702,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01702,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01703,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01703,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01704,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01704,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01705,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01705,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V035,R01706,F900,FORMALIZACION,true,Átomo determinista sintético.
+V035,R01706,F021,CONTEXTO,true,Fuente oficial para contexto; átomo simplificado.
+V036,R01801,F900,FORMALIZACION,true,Átomo determinista sintético.
+V036,R01802,F900,FORMALIZACION,true,Átomo determinista sintético.
+V037,R01801,F900,FORMALIZACION,true,Átomo determinista sintético.
+V037,R01802,F900,FORMALIZACION,true,Átomo determinista sintético.
+V038,R01901,F900,FORMALIZACION,true,Átomo determinista sintético.
+V038,R01902,F900,FORMALIZACION,true,Átomo determinista sintético.
+V038,R01903,F900,FORMALIZACION,true,Átomo determinista sintético.
+V038,R01904,F900,FORMALIZACION,true,Átomo determinista sintético.
+V038,R01905,F900,FORMALIZACION,true,Átomo determinista sintético.
+V039,R01901,F900,FORMALIZACION,true,Átomo determinista sintético.
+V039,R01902,F900,FORMALIZACION,true,Átomo determinista sintético.
+V039,R01903,F900,FORMALIZACION,true,Átomo determinista sintético.
+V039,R01904,F900,FORMALIZACION,true,Átomo determinista sintético.
+V039,R01905,F900,FORMALIZACION,true,Átomo determinista sintético.
+V040,R02001,F900,FORMALIZACION,true,Átomo determinista sintético.
+V040,R02002,F900,FORMALIZACION,true,Átomo determinista sintético.
+V040,R02003,F900,FORMALIZACION,true,Átomo determinista sintético.
+V040,R02004,F900,FORMALIZACION,true,Átomo determinista sintético.
+V040,R02005,F900,FORMALIZACION,true,Átomo determinista sintético.
+V041,R02001,F900,FORMALIZACION,true,Átomo determinista sintético.
+V041,R02002,F900,FORMALIZACION,true,Átomo determinista sintético.
+V041,R02003,F900,FORMALIZACION,true,Átomo determinista sintético.
+V041,R02004,F900,FORMALIZACION,true,Átomo determinista sintético.
+V041,R02005,F900,FORMALIZACION,true,Átomo determinista sintético.

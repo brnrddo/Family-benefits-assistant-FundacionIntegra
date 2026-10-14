@@ -1,0 +1,21 @@
+id_beneficio,nombre,tipo_fuente,institucion,descripcion_sintetica,tipo_prestacion,plataforma_canal_principal,es_sintetico
+BEN-001,Subsidio Familiar (SUF) tradicional,ESTATAL,IPS/municipalidades,Hogares responsables de causantes menores de 18 con antecedentes vigentes y sin cobertura incompatible.,MONETARIA,Municipalidad/VUS/ChileAtiende,true
+BEN-002,Subsidio Familiar Automático,ESTATAL,IPS,Causantes menores de 18 de hogares en tramo 40 con antecedentes por edad vigentes.,MONETARIA,Asignación automática,true
+BEN-003,Subsidio Maternal,ESTATAL,IPS/municipalidades,"Persona gestante desde semana 20, tramo hasta 60 y sin cobertura incompatible.",MONETARIA,Municipalidad/VUS,true
+BEN-004,Aporte Familiar Permanente,ESTATAL,IPS,Hogares con una prestación habilitante activa en el corte anual sintético.,MONETARIA,Asignación automática/IPS,true
+BEN-005,Subsidio al consumo de agua potable y alcantarillado,ESTATAL,Municipalidades/MDSF,Hogar residente con cuenta al día y carga de gasto de agua sobre el umbral.,MONETARIA_INDIRECTA,Municipalidad,true
+BEN-006,Subsidio de discapacidad para menores de 18 años,ESTATAL,IPS,Mismo causante menor de 18 con discapacidad severa acreditada y RSH hasta 60.,MONETARIA,VUS/ChileAtiende/IPS,true
+BEN-007,Programa de Alimentación Escolar,ESTATAL,JUNAEB,Mismo estudiante matriculado en establecimiento sintético adscrito al programa.,ALIMENTACION,Asignación institucional,true
+BEN-008,Programa de Apoyo al Recién Nacido,ESTATAL,Chile Crece Contigo/MDSF,Recién nacido cuyo parto sintético ocurrió en una red pública.,ESPECIE,Red de salud,true
+BEN-009,Programa de Apoyo al Desarrollo Biopsicosocial,ESTATAL,Chile Crece Contigo/MDSF-salud,Gestación o infancia atendida en una red pública según etapa de desarrollo.,SERVICIO,Red pública,true
+BEN-010,Bono de Protección,ESTATAL,Subsistema Seguridades y Oportunidades/IPS,Hogar participante del subsistema que acepta acompañamiento.,MONETARIA,Asignación automática,true
+BEN-011,Bono Base Familiar,ESTATAL,Subsistema Seguridades y Oportunidades/IPS,Hogar participante con ingreso per cápita bajo el umbral versionado.,MONETARIA,Asignación automática,true
+BEN-012,Bono Control Niño Sano,ESTATAL,Subsistema Seguridades y Oportunidades,Mismo niño o niña menor de seis con controles de salud vigentes.,MONETARIA,Asignación automática,true
+BEN-013,Bono Asistencia Escolar,ESTATAL,Subsistema Seguridades y Oportunidades,Mismo estudiante de 6 a 18 con matrícula y asistencia mínima.,MONETARIA,Asignación automática,true
+BEN-014,Bono por Logro Escolar,ESTATAL,MDSF,"Mismo estudiante en niveles cubiertos, subtramo sintético y desempeño requerido.",MONETARIA,Asignación automática,true
+BEN-015,Programa Útiles Escolares,ESTATAL,JUNAEB,Mismo estudiante matriculado en nivel y establecimiento cubiertos.,ESPECIE,Asignación institucional,true
+BEN-016,Asignación Familiar,ESTATAL,IPS/entidades administradoras,Persona beneficiaria con previsión e ingreso compatibles y causante acreditado.,MONETARIA,Entidad administradora,true
+BEN-017,Bono por Hijo,ESTATAL,IPS,"Persona sintética F de 65 años o más, residencia, previsión e hijo o hija registrado.",MONETARIA,IPS,true
+BEN-018,Programa Sintético de Canasta Familiar,PRIVADO_SINTETICO,Organización Social Sintética A,"Hogar con inseguridad alimentaria en una comuna sintética cubierta, sujeto a cupo.",ESPECIE,Derivación desde jardín,true
+BEN-019,Fondo Sintético de Traslado a Terapias,PRIVADO_SINTETICO,Fundación Sintética B,"Mismo niño o niña con terapia, distancia, ingreso y documentos requeridos.",MIXTA,Formulario/derivación,true
+BEN-020,Apoyo Sintético de Emergencia Familiar,PRIVADO_SINTETICO,Red Comunitaria Sintética C,"Hogar con evento crítico reciente, residencia e informe, sujeto a recurrencia.",MONETARIA,Derivación/evaluación social,true
