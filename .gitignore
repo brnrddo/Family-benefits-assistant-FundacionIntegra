@@ -1,0 +1,87 @@
+# ============================================================
+#  SEGURIDAD — NUNCA subir secretos ni credenciales
+# ============================================================
+# Variables de entorno (claves de AWS, API keys de IA, DB, etc.)
+.env
+.env.*
+!.env.example
+*.env
+
+# Credenciales de AWS
+.aws/
+aws-credentials*
+*.pem
+*.key
+*.ppk
+credentials.json
+service-account*.json
+
+# Tokens y secretos varios
+secrets/
+*secret*
+*.secret
+
+# ============================================================
+#  Node / Frontend
+# ============================================================
+node_modules/
+dist/
+build/
+.next/
+out/
+.cache/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ============================================================
+#  Python / Backend / IA
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.Python
+pip-log.txt
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Modelos y datasets pesados (no van a git)
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+*.gguf
+datasets/
+models/
+
+# ============================================================
+#  Base de datos (archivos locales, nunca el dump productivo)
+# ============================================================
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+data/local/
+
+# ============================================================
+#  Editores / Sistema operativo
+# ============================================================
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+
+# VS Code / Kiro: ignoramos settings personales pero
+# mantenemos la config compartida del proyecto si la hubiera
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
