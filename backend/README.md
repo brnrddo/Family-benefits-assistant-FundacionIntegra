@@ -116,3 +116,60 @@ Resuelve elegibilidad. Los beneficios que dependen del cruce con accesos
 previos / gestiones (BEN-004 Aporte Familiar, BEN-016 Asignación Familiar) o de
 datos genuinamente ausentes (BEN-008, 019, 020) quedan `INDETERMINADO` aquí; se
 completan en M3 (estado de acceso).
+
+---
+
+## M3 — Estado de acceso + checklist de requisitos
+
+Cruza la elegibilidad (M2) con las **gestiones reales** (`postulaciones` +
+último estado + `pagos`) para responder qué pasa de verdad con la familia.
+Módulos en `app/access/`.
+
+### Estados (spec §7)
+| Estado | Semáforo | Regla |
+|---|---|---|
+| `ASIGNADO` | azul | SI + gestión con último estado VIGENTE |
+| `GESTION_EN_CURSO` | azul | SI + estado POSTULADA/EN_REVISION/DERIVADA/APROBADA |
+| `GESTION_RECHAZADA` | verde | SI + estado RECHAZADA (cumple pero se lo negaron) |
+| `ELEGIBLE_SIN_ASIGNACION` ⭐ | verde | SI **confirmado** sin gestión — **la brecha** |
+| `PENDIENTE_ANTECEDENTES` | amarillo | SI **preliminar** sin gestión (decisión acordada) |
+| `SIN_CUPO` | amarillo | elegible pero sobre el cupo (BEN-018; nota simple) |
+| `INDETERMINADO` | amarillo | falta un dato → preguntar |
+| `NO_APLICA` | gris | no cumple criterios |
+
+Decisión aplicada: un `SI` **preliminar** sin gestión se marca
+`PENDIENTE_ANTECEDENTES` (prima sobre la brecha). La brecha pura
+(`ELEGIBLE_SIN_ASIGNACION`) la pueblan los `SI` confirmados sin gestión.
+
+### Checklist de requisitos/documentos
+Para beneficios con `SI`/`INDETERMINADO`, deriva qué necesita la familia:
+modalidad de acceso, si requiere acción, canal (dónde ir), ventana, URL oficial
+(de `fuentes`), y los **documentos** mapeados desde los `campo_dato` de las
+reglas (p. ej. `tramo_rsh` → "Registro Social de Hogares al día").
+
+```python
+from app.access.service import evaluar_acceso_familia
+for r in evaluar_acceso_familia("FAM-SIM-E3-00100"):
+    print(r.id_beneficio, r.estado.value, r.semaforo)
+```
+
+---
+
+## Perfil consolidado de familia
+
+`app/profile/builder.py` arma un objeto único por familia (entrada para la ficha
+y la IA) con seis secciones: **identidad** (hogar, jardín, comuna, región, zona),
+**rsh** (estado, tramo, vigencia, `rsh_conocido`), **composición** (integrantes,
+niños de jardín con nivel/matrícula, persona de referencia), **antecedentes**
+(ingreso, residencia, condiciones por integrante con flag de acreditación),
+**historial** (accesos previos + postulaciones con su último estado), y
+**contexto_recomendacion** derivado:
+- `beneficios_elegibles_determinables` — SI (incluye monto y estado de acceso)
+- `beneficios_candidatos` — IND por un dato que la familia PODRÍA acreditar
+- `beneficios_no_evaluables` — IND por un dato externo/clínico o de gestión
+- `datos_faltantes` — todo lo que falta para evaluar más
+
+```python
+from app.profile.builder import construir_perfil
+perfil = construir_perfil("FAM-SIM-E3-00100")
+```
