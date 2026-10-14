@@ -85,3 +85,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.shared.json
+
+# ============================================================
+#  Herramientas y agentes locales
+# ============================================================
+.agents/
