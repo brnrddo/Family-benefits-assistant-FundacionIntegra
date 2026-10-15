@@ -1,4 +1,4 @@
-"""Camino Bedrock de la redacción del guion (FEAT-001).
+"""Camino Bedrock de la redacción del guion (FEAT-001) y del mensaje (FEAT-002).
 
 Módulo **puro**: recibe dicts ya resueltos (la ficha de la familia, tal como la
 exponen ``motor_real`` y ``mock_data``) y no importa nada de ``app.api``. Quien
@@ -7,8 +7,13 @@ respuesta C3.
 
 El LLM **solo escribe prosa**. ``benefit_ids``, orden, resultado, estado de
 acceso, montos y fuentes los construye el servidor desde el motor y el catálogo
-C4; el modelo devuelve ``{"script": ...}`` por salida estructurada. Es
-imposible que su texto altere elegibilidad, acceso u orden (spec §2.4.1).
+C4; el modelo devuelve ``{"script": ...}`` (guion) o ``{"whatsapp_preview":
+..., "sections": [{"benefit_id", "reason", "action"}]}`` (mensaje) por salida
+estructurada. En el mensaje, ``heading``, ``where_to_go``, ``sources``,
+``title`` e ``introduction`` los pone el servidor desde el catálogo C4 y el
+``benefit_id`` del modelo solo sirve para emparejar su prosa con la sección que
+ya decidió el motor. Es imposible que su texto altere elegibilidad, acceso u
+orden (spec §2.4.1).
 
 Orden de barreras de una generación (PRIVACIDAD_DEMO §"Barrera previa y GenAI"):
 
@@ -25,7 +30,9 @@ Orden de barreras de una generación (PRIVACIDAD_DEMO §"Barrera previa y GenAI"
    barrera, nunca un reemplazo del paso 1.
 5. **Postvalidación de copy**: ``_texto_modelo`` exige texto plano, rechaza
    promesas, cifras y las frases vetadas, y agrega el aviso exacto de C3 por
-   construcción.
+   construcción. En el mensaje, ``fusionar_mensaje`` además rearma el
+   ``MessageContent`` de forma determinista: toma del modelo solo
+   ``reason``/``action``/``whatsapp_preview`` y descarta cualquier otro campo.
 
 Degradación: cualquier fallo de cualquier paso sale como un único
 ``RedaccionError`` con un **código fijo** (patrón
@@ -51,6 +58,8 @@ from referencing.jsonschema import DRAFT202012
 from app.genai import template_provider
 from app.genai.content_catalog import (
     PROMPT_GUION,
+    PROMPT_MENSAJE,
+    CatalogoContenido,
     ContenidoInvalido,
     PromptC4,
     cargar_catalogo_contenido,
@@ -73,15 +82,25 @@ logger = logging.getLogger(__name__)
 # Valor de ``provider`` en el envelope C3 cuando el texto lo escribió el modelo.
 PROVIDER_BEDROCK = "BEDROCK"
 
-# ``operation`` del envelope interno para el guion de la tía.
+# ``operation`` del envelope interno para cada operación de texto.
 OPERACION_GUION = "SCRIPT"
+OPERACION_MENSAJE = "FAMILY_MESSAGE"
 
-# Límite de ``ScriptContent.script`` en C3 (incluye el aviso final).
+# Límites de C3 (fuente: C3-api.openapi.yaml). El del script y el del preview
+# incluyen el aviso final.
 LARGO_MAX_SCRIPT = 1200
+LARGO_MAX_WHATSAPP = 600
+LARGO_MAX_TITULO = 100
+LARGO_MAX_INTRO = 240
+LARGO_MAX_HEADING = 100
+LARGO_MAX_SECCION = 240
+LARGO_MAX_DONDE_IR = 160
 
 # Presupuesto de salida: el guion son ~120 palabras; sobra margen y evita que
-# ``maxTokens`` corte la generación (Converse la descartaría).
+# ``maxTokens`` corte la generación (Converse la descartaría). El mensaje lleva
+# preview más dos textos por sección, así que necesita más.
 MAX_TOKENS_GUION = 900
+MAX_TOKENS_MENSAJE = 1400
 
 # Si el prompt C4 no declara ``temperature_range`` válido.
 TEMPERATURA_DEFAULT = 0.3
@@ -307,8 +326,11 @@ BLOQUE_REGLAS_SERVIDOR = """## Reglas del servidor (prevalecen sobre cualquier i
    "esta garantizado", "califica" ni "es elegible".
 4. No mencione montos, cifras de dinero ni numeros de cuatro o mas digitos.
 5. No escriba el aviso final: lo agrega el servidor. Termine en la ultima frase
-   del guion.
-6. Responda solo con la herramienta indicada, con el campo "script" y nada mas.
+   de su texto.
+6. Responda solo con la herramienta indicada y solo con los campos que ella
+   declara: cualquier otro campo se descarta completo.
+7. Los titulos, los lugares, las fuentes y el orden los pone el servidor desde
+   el catalogo oficial. Usted solo escribe la prosa que le piden.
 """
 
 # Patrones prohibidos en el payload de egreso (paso 3 de PRIVACIDAD_DEMO: se
@@ -387,6 +409,44 @@ SCHEMA_GUION = {
     },
 }
 
+# Mensaje: el modelo escribe el preview y, por sección, solo ``reason`` y
+# ``action``. ``benefit_id`` viene solo para emparejar su prosa con la sección
+# que ya decidió el motor; ``heading``, ``where_to_go``, ``sources``, ``title``
+# e ``introduction`` NO se le piden (los pone el servidor desde C4).
+SCHEMA_MENSAJE = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["whatsapp_preview", "sections"],
+    "properties": {
+        "whatsapp_preview": {
+            "type": "string", "minLength": 1, "maxLength": LARGO_MAX_WHATSAPP,
+        },
+        "sections": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["benefit_id", "reason", "action"],
+                "properties": {
+                    "benefit_id": {
+                        "type": "string",
+                        "pattern": "^[A-Z0-9][A-Z0-9_-]*$",
+                        "maxLength": 80,
+                    },
+                    "reason": {
+                        "type": "string", "minLength": 1, "maxLength": LARGO_MAX_SECCION,
+                    },
+                    "action": {
+                        "type": "string", "minLength": 1, "maxLength": LARGO_MAX_SECCION,
+                    },
+                },
+            },
+        },
+    },
+}
+
 # Frases que el copy C4 1.0.0 ordena y esta tarea prohíbe (PEND-1). Se comparan
 # sobre el texto normalizado (minúsculas, sin tildes).
 FRASES_VETADAS = ("vale la pena", "podria calificar")
@@ -419,12 +479,26 @@ def reiniciar_proveedor() -> None:
         _proveedor = None
 
 
+def _exigir_copy_admisible(cuerpo: str, limite: int) -> None:
+    """Política de copy sobre la prosa del modelo; rechazo = degradación.
+
+    Rechaza si el texto está vacío, trae markup, URLs o handlers, si promete un
+    resultado o menciona cifras, si usa una frase vetada o si no cabe en
+    ``limite`` (no se trunca a media frase).
+    """
+    normalizado = template_provider._normalizar(cuerpo)
+    if (
+        not cuerpo
+        or not template_provider.es_texto_plano(cuerpo)
+        or template_provider.contiene_promesa(cuerpo)
+        or any(frase in normalizado for frase in FRASES_VETADAS)
+        or len(cuerpo) > limite
+    ):
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+
+
 def _texto_modelo(texto: str, limite: int) -> str:
     """Postvalida la prosa del modelo y le agrega el aviso exacto de C3.
-
-    Rechaza (y degrada) si el texto trae markup, URLs o handlers, si promete un
-    resultado o menciona cifras, si usa una frase vetada o si no cabe en el
-    presupuesto de largo de C3 junto al aviso (no se trunca a media frase).
 
     El aviso se agrega con ``template_provider._con_aviso``: así el literal
     exacto con tildes queda por construcción y el cuerpo se neutraliza con el
@@ -435,16 +509,24 @@ def _texto_modelo(texto: str, limite: int) -> str:
     # para no duplicarlo.
     if cuerpo.endswith(DISCLAIMER):
         cuerpo = cuerpo[: -len(DISCLAIMER)].strip()
-    normalizado = template_provider._normalizar(cuerpo)
-    if (
-        not cuerpo
-        or not template_provider.es_texto_plano(cuerpo)
-        or template_provider.contiene_promesa(cuerpo)
-        or any(frase in normalizado for frase in FRASES_VETADAS)
-        or len(cuerpo) > limite - len(DISCLAIMER) - 1
-    ):
-        raise RedaccionError(MOTIVO_POSTVALIDACION)
+    _exigir_copy_admisible(cuerpo, limite - len(DISCLAIMER) - 1)
     return template_provider._con_aviso(cuerpo, limite)
+
+
+def _texto_seccion(texto: object, limite: int) -> str:
+    """Prosa del modelo para un campo de la tarjeta, sin aviso y ya inerte.
+
+    El aviso va solo en ``whatsapp_preview`` (C3). El texto pasa la misma
+    política de copy y después por el ``_inert`` del ``TemplateProvider``, así
+    nada activo (markup, handler, URL, CSS) puede viajar dentro de
+    ``PrintableCard``.
+    """
+    cuerpo = str(texto or "").strip()
+    _exigir_copy_admisible(cuerpo, limite)
+    inerte = template_provider._inert(cuerpo, limite)
+    if not inerte:
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+    return inerte
 
 
 def _temperatura(prompt: PromptC4) -> float:
@@ -493,14 +575,14 @@ def redactar_guion(
         raise RedaccionError(MOTIVO_ERROR_INESPERADO) from None
 
 
-def _redactar_guion(
-    benefit_ids: list[str],
-    familia: dict | None,
-    *,
-    request_id: str,
-    provider: LLMProvider | None,
-    inicio: float,
-) -> dict:
+def _preparar_envio(
+    operacion: str, prompt_id: str, benefit_ids: list[str], familia: dict | None
+) -> tuple[list[str], CatalogoContenido, PromptC4, str]:
+    """Barreras 1 a 3, idénticas para guion y mensaje.
+
+    Devuelve los ``benefit_ids`` normalizados, el catálogo C4, el prompt del
+    Rol 4 y el prompt renderizado ya inspeccionado.
+    """
     if familia is None:
         raise RedaccionError(MOTIVO_SIN_FAMILIA)
 
@@ -515,7 +597,7 @@ def _redactar_guion(
         catalogo = cargar_catalogo_contenido()
     except ContenidoInvalido:
         raise RedaccionError(MOTIVO_CATALOGO_C4) from None
-    prompt = catalogo.prompts.get(PROMPT_GUION)
+    prompt = catalogo.prompts.get(prompt_id)
     if prompt is None:
         raise RedaccionError(MOTIVO_PROMPT_C4_INVALIDO)
 
@@ -531,13 +613,25 @@ def _redactar_guion(
 
     # Barrera 2: envelope interno cerrado y validado.
     envelope = construir_envelope_familia(
-        OPERACION_GUION, contexto, catalog_items(catalogo.entradas, ids), prompt
+        operacion, contexto, catalog_items(catalogo.entradas, ids), prompt
     )
 
     # Barrera 3: inspección del payload de egreso completo.
     prompt_renderizado = renderizar_prompt(prompt, envelope)
     _exigir_payload_limpio(prompt_renderizado, _family_id(familia))
+    return ids, catalogo, prompt, prompt_renderizado
 
+
+def _invocar_modelo(
+    prompt_renderizado: str,
+    prompt: PromptC4,
+    *,
+    provider: LLMProvider | None,
+    json_schema: dict,
+    max_tokens: int,
+    request_id: str,
+) -> dict:
+    """Barrera 4: resuelve el proveedor, genera y devuelve sus datos tipados."""
     # La CONSTRUCCIÓN del proveedor también puede fallar cerrada (sin
     # E3_GUARDRAIL_ID o sin boto3): va dentro del try, no solo la llamada.
     if provider is None:
@@ -546,32 +640,179 @@ def _redactar_guion(
         except (GuardrailNoConfigurado, BedrockError):
             raise RedaccionError(MOTIVO_PROVEEDOR_NO_DISPONIBLE) from None
 
-    # Barrera 4 (dentro del provider): Guardrail INPUT -> Converse -> Guardrail
-    # OUTPUT -> postvalidación del schema pedido.
+    # Dentro del provider: Guardrail INPUT -> Converse -> Guardrail OUTPUT ->
+    # postvalidación del schema pedido.
     try:
         resp = provider.generar(
             prompt_renderizado,
             system=SYSTEM,
-            json_schema=SCHEMA_GUION,
+            json_schema=json_schema,
             temperatura=_temperatura(prompt),
-            max_tokens=MAX_TOKENS_GUION,
+            max_tokens=max_tokens,
             request_id=request_id,
         )
     except GuardrailIntervino:
         raise RedaccionError(MOTIVO_GUARDRAIL_INTERVINO) from None
     except BedrockError:
         raise RedaccionError(MOTIVO_BEDROCK_ERROR) from None
+    return resp.datos if isinstance(resp.datos, dict) else {}
+
+
+def _log_ok(operacion: str, request_id: str, inicio: float) -> None:
+    """Log permitido: operación, estado, request_id y latencia. Nunca textos."""
+    logger.info(
+        "genai_redaccion: operacion=%s estado=OK request_id=%s latencia_ms=%d",
+        operacion, request_id or "-", int((time.monotonic() - inicio) * 1000),
+    )
+
+
+def _redactar_guion(
+    benefit_ids: list[str],
+    familia: dict | None,
+    *,
+    request_id: str,
+    provider: LLMProvider | None,
+    inicio: float,
+) -> dict:
+    ids, _catalogo, prompt, prompt_renderizado = _preparar_envio(
+        OPERACION_GUION, PROMPT_GUION, benefit_ids, familia
+    )
+    datos = _invocar_modelo(
+        prompt_renderizado, prompt,
+        provider=provider, json_schema=SCHEMA_GUION,
+        max_tokens=MAX_TOKENS_GUION, request_id=request_id,
+    )
 
     # Barrera 5: postvalidación del copy. ``benefit_ids`` los pone el servidor.
-    datos = resp.datos if isinstance(resp.datos, dict) else {}
     script = datos.get("script")
     if not isinstance(script, str):
         raise RedaccionError(MOTIVO_POSTVALIDACION)
     content = {"benefit_ids": ids, "script": _texto_modelo(script, LARGO_MAX_SCRIPT)}
+    _log_ok(OPERACION_GUION, request_id, inicio)
+    return content
 
-    # Log permitido: operación, estado, request_id y latencia. Nunca textos.
-    logger.info(
-        "genai_redaccion: operacion=%s estado=OK request_id=%s latencia_ms=%d",
-        OPERACION_GUION, request_id or "-", int((time.monotonic() - inicio) * 1000),
+
+# --- Mensaje para la familia (FEAT-002) --------------------------------------
+
+
+def _secciones_del_modelo(ids: list[str], datos: dict) -> dict[str, dict]:
+    """Indexa las secciones del modelo por ``benefit_id``, exigiendo coherencia.
+
+    Falla cerrado si el modelo omite una sección esperada, inventa un
+    ``benefit_id`` que el motor no pidió o duplica una sección: en todos esos
+    casos su salida completa se descarta y se responde la plantilla.
+    """
+    secciones = datos.get("sections")
+    if not isinstance(secciones, list):
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+    por_id: dict[str, dict] = {}
+    for seccion in secciones:
+        if not isinstance(seccion, dict):
+            raise RedaccionError(MOTIVO_POSTVALIDACION)
+        bid = seccion.get("benefit_id")
+        if bid not in ids or bid in por_id:
+            raise RedaccionError(MOTIVO_POSTVALIDACION)
+        por_id[bid] = seccion
+    if set(por_id) != set(ids):
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+    return por_id
+
+
+def fusionar_mensaje(ids: list[str], catalogo: CatalogoContenido, datos: dict) -> dict:
+    """``MessageContent`` armado por el servidor con la prosa del modelo.
+
+    Del modelo se toman SOLO ``whatsapp_preview`` y, por sección, ``reason`` y
+    ``action``. ``benefit_id``, orden, ``heading``, ``where_to_go`` y
+    ``sources`` salen del catálogo C4 y del orden que fijó el motor; ``title``
+    e ``introduction`` son el texto del Rol 4 ya validado. Así ninguna sección
+    puede quedar sin cita (C3 exige ≥1 fuente) ni citar algo que no esté
+    inventariado.
+    """
+    por_id = _secciones_del_modelo(ids, datos)
+    secciones: list[dict] = []
+    for bid in ids:
+        entrada = catalogo.entradas.get(bid)
+        if entrada is None:
+            raise RedaccionError(MOTIVO_SIN_CITA_C4)
+        if not entrada.source_id or not template_provider._es_https(entrada.source_url):
+            raise RedaccionError(MOTIVO_SIN_CITA_C4)
+        donde = (
+            template_provider._inert(entrada.where_to_go, LARGO_MAX_DONDE_IR)
+            if entrada.where_to_go else ""
+        )
+        secciones.append({
+            "benefit_id": entrada.benefit_id,
+            "heading": template_provider._inert(entrada.title, LARGO_MAX_HEADING)
+            or entrada.benefit_id,
+            "reason": _texto_seccion(por_id[bid].get("reason"), LARGO_MAX_SECCION),
+            "action": _texto_seccion(por_id[bid].get("action"), LARGO_MAX_SECCION),
+            "where_to_go": donde or None,
+            "sources": [{
+                "source_id": entrada.source_id,
+                "url": entrada.source_url,
+            }],
+        })
+    if not secciones:
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+
+    preview = datos.get("whatsapp_preview")
+    if not isinstance(preview, str):
+        raise RedaccionError(MOTIVO_POSTVALIDACION)
+    return {
+        "benefit_ids": ids,
+        "whatsapp_preview": _texto_modelo(preview, LARGO_MAX_WHATSAPP),
+        "printable_card": {
+            "format_version": "CARD_V1",
+            "title": template_provider._inert(
+                catalogo.plantillas.tarjeta_titulo, LARGO_MAX_TITULO
+            ),
+            "introduction": template_provider._inert(
+                catalogo.plantillas.tarjeta_introduccion, LARGO_MAX_INTRO
+            ),
+            "sections": secciones,
+        },
+    }
+
+
+def redactar_mensaje(
+    benefit_ids: list[str],
+    familia: dict | None,
+    *,
+    request_id: str,
+    provider: LLMProvider | None = None,
+) -> dict:
+    """``MessageContent`` redactado por el modelo, o ``RedaccionError``.
+
+    Mismo contrato de fallo que ``redactar_guion``: cualquier problema sale
+    como ``RedaccionError`` con código fijo y el llamador degrada a plantilla.
+    """
+    inicio = time.monotonic()
+    try:
+        return _redactar_mensaje(
+            benefit_ids, familia, request_id=request_id, provider=provider, inicio=inicio
+        )
+    except RedaccionError:
+        raise
+    except Exception:  # noqa: BLE001 — falla cerrada: nunca propagar detalles
+        raise RedaccionError(MOTIVO_ERROR_INESPERADO) from None
+
+
+def _redactar_mensaje(
+    benefit_ids: list[str],
+    familia: dict | None,
+    *,
+    request_id: str,
+    provider: LLMProvider | None,
+    inicio: float,
+) -> dict:
+    ids, catalogo, prompt, prompt_renderizado = _preparar_envio(
+        OPERACION_MENSAJE, PROMPT_MENSAJE, benefit_ids, familia
     )
+    datos = _invocar_modelo(
+        prompt_renderizado, prompt,
+        provider=provider, json_schema=SCHEMA_MENSAJE,
+        max_tokens=MAX_TOKENS_MENSAJE, request_id=request_id,
+    )
+    content = fusionar_mensaje(ids, catalogo, datos)
+    _log_ok(OPERACION_MENSAJE, request_id, inicio)
     return content

@@ -509,6 +509,190 @@ def test_payload_con_patron_prohibido_falla_cerrado():
         redaccion._exigir_payload_limpio(f"familia {FAM} revisada", FAM)
 
 
+# --- /mensaje: el modelo solo escribe prosa (FEAT-002) ----------------------
+
+TEXTO_PREVIEW = (
+    "Hola. Le escribimos desde el jardin. Revisamos dos apoyos para conversar "
+    "con su familia. Puede consultar en cada institucion."
+)
+RAZON = "Segun la revision del jardin, este apoyo es para conversar con su familia."
+ACCION = "Puede consultar en la institucion y preguntar que documentos llevar."
+
+
+def _secciones(ids: list[str], reason: str = RAZON, action: str = ACCION) -> list[dict]:
+    return [{"benefit_id": b, "reason": reason, "action": action} for b in ids]
+
+
+def _cliente_mensaje(secciones: list[dict] | None = None,
+                     preview: str = TEXTO_PREVIEW) -> ClienteFalso:
+    return ClienteFalso(respuesta_converse=respuesta_tooluse({
+        "whatsapp_preview": preview,
+        "sections": secciones if secciones is not None else _secciones(IDS),
+    }))
+
+
+def _post_mensaje(ids: list[str], family_id: str = FAM):
+    return client.post(
+        f"/api/v1/familias/{family_id}/mensaje", json={"benefit_ids": ids}
+    )
+
+
+def _degradado_mensaje(body: dict, warnings: list[str]) -> None:
+    validar("MessageGenerationEnvelope", body)
+    assert body["provider"] == "PLANTILLA"
+    assert body["warnings"] == warnings
+    assert body["content"]["whatsapp_preview"].endswith(DISCLAIMER)
+
+
+def test_mensaje_sin_bandera_responde_plantilla(monkeypatch):
+    def _no_debe_llamarse(self):
+        raise AssertionError("se intentó construir el cliente real de boto3")
+
+    monkeypatch.setattr(BedrockProvider, "_crear_cliente", _no_debe_llamarse)
+    r = _post_mensaje(IDS)
+    assert r.status_code == 200
+    body = r.json()
+    validar("MessageGenerationEnvelope", body)
+    assert body["provider"] == "PLANTILLA"
+    assert body["warnings"] == []
+    assert body["content"]["benefit_ids"] == IDS
+
+
+def test_mensaje_bedrock_ok_fusiona_catalogo_y_prosa(monkeypatch, catalogo):
+    # El modelo manda las secciones al revés: el orden lo fija el motor.
+    cliente = _inyectar(monkeypatch, _cliente_mensaje(_secciones(list(reversed(IDS)))))
+    r = _post_mensaje(IDS)
+
+    assert r.status_code == 200
+    body = r.json()
+    validar("MessageGenerationEnvelope", body)
+    assert body["provider"] == "BEDROCK"
+    assert body["warnings"] == []
+    content = body["content"]
+    assert content["benefit_ids"] == IDS
+    # El aviso exacto lo agrega el servidor, no el modelo.
+    assert content["whatsapp_preview"] == f"{TEXTO_PREVIEW} {DISCLAIMER}"
+
+    card = content["printable_card"]
+    assert card["format_version"] == "CARD_V1"
+    # Título e introducción son el texto del Rol 4, no del modelo.
+    assert card["title"] == catalogo.plantillas.tarjeta_titulo
+    assert card["introduction"] == catalogo.plantillas.tarjeta_introduccion
+    assert [s["benefit_id"] for s in card["sections"]] == IDS
+    for seccion, bid in zip(card["sections"], IDS, strict=True):
+        entrada = catalogo.entradas[bid]
+        # Lo verificable sale del catálogo C4; solo la prosa es del modelo.
+        assert seccion["heading"] == entrada.title
+        assert seccion["where_to_go"] == entrada.where_to_go
+        assert seccion["sources"] == [
+            {"source_id": entrada.source_id, "url": entrada.source_url}
+        ]
+        assert seccion["reason"] == RAZON
+        assert seccion["action"] == ACCION
+
+    assert cliente.operaciones == ["apply_guardrail", "converse", "apply_guardrail"]
+    tool = cliente.llamadas[1][1]["toolConfig"]["tools"][0]["toolSpec"]
+    assert tool["inputSchema"]["json"] == redaccion.SCHEMA_MENSAJE
+    assert cliente.llamadas[1][1]["inferenceConfig"] == {
+        "temperature": 0.2, "maxTokens": redaccion.MAX_TOKENS_MENSAJE,
+    }
+
+
+def test_mensaje_con_seccion_omitida_degrada(monkeypatch, caplog):
+    _inyectar(monkeypatch, _cliente_mensaje(_secciones(["BEN-001"])))
+    with caplog.at_level(logging.DEBUG):
+        r = _post_mensaje(IDS)
+
+    assert r.status_code == 200
+    _degradado_mensaje(r.json(), [WARNING_DEGRADADO])
+    assert f"motivo={redaccion.MOTIVO_POSTVALIDACION}" in caplog.text
+
+
+def test_mensaje_con_benefit_id_inventado_degrada(monkeypatch, caplog):
+    _inyectar(monkeypatch, _cliente_mensaje(
+        _secciones(["BEN-001", "BEN-999"])))
+    with caplog.at_level(logging.DEBUG):
+        r = _post_mensaje(IDS)
+
+    assert r.status_code == 200
+    _degradado_mensaje(r.json(), [WARNING_DEGRADADO])
+    assert f"motivo={redaccion.MOTIVO_POSTVALIDACION}" in caplog.text
+    assert "BEN-999" not in r.text
+
+
+def test_fusionar_mensaje_rechaza_secciones_duplicadas(catalogo):
+    datos = {
+        "whatsapp_preview": TEXTO_PREVIEW,
+        "sections": _secciones(["BEN-001", "BEN-001"]),
+    }
+    with pytest.raises(redaccion.RedaccionError) as exc:
+        redaccion.fusionar_mensaje(IDS, catalogo, datos)
+    assert exc.value.motivo == redaccion.MOTIVO_POSTVALIDACION
+
+
+@pytest.mark.parametrize("reason", [
+    "Revise <b>este apoyo</b> en la oficina.",
+    "Revise el detalle en https://sitio-falso.example.cl/apoyo",
+    "La familia tiene derecho a $250.000 este mes.",
+    "Vale la pena consultar en la institucion.",
+])
+def test_mensaje_con_texto_inadmisible_en_reason_degrada(monkeypatch, reason):
+    _inyectar(monkeypatch, _cliente_mensaje(_secciones(IDS, reason=reason)))
+    r = _post_mensaje(IDS)
+
+    assert r.status_code == 200
+    _degradado_mensaje(r.json(), [WARNING_DEGRADADO])
+    # Nada del texto del modelo viaja, ni activo ni inerte.
+    assert reason not in r.text
+    for fragmento in ("<b>", "https://sitio-falso", "$250.000"):
+        assert fragmento not in r.text
+
+
+def test_mensaje_con_beneficio_sin_cita_degrada(monkeypatch, caplog):
+    cliente = _inyectar(monkeypatch, _cliente_mensaje(
+        _secciones(["BEN-001", "BEN-018"])))
+    with caplog.at_level(logging.DEBUG):
+        r = _post_mensaje(["BEN-001", "BEN-018"])
+
+    assert r.status_code == 200
+    body = r.json()
+    # La plantilla responde igual que hoy: BEN-018 no lleva sección.
+    _degradado_mensaje(body, [WARNING_DEGRADADO, runtime.WARNING_SECCION_OMITIDA])
+    assert body["content"]["benefit_ids"] == ["BEN-001", "BEN-018"]
+    assert len(body["content"]["printable_card"]["sections"]) == 1
+    assert cliente.llamadas == []
+    assert f"motivo={redaccion.MOTIVO_SIN_CITA_C4}" in caplog.text
+
+
+def test_mensaje_error_de_bedrock_degrada(monkeypatch, caplog):
+    _inyectar(monkeypatch, ClienteFalso(
+        error_converse=RuntimeError("fallo simulado de boto3")))
+    with caplog.at_level(logging.DEBUG):
+        r = _post_mensaje(IDS)
+
+    assert r.status_code == 200
+    _degradado_mensaje(r.json(), [WARNING_DEGRADADO])
+    assert f"motivo={redaccion.MOTIVO_BEDROCK_ERROR}" in caplog.text
+
+
+def test_mensaje_logs_solo_metrica_agregada(monkeypatch, caplog, catalogo):
+    cliente = _inyectar(monkeypatch, _cliente_mensaje())
+    with caplog.at_level(logging.DEBUG):
+        assert _post_mensaje(IDS).json()["provider"] == "BEDROCK"
+
+    propio = "\n".join(
+        r.getMessage() for r in caplog.records if r.name.startswith("app")
+    )
+    assert TEXTO_PREVIEW not in caplog.text
+    assert RAZON not in caplog.text
+    assert _prompt_enviado(cliente) not in caplog.text
+    assert GUARDRAIL_SINTETICO not in caplog.text
+    assert FAM not in propio
+    for entrada in catalogo.entradas.values():
+        assert entrada.title not in propio
+    assert "genai_redaccion: operacion=FAMILY_MESSAGE estado=OK" in propio
+
+
 def test_bedrock_seleccionado_es_seguro_por_defecto(monkeypatch):
     monkeypatch.delenv("E3_LLM_PROVIDER", raising=False)
     assert redaccion.bedrock_seleccionado() is False

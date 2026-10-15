@@ -4,10 +4,12 @@
   ``TemplateProvider`` determinista de FEAT-002 (``provider='PLANTILLA'``),
   construido desde el catálogo C4 de ``content/`` (Rol 4, DEC-055). El cliente
   nunca envía contexto, catálogo ni prompt (API-007).
-- Solo el guion tiene camino Bedrock, detrás de ``E3_LLM_PROVIDER=bedrock`` y
-  delegado completo a ``app.genai.redaccion`` (allowlist, envelope interno,
-  Guardrails y postvalidación). Ante cualquier fallo se degrada a la plantilla
-  con HTTP 200 y ``warnings=['GENAI_DEGRADADO_A_PLANTILLA']`` (API-008).
+- El guion y el mensaje tienen camino Bedrock, detrás de
+  ``E3_LLM_PROVIDER=bedrock`` y delegado completo a ``app.genai.redaccion``
+  (allowlist, envelope interno, Guardrails y postvalidación). Ante cualquier
+  fallo se degrada a la plantilla con HTTP 200 y
+  ``warnings=['GENAI_DEGRADADO_A_PLANTILLA']`` (API-008). ``/asistente`` sigue
+  siempre por plantilla.
 - Un ``benefit_id`` sin respaldo en el catálogo responde 422 y nunca se
   sustituye por otro beneficio (DEC-056). Si el catálogo no valida, la
   respuesta falla cerrada sin 500 (DEC-058).
@@ -166,12 +168,24 @@ def generar_guion(benefit_ids: list[str], request_id: str,
     return _envelope(request_id, content, warnings)
 
 
-def generar_mensaje(benefit_ids: list[str], request_id: str) -> dict:
-    """Arma el ``MessageGenerationEnvelope`` C3 (provider=PLANTILLA).
+def _warnings_mensaje(content: dict) -> list[str]:
+    """Warning si algún beneficio pedido quedó sin sección (PREG-045)."""
+    omitidas = len(content["benefit_ids"]) > len(content["printable_card"]["sections"])
+    return [WARNING_SECCION_OMITIDA] if omitidas else []
+
+
+def generar_mensaje(benefit_ids: list[str], request_id: str,
+                    family_id: str | None = None) -> dict:
+    """Arma el ``MessageGenerationEnvelope`` C3 (PLANTILLA o BEDROCK).
 
     Sin catálogo no hay tarjeta válida (C3 exige citas): 503. Los beneficios
     sin fuente oficial (PREG-045) no llevan sección y se avisa con un warning;
     si ninguno la tiene, 422 (DEC-057).
+
+    Con ``E3_LLM_PROVIDER=bedrock`` el modelo escribe el preview y el
+    ``reason``/``action`` de cada sección; todo lo demás (orden, títulos,
+    lugares y citas) lo pone el servidor. Cualquier fallo degrada a la
+    plantilla con HTTP 200 y un warning de código fijo (API-008).
     """
     provider = get_provider()
     if provider is None:
@@ -180,13 +194,25 @@ def generar_mensaje(benefit_ids: list[str], request_id: str) -> dict:
     if not any(provider.tiene_cita(bid) for bid in benefit_ids):
         detalles = _detalles(benefit_ids, _RAZON_SIN_FUENTE, lambda b: True)
         raise ApiError(status_code=422, details=detalles, retryable=False)
+    warnings: list[str] = []
+    if redaccion.bedrock_seleccionado():
+        try:
+            content = redaccion.redactar_mensaje(
+                benefit_ids, _vista_familia_llm(family_id), request_id=request_id
+            )
+            return _envelope(
+                request_id, content, _warnings_mensaje(content),
+                provider=redaccion.PROVIDER_BEDROCK,
+            )
+        except redaccion.RedaccionError as exc:
+            _log_genai_degradado(exc.motivo)
+            warnings = [WARNING_GENAI_DEGRADADO]
     try:
         content = provider.generar_mensaje(benefit_ids)
     except TemplateError:
         _log_sin_catalogo("INVARIANTE_PLANTILLA")
         raise ApiError(status_code=503) from None
-    omitidas = len(content["benefit_ids"]) > len(content["printable_card"]["sections"])
-    return _envelope(request_id, content, [WARNING_SECCION_OMITIDA] if omitidas else [])
+    return _envelope(request_id, content, warnings + _warnings_mensaje(content))
 
 
 def responder_asistente(question: str, request_id: str) -> dict:

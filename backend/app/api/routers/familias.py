@@ -150,4 +150,4 @@ def create_mensaje(
 ) -> dict:
     if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
         raise ApiError(status_code=404)
-    return generar_mensaje(body.benefit_ids, request.state.request_id)
+    return generar_mensaje(body.benefit_ids, request.state.request_id, family_id=id)
