@@ -157,7 +157,8 @@ def bedrock_seleccionado() -> bool:
 
 # --- Barrera 1: allowlist POSITIVA (nunca por exclusión) ---------------------
 
-# Las cinco claves de ``LlmContextV1`` que salen de la vista C2 de la ficha.
+# Claves escalares de ``LlmContextV1`` que se copian tal cual de la vista C2
+# (``composition`` se reduce aparte, item por item).
 _CLAVES_CONTEXTO = ("rsh_band", "income_band", "preferred_format", "language")
 
 
