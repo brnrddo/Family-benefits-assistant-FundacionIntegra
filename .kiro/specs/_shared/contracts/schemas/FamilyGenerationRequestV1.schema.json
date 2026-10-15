@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:family-generation-request:v1",
+  "title": "FamilyGenerationRequestV1 — envelope interno",
+  "description": "Contrato interno construido por el servidor desde C1, C2 minimizado y C4 autorizados. Nunca se acepta como cuerpo público C3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "context", "catalog_items", "prompt_template_id", "prompt_version", "output_schema_version"],
+  "properties": {
+    "operation": {"enum": ["EXPLANATION", "SCRIPT", "FAMILY_MESSAGE"]},
+    "context": {"$ref": "./LlmContextV1.schema.json"},
+    "catalog_items": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/catalogItem"}},
+    "prompt_template_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$", "maxLength": 80},
+    "prompt_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "output_schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
+  },
+  "$defs": {
+    "catalogItem": {"type": "object", "additionalProperties": false, "required": ["benefit_id", "title", "description", "actions", "institution", "official_url", "source_ids"], "properties": {"benefit_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$"}, "title": {"type": "string", "minLength": 1, "maxLength": 100}, "description": {"type": "string", "minLength": 1, "maxLength": 500}, "actions": {"type": "array", "minItems": 1, "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 160}}, "institution": {"type": "string", "minLength": 1, "maxLength": 100}, "official_url": {"type": "string", "format": "uri", "pattern": "^https://"}, "source_ids": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$"}}}}
+  }
+}

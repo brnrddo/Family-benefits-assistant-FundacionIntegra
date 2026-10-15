@@ -67,3 +67,15 @@ Más detalles y qué hacer si algo sale mal 👉 ver [`CONTRIBUTING.md`](./CONTR
 - ✅ Todo secreto va en tu `.env` local (protegido por `.gitignore`).
 - ✅ Si vas a compartir una clave con el equipo, hazlo por mensaje privado, no por el repo.
 - 🚨 Si por error subes un secreto, **avisa de inmediato** para rotar/invalidar esa clave.
+
+---
+
+## 📚 Documentación del proyecto
+
+- [Índice navegable de Specs Kiro](./.kiro/specs/INDICE.md)
+- [Spec maestro del producto](./.kiro/specs/apoyo-inteligente-familias/requirements.md)
+- [Guía Kiro para el equipo](./docs/GUIA_KIRO_EQUIPO.md)
+- [Arquitectura AWS-first](./docs/ARQUITECTURA_AWS.md)
+- [Política de privacidad y anonimización](./docs/PRIVACIDAD_DEMO.md)
+- [Especificación funcional inmutable](./PROYECTO_3_ESPECIFICACION_v2.md)
+- [Documentación del dataset sintético](./data/README.md)

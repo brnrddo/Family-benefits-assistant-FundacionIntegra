@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:error-response:v1",
+  "title": "ErrorResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["error"],
+  "properties": {
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "request_id", "retryable", "details"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$", "maxLength": 80},
+        "message": {"type": "string", "minLength": 1, "maxLength": 200},
+        "request_id": {"type": "string", "minLength": 1, "maxLength": 80},
+        "retryable": {"type": "boolean"},
+        "details": {"type": "array", "maxItems": 20, "items": {"type": "object", "additionalProperties": false, "required": ["field", "reason"], "properties": {"field": {"type": "string", "minLength": 1, "maxLength": 120}, "reason": {"type": "string", "minLength": 1, "maxLength": 160}}}}
+      }
+    }
+  }
+}
