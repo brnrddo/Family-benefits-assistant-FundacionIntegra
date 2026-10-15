@@ -1,8 +1,13 @@
 """Carga y validación del bundle C4 para el ranking determinista U/B/V (FEAT-001).
 
-Autoridad: el bundle C4 (`content/manifest.json`) es la única fuente de todos los
-números de negocio de §8. Este módulo NO contiene umbrales/pesos/medianas/bonus
-hardcodeados: solo carga, valida y expone la configuración.
+Autoridad: el bundle C4 autoritativo es el del Rol 4 en `content/`
+(YAML/CSV/MD, `content/manifest.yaml`). El bundle JSON que carga este módulo es
+un mock de desarrollo del Rol 2 (`backend/fixtures/c4_mock/manifest.json`) hasta
+que exista el adaptador JSON→YAML (DEC-022).
+
+El bundle cargado es la única fuente de todos los números de negocio de §8: este
+módulo NO contiene umbrales/pesos/medianas/bonus hardcodeados; solo carga,
+valida y expone la configuración.
 
 Falla cerrado: cualquier bundle inválido (schema o invariantes de negocio) lanza
 ``ConfigInvalida`` y nada downstream debe continuar con una config dudosa.
@@ -29,8 +34,9 @@ _C4_SCHEMA_PATH = (
     / "C4-contenido-manifest.schema.json"
 )
 
-# Ruta por defecto del manifest; configurable por entorno (E3_CONTENT_MANIFEST).
-_DEFAULT_MANIFEST = _REPO_DIR / "content" / "manifest.json"
+# Ruta por defecto del manifest: mock C4 de desarrollo del Rol 2 (DEC-022);
+# configurable por entorno (E3_CONTENT_MANIFEST).
+_DEFAULT_MANIFEST = _REPO_DIR / "backend" / "fixtures" / "c4_mock" / "manifest.json"
 
 # Tolerancia de la suma de ejes U/B/V (contrato C4: 1 ± 1e-6).
 AXIS_SUM_TOLERANCE = 1e-6
@@ -112,7 +118,8 @@ def cargar_ranking_config(manifest_path: str | os.PathLike | None = None) -> Ran
     """Carga el bundle C4, valida schema + invariantes y devuelve ``RankingConfig``.
 
     La ruta se resuelve en este orden: argumento explícito > variable de entorno
-    ``E3_CONTENT_MANIFEST`` > ``content/manifest.json`` del repo.
+    ``E3_CONTENT_MANIFEST`` > ``backend/fixtures/c4_mock/manifest.json`` (mock de
+    desarrollo del Rol 2; la autoridad C4 es el bundle del Rol 4 en ``content/``).
     """
     if manifest_path is None:
         env = os.environ.get("E3_CONTENT_MANIFEST")

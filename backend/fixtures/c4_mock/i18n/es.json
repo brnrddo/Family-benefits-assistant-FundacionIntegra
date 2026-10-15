@@ -1,0 +1,16 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. i18n canonico en espanol.",
+  "a11y.canonical_es": "Orientacion referencial; no determina derechos.",
+  "a11y.polly_fallback": "Texto disponible en pantalla.",
+  "a11y.translate_fallback": "Contenido disponible en espanol.",
+  "q.rsh_band": "Tiene Registro Social de Hogares vigente?",
+  "q.income_band": "En que rango esta el ingreso del hogar?",
+  "q.last_health_control_date": "Cuando fue el ultimo control de salud del nino?",
+  "q.possible_disability": "Hay sospecha de discapacidad en algun nino?",
+  "q.therapy": "El nino asiste a alguna terapia?",
+  "q.housing_type": "Como describiria la vivienda del hogar?",
+  "ben.BEN-001.title": "Subsidio Unico Familiar",
+  "ben.BEN-012.title": "Bono Control Nino Sano",
+  "ben.BEN-018.title": "Programa con cupo limitado"
+}
