@@ -317,7 +317,7 @@ class Evaluator:
                 binding_grupo=r["binding_grupo"], nota="sin candidatos") for r in reglas_b]
             return Tri.INDETERMINADO, None, trazas, campos, True
 
-        mejor = (Tri.NO, None, [], set(), True)
+        mejor = None
         rank = {Tri.NO: 0, Tri.INDETERMINADO: 1, Tri.SI: 2}
         for cand in candidatos:
             tris, trazas, faltantes = [], [], set()
@@ -350,7 +350,7 @@ class Evaluator:
                     nota=("declarado" if hecho.estado_dato == "DECLARADO" and hecho.presente else None)))
             tri_cand = _and_tri(tris)
             cur = (tri_cand, cand["id_integrante"], trazas, faltantes, acred_ok)
-            if rank[tri_cand] > rank[mejor[0]]:
+            if mejor is None or rank[tri_cand] > rank[mejor[0]]:
                 mejor = cur
             if tri_cand == Tri.SI:
                 break  # ganador encontrado
