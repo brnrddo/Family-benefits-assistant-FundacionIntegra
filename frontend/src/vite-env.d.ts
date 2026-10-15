@@ -13,6 +13,7 @@ interface ImportMetaEnv {
   readonly VITE_COGNITO_REDIRECT_PATH: string;
   readonly VITE_DATA_CLASSIFICATION: string;
   readonly VITE_DEMO_CACHE_TTL_HOURS: string;
+  readonly VITE_PROPOSAL_ADD_INFO: string;
 }
 
 interface ImportMeta {

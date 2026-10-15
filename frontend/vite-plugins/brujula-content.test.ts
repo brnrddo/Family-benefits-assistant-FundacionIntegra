@@ -145,11 +145,11 @@ function resolve(dir: string, profile: Profile = 'local', allowMock = false, sch
 const canonicalCopy = (): Record<string, string> => ({ ...MOCK_COPY });
 
 describe('brujula-content — copy', () => {
-  it('MISSING en local → MOCK_LOCAL clave por clave (368)', () => {
+  it('MISSING en local → MOCK_LOCAL clave por clave (407)', () => {
     const result = resolve(contentDir());
     expect(result.strict).toBe(false);
     expect(result.copy).toMatchObject({ status: 'MISSING', source: 'MOCK_LOCAL' });
-    expect(Object.keys(result.copy.values)).toHaveLength(368);
+    expect(Object.keys(result.copy.values)).toHaveLength(407);
     expect(result.c4.status).toBe('MISSING');
   });
 

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "catalog_version": "1.1.0",
-    "changes": "1.1.0: no quita ni renombra claves de 1.0.0; agrega tres obligatorias: new_family.date_future, kpi.range_invalid, kpi.range_too_long {max_days}. Total 368 claves.",
+    "catalog_version": "1.2.0",
+    "changes": "1.2.0: no quita ni renombra claves de 1.1.0; agrega 39 obligatorias para lista neutra con acciones prioritarias (DEC-037), nombre de trato local (DEC-038), dos grupos de beneficios en la ficha, Agregar informacion (DEC-039) y edad singular (common.year_one). home.next_family, home.next_family_none, home.family_item y family.title quedan sin uso. Total 407 claves. 1.1.0: agrego new_family.date_future, kpi.range_invalid, kpi.range_too_long {max_days}.",
     "producer": "Rol 3 Frontend PWA (rama front)",
     "consumer": "Rol 4 / workflow contenido -> content/i18n/es.json",
     "es_json_shape": "Objeto JSON plano: { \"<key>\": \"<texto>\" }. Solo strings. Sin objetos anidados, arrays, HTML, Markdown, URLs ni emojis obligatorios.",
@@ -170,6 +170,16 @@
       "uso": "Cuerpo del dialogo cuando hay conversaciones Demo sin enviar que se borraran."
     },
     {
+      "key": "auth.logout_confirm.body_names",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Aviso adicional del dialogo: se borraran los nombres de trato guardados en este equipo."
+    },
+    {
       "key": "auth.logout_confirm.accept",
       "placeholders": [],
       "uso": "Boton confirmar cierre de sesion y borrado local."
@@ -242,7 +252,12 @@
           "tipo": "integer"
         }
       ],
-      "uso": "Edad de un integrante, p. ej. '4 anos'."
+      "uso": "Edad de un integrante en plural, p. ej. '4 anos' (tambien 0)."
+    },
+    {
+      "key": "common.year_one",
+      "placeholders": [],
+      "uso": "Edad de un integrante de exactamente 1 ano (singular)."
     },
     {
       "key": "common.not_available",
@@ -486,17 +501,17 @@
     {
       "key": "home.next_family",
       "placeholders": [],
-      "uso": "Boton principal: siguiente familia pendiente para conversar."
+      "uso": "SIN USO desde 1.2.0 (DEC-037: Inicio ya no destaca una siguiente familia). Se mantiene por compatibilidad."
     },
     {
       "key": "home.next_family_none",
       "placeholders": [],
-      "uso": "Mensaje cuando no quedan familias pendientes."
+      "uso": "SIN USO desde 1.2.0 (DEC-037). Se mantiene por compatibilidad."
     },
     {
       "key": "home.list_title",
       "placeholders": [],
-      "uso": "Titulo de la lista de familias ordenada por prioridad (orden de C3)."
+      "uso": "Titulo de la lista de familias del jardin en orden neutro (alfabetico), sin prioridad familiar (DEC-037)."
     },
     {
       "key": "home.family_item",
@@ -506,7 +521,7 @@
           "tipo": "id"
         }
       ],
-      "uso": "Nombre visible de una familia en la lista (solo ID sintetico)."
+      "uso": "SIN USO desde 1.2.0 (se muestra el nombre de trato o family.generic_name). Se mantiene por compatibilidad."
     },
     {
       "key": "home.opportunity_count",
@@ -522,6 +537,26 @@
       "key": "home.pending_local",
       "placeholders": [],
       "uso": "Insignia local: conversacion en cola en este equipo, aun no cuenta en el avance."
+    },
+    {
+      "key": "home.priority_actions",
+      "placeholders": [],
+      "uso": "Etiqueta en la tarjeta de familia sobre sus acciones prioritarias (top_benefit_ids de C3)."
+    },
+    {
+      "key": "home.no_priority_actions",
+      "placeholders": [],
+      "uso": "Tarjeta de familia sin acciones prioritarias (top_benefit_ids vacio)."
+    },
+    {
+      "key": "home.benefit_fallback",
+      "placeholders": [
+        {
+          "name": "benefit_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Nombre generico de un beneficio cuando no existe benefit.<id>.name."
     },
     {
       "key": "traffic_light.verde",
@@ -566,7 +601,7 @@
           "tipo": "id"
         }
       ],
-      "uso": "Titulo de la ficha de familia."
+      "uso": "SIN USO desde 1.2.0 (el titulo es el nombre de trato o family.generic_name). Se mantiene por compatibilidad."
     },
     {
       "key": "family.composition_title",
@@ -601,7 +636,7 @@
     {
       "key": "family.top_title",
       "placeholders": [],
-      "uso": "Titulo de las tres tarjetas 'Para conversar hoy'."
+      "uso": "Titulo de las tres tarjetas de acciones prioritarias de la familia (top tres de C3)."
     },
     {
       "key": "family.order_label",
@@ -616,7 +651,7 @@
     {
       "key": "family.has_title",
       "placeholders": [],
-      "uso": "Seccion 'Ya lo tiene o esta en tramite'."
+      "uso": "SIN USO desde 1.2.0 (lo cubre family.applies_title). Se mantiene por compatibilidad."
     },
     {
       "key": "family.to_confirm_title",
@@ -652,6 +687,136 @@
       "key": "family.actions.mark",
       "placeholders": [],
       "uso": "Boton principal 'Marcar conversado' (toque 1 de 3)."
+    },
+    {
+      "key": "family.actions.add_info",
+      "placeholders": [],
+      "uso": "Boton 'Agregar informacion' junto a Marcar conversado (DEC-039)."
+    },
+    {
+      "key": "family.generic_name",
+      "placeholders": [
+        {
+          "name": "short_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Nombre generico amable de la familia sin nombre de trato, con el ID corto (p. ej. 00003)."
+    },
+    {
+      "key": "family.name.title",
+      "placeholders": [],
+      "uso": "Etiqueta del campo nombre de trato del nino o nina, guardado solo en este equipo (DEC-038)."
+    },
+    {
+      "key": "family.name.hint",
+      "placeholders": [],
+      "uso": "Ayuda del campo: el nombre queda solo en este equipo y no se envia a ningun servidor."
+    },
+    {
+      "key": "family.name.demo_hint",
+      "placeholders": [],
+      "uso": "Ayuda en la demo: usar un nombre inventado."
+    },
+    {
+      "key": "family.name.open",
+      "placeholders": [],
+      "uso": "Boton para abrir el editor cuando aun no hay nombre."
+    },
+    {
+      "key": "family.name.change",
+      "placeholders": [],
+      "uso": "Boton para abrir el editor cuando ya hay nombre."
+    },
+    {
+      "key": "family.name.save",
+      "placeholders": [],
+      "uso": "Boton guardar nombre de trato."
+    },
+    {
+      "key": "family.name.remove",
+      "placeholders": [],
+      "uso": "Boton quitar el nombre de trato de este equipo."
+    },
+    {
+      "key": "family.name.saved",
+      "placeholders": [],
+      "uso": "Confirmacion (aria-live): nombre guardado en este equipo."
+    },
+    {
+      "key": "family.name.removed",
+      "placeholders": [],
+      "uso": "Confirmacion (aria-live): nombre quitado de este equipo."
+    },
+    {
+      "key": "family.name.error_empty",
+      "placeholders": [],
+      "uso": "Error en linea: el nombre esta vacio."
+    },
+    {
+      "key": "family.name.error_too_long",
+      "placeholders": [
+        {
+          "name": "max",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Error en linea: el nombre supera {max} caracteres."
+    },
+    {
+      "key": "family.name.error_chars",
+      "placeholders": [],
+      "uso": "Error en linea: solo letras, espacios, guion, punto o apostrofo (sin numeros)."
+    },
+    {
+      "key": "family.name.save_failed",
+      "placeholders": [],
+      "uso": "Error: no se pudo guardar el nombre en el almacenamiento local."
+    },
+    {
+      "key": "family.applies_title",
+      "placeholders": [],
+      "uso": "Grupo de la ficha con beneficios de resultado SI (estado de acceso y nivel de C3)."
+    },
+    {
+      "key": "family.applies_empty",
+      "placeholders": [],
+      "uso": "Grupo 'Beneficios que aplica' vacio."
+    },
+    {
+      "key": "family.missing_title",
+      "placeholders": [],
+      "uso": "Grupo de la ficha con beneficios INDETERMINADO o PENDIENTE_ANTECEDENTES."
+    },
+    {
+      "key": "family.missing_empty",
+      "placeholders": [],
+      "uso": "Grupo 'Falta informacion' vacio."
+    },
+    {
+      "key": "family.missing_data_label",
+      "placeholders": [],
+      "uso": "Etiqueta antes de la lista de datos que faltan de un beneficio."
+    },
+    {
+      "key": "family.missing_generic",
+      "placeholders": [],
+      "uso": "Dato faltante con codigo sin traduccion (sin mostrar el codigo tecnico)."
+    },
+    {
+      "key": "family.suggested_question_label",
+      "placeholders": [],
+      "uso": "Etiqueta antes de la pregunta sugerida de C3 para un beneficio."
+    },
+    {
+      "key": "family.pending_confirm_label",
+      "placeholders": [],
+      "uso": "Etiqueta de datos por confirmar en un beneficio que si aplica."
+    },
+    {
+      "key": "family.add_info_done",
+      "placeholders": [],
+      "uso": "Aviso en la ficha tras Agregar informacion: resultados actualizados y preliminares."
     },
     {
       "key": "role.adult_reference",
@@ -1653,6 +1818,51 @@
       "uso": "Boton empezar otra ficha (borra el formulario en memoria)."
     },
     {
+      "key": "add_info.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Agregar informacion de una familia existente (DEC-039)."
+    },
+    {
+      "key": "add_info.intro",
+      "placeholders": [],
+      "uso": "Introduccion: responder solo lo que la familia cuente; se puede elegir No se."
+    },
+    {
+      "key": "add_info.no_fields",
+      "placeholders": [],
+      "uso": "No hay datos faltantes con pregunta cerrada para esta familia."
+    },
+    {
+      "key": "add_info.guide_title",
+      "placeholders": [],
+      "uso": "Titulo de preguntas de guia sin campo de respuesta (datos sin campo cerrado, DEC-039)."
+    },
+    {
+      "key": "add_info.guide_hint",
+      "placeholders": [],
+      "uso": "Explica que esas preguntas no se registran en la app; solo orientan la conversacion."
+    },
+    {
+      "key": "add_info.submit",
+      "placeholders": [],
+      "uso": "Boton enviar la informacion agregada."
+    },
+    {
+      "key": "add_info.submitting",
+      "placeholders": [],
+      "uso": "Estado enviando informacion agregada."
+    },
+    {
+      "key": "add_info.answer_one",
+      "placeholders": [],
+      "uso": "Validacion: responder al menos una pregunta antes de enviar."
+    },
+    {
+      "key": "add_info.offline",
+      "placeholders": [],
+      "uso": "Sin conexion: esta accion no se guarda en cola; necesita internet."
+    },
+    {
       "key": "kpi.title",
       "placeholders": [],
       "uso": "Titulo de la vista Avance (KPI)."
@@ -1858,6 +2068,11 @@
       "key": "assistant.pii_blocked",
       "placeholders": [],
       "uso": "Bloqueo local: la pregunta parece incluir RUT, telefono o correo."
+    },
+    {
+      "key": "assistant.name_blocked",
+      "placeholders": [],
+      "uso": "Bloqueo local: la pregunta incluye un nombre de trato guardado en este equipo (DEC-038)."
     },
     {
       "key": "assistant.not_saved",

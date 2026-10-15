@@ -9,10 +9,11 @@ import { now, nowMs } from '../lib/now';
 import type { SessionPort } from '../auth/session';
 import { ApiError, contractError, isApiError, RETRYABLE_STATUSES } from './errors';
 import { validateErrorResponse, type ValidateFn } from './generated/validators.gen.js';
-import type { C3Ok, OperationId } from './types';
+import type { AnyOperationId, C3Ok } from './types';
 
 export interface TransportRequest<T> {
-  readonly operationId: OperationId;
+  /** operationId de C3 o de una propuesta explícita de src/api/proposals (DEC-039). */
+  readonly operationId: AnyOperationId;
   readonly method: 'GET' | 'POST';
   /** Path relativo a la base, con IDs ya validados y codificados (p. ej. `/familias/FAM-SIM-E3-00001`). */
   readonly path: string;
@@ -35,7 +36,7 @@ export interface Transport {
 }
 
 /** Ejecuta el `Request` ya armado: `fetch` real o `getResponse` de MSW en proceso. */
-export type Dispatch = (request: Request, operationId: OperationId) => Promise<Response>;
+export type Dispatch = (request: Request, operationId: AnyOperationId) => Promise<Response>;
 
 export interface TransportDeps {
   /** Base absoluta terminada en /api/v1 (sin barra final). */

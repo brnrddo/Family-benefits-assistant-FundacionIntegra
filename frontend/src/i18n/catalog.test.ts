@@ -10,12 +10,13 @@ import { MOCK_COPY } from './es.mock';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const placeholdersOf = (value: string) => [...value.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).sort();
 
-describe('i18n — catálogo v1.1.0 (§7.1)', () => {
-  it('tiene 368 claves con el patrón de C4 y versión 1.1.0', () => {
-    expect(CATALOG_META.catalog_version).toBe('1.1.0');
-    expect(COPY_KEYS).toHaveLength(368);
+describe('i18n — catálogo v1.2.0 (§7.1)', () => {
+  it('tiene 407 claves con el patrón de C4 y versión 1.2.0', () => {
+    expect(CATALOG_META.catalog_version).toBe('1.2.0');
+    expect(COPY_KEYS).toHaveLength(407);
     for (const key of COPY_KEYS) expect(key).toMatch(/^[a-z0-9_.-]+$/);
   });
+
 
   it('incluye las tres claves nuevas de 1.1.0', () => {
     expect(COPY_CATALOG['new_family.date_future'].placeholders).toEqual([]);
@@ -37,7 +38,7 @@ describe('i18n — catálogo v1.1.0 (§7.1)', () => {
 });
 
 describe('i18n — copy MOCK_LOCAL (SUP-030)', () => {
-  it('cubre las 368 claves, sin extras, con los placeholders exactos', () => {
+  it('cubre las 407 claves, sin extras, con los placeholders exactos', () => {
     expect(Object.keys(MOCK_COPY).sort()).toEqual([...COPY_KEYS].sort());
     for (const key of COPY_KEYS) {
       const value: string = MOCK_COPY[key];

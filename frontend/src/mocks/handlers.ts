@@ -18,6 +18,7 @@ import type {
   FamiliaContextEnvelope,
   FamiliaDetailEnvelope,
   FamiliaListEnvelope,
+  FamilyDetail,
   FamilySummary,
   FlyerDraftEnvelope,
   JardinListEnvelope,
@@ -30,8 +31,12 @@ import type {
   ScriptGenerationEnvelope,
   TrafficLight,
 } from '../api/types';
+import { MISSING_CODE_FIELD } from '../api/proposals/addInfo';
+import { validateAddFamilyInfoRequestV1 } from '../api/proposals/generated/validators.gen.js';
+import type { AddFamilyInfoRequestV1 } from '../api/proposals/types';
 import { isValidId } from '../domain/ids';
 import { hasFixture, payloadOf } from './fixtureStore';
+import addInfoFixture from './proposals/addFamiliaAntecedentes.FAM-SIM-E3-00002.json';
 import type { ScenarioId } from './scenarios';
 import { messageWithHttpCitation } from './variants';
 
@@ -82,6 +87,8 @@ interface ServerState {
   gardens: JardinSummary[];
   pages: Map<string, FamilyPages>;
   families: Map<string, FamilyRecord>;
+  /** Fichas re-evaluadas por la operación propuesta `addFamiliaAntecedentes` (DEC-039). */
+  details: Map<string, FamilyDetail>;
   informed: Set<string>;
   conversations: ConversationRecord[];
   newFamiliesInformed: Set<string>;
@@ -112,6 +119,7 @@ function createState(): ServerState {
     gardens,
     pages,
     families,
+    details: new Map(),
     informed,
     conversations,
     newFamiliesInformed: new Set(),
@@ -133,6 +141,52 @@ export function canonicalJson(value: unknown): string {
     return `{${entries.join(',')}}`;
   }
   return JSON.stringify(value);
+}
+
+/** Códigos faltantes que el cuerpo declara con un valor (null/UNKNOWN = "No sé": no resuelve). */
+function declaredCodes(body: AddFamilyInfoRequestV1): Set<string> {
+  const declared = new Set<string>();
+  for (const [code, field] of Object.entries(MISSING_CODE_FIELD)) {
+    if (field === undefined) continue;
+    const value = body[field];
+    if (value !== undefined && value !== null && value !== 'UNKNOWN') declared.add(code);
+  }
+  return declared;
+}
+
+interface Resolvable {
+  readonly result: string;
+  readonly level: string | null;
+  readonly access_state: string;
+  readonly missing_codes: readonly string[];
+}
+
+/**
+ * SIMULACIÓN SINTÉTICA del mock-servidor (rol de servidor; el motor real es de Rol 1/2): un beneficio
+ * cuyos faltantes quedan TODOS declarados pasa a SI PRELIMINAR (ELEGIBLE_SIN_ASIGNACION si estaba
+ * INDETERMINADO o PENDIENTE_ANTECEDENTES); si quedan faltantes, solo se quitan los declarados.
+ */
+function resolveDeclared<T extends Resolvable>(row: T, declared: ReadonlySet<string>): T {
+  const remaining = row.missing_codes.filter((code) => !declared.has(code));
+  if (remaining.length === row.missing_codes.length) return row;
+  if (remaining.length > 0) return { ...row, missing_codes: remaining } as T;
+  if (row.result === 'INDETERMINADO' || row.access_state === 'PENDIENTE_ANTECEDENTES') {
+    return { ...row, result: 'SI', level: 'PRELIMINAR', access_state: 'ELEGIBLE_SIN_ASIGNACION', missing_codes: [] } as T;
+  }
+  return { ...row, level: row.result === 'SI' ? 'PRELIMINAR' : row.level, missing_codes: [] } as T;
+}
+
+export function reevaluateWithDeclared(detail: FamilyDetail, body: AddFamilyInfoRequestV1): FamilyDetail {
+  const declared = declaredCodes(body);
+  return {
+    ...detail,
+    benefit_results: detail.benefit_results.map((result) => {
+      const next = resolveDeclared(result, declared);
+      if (next === result || next.missing_codes.length > 0) return next;
+      return { ...next, trace: next.trace.map((item) => (item.result === 'INDETERMINADO' ? { ...item, result: 'CUMPLE' as const } : item)) };
+    }),
+    top_opportunities: detail.top_opportunities.map((opportunity) => resolveDeclared(opportunity, declared)),
+  };
 }
 
 /** Porcentaje con 1 decimal; null si el total es 0 (rol de servidor). */
@@ -175,6 +229,17 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
   };
 
   const gardenOf = (gardenId: string) => state.gardens.find((g) => g.garden_id === gardenId);
+
+  /** Ficha del servidor: la re-evaluada si existe; si no, el fixture base con IDs y estado actuales. */
+  const detailEnvelope = (record: FamilyRecord): FamiliaDetailEnvelope => {
+    const body = payloadOf<FamiliaDetailEnvelope>(`getFamilia.${record.base}`);
+    const stored = state.details.get(record.familyId);
+    if (stored !== undefined) body.data = structuredClone(stored);
+    body.data.family_id = record.familyId;
+    body.data.garden_id = record.gardenId;
+    body.data.informed = state.informed.has(record.familyId);
+    return body;
+  };
 
   const summaryWithState = (item: FamilySummary): FamilySummary =>
     state.informed.has(item.family_id) ? { ...item, conversation_status: 'CONVERSADA' } : item;
@@ -239,11 +304,33 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
         });
       }
-      const body = payloadOf<FamiliaDetailEnvelope>(`getFamilia.${record.base}`);
-      body.data.family_id = familyId;
-      body.data.garden_id = record.gardenId;
-      body.data.informed = state.informed.has(familyId);
-      return ok(body);
+      return ok(detailEnvelope(record));
+    }),
+
+    // Operación PROPUESTA (DEC-039, fuera de C3): datos declarados → ficha re-evaluada (PRELIMINAR).
+    http.post(`${API}/familias/:id/antecedentes`, async ({ request, params }) => {
+      const familyId = String(params.id);
+      const key = request.headers.get('Idempotency-Key');
+      if (key === null || !formats.uuid(key)) return fail(422);
+      const parsed = await readJson(request);
+      if (!parsed.ok || !validateAddFamilyInfoRequestV1(parsed.value)) return fail(422);
+      const record = state.families.get(familyId);
+      if (!isValidId(familyId) || record === undefined) return fail(404);
+      if (scenario === 'addInfo503') return fail(503);
+      const canonical = canonicalJson(parsed.value);
+      const scope = `addinfo:${familyId}`;
+      const replayed = replay(key, scope, canonical);
+      if (replayed === 'conflict') return fail(409);
+      if (replayed !== null) return replayed;
+
+      const current = detailEnvelope(record);
+      const updated = reevaluateWithDeclared(current.data, parsed.value);
+      state.details.set(familyId, structuredClone(updated));
+      const response = structuredClone(addInfoFixture.payload) as unknown as FamiliaDetailEnvelope;
+      response.meta.snapshot_id = currentSnapshot();
+      response.data = updated;
+      state.idempotency.set(`${scope}|${key}`, { scope, canonical, status: 200, body: structuredClone(response) });
+      return ok(response);
     }),
 
     http.get(`${API}/familias/:id/contexto`, ({ params }) => {

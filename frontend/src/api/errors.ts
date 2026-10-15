@@ -1,6 +1,6 @@
 // ApiError discriminado (design.md §6.3). El `message` del servidor NUNCA se guarda ni se
 // muestra: la UI usa claves error.* según tipo/status y solo enseña `requestId` como código de ayuda.
-import type { OperationId } from './types';
+import type { AnyOperationId } from './types';
 
 export type ContractReason = 'invalid_param' | 'content_type' | 'too_large' | 'encoding' | 'schema' | 'unexpected_status';
 
@@ -18,7 +18,7 @@ export type ApiErrorDetail =
     }
   | {
       readonly kind: 'contract';
-      readonly operationId: OperationId;
+      readonly operationId: AnyOperationId;
       readonly reason: ContractReason;
       readonly status?: number;
       readonly instancePath?: string;
@@ -73,7 +73,7 @@ export function isInvalidResponse(error: ApiError): boolean {
 }
 
 export function contractError(
-  operationId: OperationId,
+  operationId: AnyOperationId,
   reason: ContractReason,
   extra: { status?: number; instancePath?: string; keyword?: string } = {},
 ): ApiError {

@@ -1,21 +1,21 @@
-// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004): top tres en el orden de C3, chips, “por qué”,
-// detalle expandible, preguntas, datos por confirmar, aviso y fuentes. El cambio de orden pide a C3;
-// el cliente no reordena. Señales de urgencia/vulnerabilidad del contexto no se muestran (SUP-032).
+// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004): arriba las acciones prioritarias (top tres en
+// el orden de C3, chips, “por qué”, detalle expandible), luego TODOS los beneficios en dos grupos
+// ("Beneficios que aplica" / "Falta información", tal como vienen de C3), preguntas, datos por
+// confirmar, aviso y fuentes. El cambio de orden pide a C3; el cliente no reordena. Señales de
+// urgencia/vulnerabilidad del contexto no se muestran (SUP-032). El título es el nombre de trato
+// local (DEC-038) o un genérico con el ID corto; la URL y los requests usan el family_id de C3.
 import { useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { useLocation, useParams, useSearchParams } from 'react-router';
 import type { FamilyContextView, FamilyDetail, Opportunity, OpportunityOrder } from '../../api/types';
+import { runtimeConfig } from '../../config/profile';
 import { useContexto, useFamilia, useOportunidades } from '../../data/queries';
+import { familyMissingCodes } from '../../domain/benefitGroups';
+import { familyDisplayName } from '../../domain/familyName';
 import { formatInteger } from '../../domain/format';
 import { isValidId } from '../../domain/ids';
-import {
-  accessPresentation,
-  FORMAT_KEY,
-  INCONSISTENCY_KEY,
-  MISSING_CODE_KEY,
-  ORDER_KEY,
-  ROLE_KEY,
-} from '../../domain/presentation';
-import { t } from '../../i18n/copy';
+import { FORMAT_KEY, INCONSISTENCY_KEY, MISSING_CODE_KEY, ORDER_KEY, ROLE_KEY } from '../../domain/presentation';
+import { t, yearsLabel } from '../../i18n/copy';
+import { useLocalNames } from '../../offline/localNames';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
@@ -23,13 +23,16 @@ import { ChoiceChips } from '../../ui/ChoiceChips';
 import { DataFreshness } from '../../ui/DataStatus';
 import { Icon } from '../../ui/icons';
 import { PageTitle } from '../../ui/PageTitle';
-import { EmptyState, ErrorState, ReferentialNotice, Skeleton } from '../../ui/states';
+import { Banner, EmptyState, ErrorState, ReferentialNotice, Skeleton } from '../../ui/states';
 import NotFoundPage from '../system/NotFoundPage';
+import { BenefitGroups } from './BenefitGroups';
+import { NameEditor } from './NameEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { familyRoutes } from './routes';
 
 const ORDERS: readonly OpportunityOrder[] = ['prioridad', 'urgencia', 'beneficio'];
 const MAX_CARDS = 3;
+const NO_NAMES: ReadonlyMap<string, string> = new Map();
 
 function parseOrder(raw: string | null): OpportunityOrder {
   return ORDERS.find((order) => order === raw) ?? 'prioridad';
@@ -48,7 +51,7 @@ function FamilyHeader({ detail }: { readonly detail: FamilyDetail }) {
         {detail.composition.map((member, index) => (
           <li key={`${member.role}-${index}`} className="inline-flex items-center gap-1.5 rounded-xl bg-canvas px-3 py-1">
             <Icon name={member.role === 'CHILD' ? 'child' : 'user'} className="size-5 text-ink-muted" />
-            {t(ROLE_KEY[member.role])} · {t('common.years', { age: formatInteger(member.age) })}
+            {t(ROLE_KEY[member.role])} · {yearsLabel(member.age, formatInteger(member.age))}
           </li>
         ))}
       </ul>
@@ -105,6 +108,9 @@ function ContextSections({ cards, context }: { readonly cards: readonly Opportun
 }
 
 function FamilyView({ familyId }: { readonly familyId: string }) {
+  const { capabilities } = runtimeConfig();
+  const location = useLocation();
+  const names = useLocalNames();
   const [search, setSearch] = useSearchParams();
   const rawOrder = search.get('orden');
   const order = parseOrder(rawOrder);
@@ -112,6 +118,8 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   const prioridad = useOportunidades(familyId, 'prioridad', ficha.isSuccess);
   const ordered = useOportunidades(familyId, order, ficha.isSuccess && order !== 'prioridad');
   const contexto = useContexto(familyId, ficha.isSuccess);
+  // Estado de navegación en memoria (nunca en la URL): vuelve de "Agregar información" con éxito.
+  const addInfoDone = (location.state as { addInfoDone?: unknown } | null)?.addInfoDone === true;
 
   useEffect(() => {
     if (rawOrder !== null && rawOrder !== order) {
@@ -135,11 +143,13 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
       { replace: true },
     );
 
-  const title = t('family.title', { family_id: familyId });
+  const title = familyDisplayName(familyId, names);
+  // La pestaña/historial nunca lleva el nombre de trato: siempre el genérico con el ID corto.
+  const tabTitle = familyDisplayName(familyId, NO_NAMES);
   if (ficha.isPending) {
     return (
       <div className="space-y-4">
-        <PageTitle>{title}</PageTitle>
+        <PageTitle documentTitle={tabTitle}>{title}</PageTitle>
         <Skeleton rows={4} rowClass="h-28" />
       </div>
     );
@@ -147,7 +157,7 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   if (ficha.isError && ficha.data === undefined) {
     return (
       <div className="space-y-4">
-        <PageTitle>{title}</PageTitle>
+        <PageTitle documentTitle={tabTitle}>{title}</PageTitle>
         <ErrorState
           error={ficha.error}
           onRetry={() => void ficha.refetch()}
@@ -164,20 +174,23 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   const detail = ficha.data.body.data;
   // Con `prioridad` se usan los top_opportunities de la ficha; con otro orden, los 3 primeros de C3.
   const cards: readonly Opportunity[] = order === 'prioridad' ? detail.top_opportunities : (ordered.data?.body.items ?? []).slice(0, MAX_CARDS);
-  const shown = new Set(cards.map((card) => card.benefit_id));
-  const hasIt = (prioridad.data?.body.items ?? []).filter(
-    (o) => (o.access_state === 'ASIGNADO' || o.access_state === 'GESTION_EN_CURSO') && !shown.has(o.benefit_id),
-  );
   const resultOf = (benefitId: string) => detail.benefit_results.find((r) => r.benefit_id === benefitId);
   const homeLink = `/?${new URLSearchParams({ jardin: detail.garden_id }).toString()}`;
   const hasOpportunities = detail.top_opportunities.length > 0;
+  const showAddInfo = capabilities.addInfo && familyMissingCodes(detail).length > 0;
 
   return (
     <div className="space-y-5">
       <ButtonLink to={homeLink} variant="ghost" icon="chevron-left" className="-ml-3">
         {t('nav.back')}
       </ButtonLink>
-      <PageTitle>{title}</PageTitle>
+      <PageTitle documentTitle={tabTitle}>{title}</PageTitle>
+      {capabilities.localNames && <NameEditor familyId={familyId} />}
+      {addInfoDone && (
+        <Banner tone="info" icon="check">
+          {t('family.add_info_done')}
+        </Banner>
+      )}
       <DataFreshness result={ficha.data} />
       <FamilyHeader detail={detail} />
 
@@ -204,24 +217,9 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
         )}
       </section>
 
-      <ContextSections cards={cards} context={contexto.data?.body.data ?? null} />
+      <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} />
 
-      {hasIt.length > 0 && (
-        <section aria-labelledby="family-has" className="space-y-2">
-          <h2 id="family-has">{t('family.has_title')}</h2>
-          <ul className="space-y-2">
-            {hasIt.map((o) => {
-              const p = accessPresentation(o.access_state);
-              return (
-                <li key={o.benefit_id} className="flex flex-wrap items-center gap-2">
-                  <span className="c3-text font-semibold">{o.simple_title}</span>
-                  {p !== null && <Chip icon={p.icon} tone={p.tone} label={t(p.labelKey)} />}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      <ContextSections cards={cards} context={contexto.data?.body.data ?? null} />
 
       {hasOpportunities && (
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -236,7 +234,7 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
 
       <ReferentialNotice />
 
-      <div className="sticky bottom-18 z-10 rounded-card bg-canvas/95 py-2">
+      <div className="sticky bottom-18 z-10 flex flex-col gap-2 rounded-card bg-canvas/95 py-2">
         {hasOpportunities ? (
           <ButtonLink to={familyRoutes.conversacion(familyId)} icon="check" data-primary-action className="w-full">
             {t('family.actions.mark')}
@@ -246,8 +244,13 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
             <Button icon="check" disabled className="w-full">
               {t('family.actions.mark')}
             </Button>
-            <p className="mt-1 text-center text-ink-muted">{t('conversation.no_benefits')}</p>
+            <p className="text-center text-ink-muted">{t('conversation.no_benefits')}</p>
           </>
+        )}
+        {showAddInfo && (
+          <ButtonLink to={familyRoutes.agregarInformacion(familyId)} variant="secondary" icon="plus" className="w-full">
+            {t('family.actions.add_info')}
+          </ButtonLink>
         )}
       </div>
     </div>

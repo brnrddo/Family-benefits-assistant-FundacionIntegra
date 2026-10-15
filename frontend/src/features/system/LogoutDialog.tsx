@@ -1,17 +1,19 @@
-// Confirmación de logout con <dialog> nativo (FE-007): avisa si hay conversaciones sin enviar
-// antes de borrarlas del dispositivo. Cancelar no borra nada.
+// Confirmación de logout con <dialog> nativo (FE-007): avisa si hay conversaciones sin enviar o
+// nombres de trato guardados (DEC-038) antes de borrarlos del dispositivo. Cancelar no borra nada.
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { performLogout } from '../../auth/logout';
 import { formatInteger } from '../../domain/format';
 import { t } from '../../i18n/copy';
 import { useQueueSummary } from '../../offline/conversationQueue';
+import { useLocalNames } from '../../offline/localNames';
 import { Button } from '../../ui/Button';
 
 export function LogoutButton() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const queryClient = useQueryClient();
   const queue = useQueueSummary();
+  const names = useLocalNames();
   const [busy, setBusy] = useState(false);
   const pending = queue.entries.length;
 
@@ -35,6 +37,7 @@ export function LogoutButton() {
         <p className="mt-2">
           {pending > 0 ? t('auth.logout_confirm.body_pending', { count: formatInteger(pending) }) : t('auth.logout_confirm.body')}
         </p>
+        {names.size > 0 && <p className="mt-2 font-semibold">{t('auth.logout_confirm.body_names', { count: formatInteger(names.size) })}</p>}
         <div className="mt-4 flex flex-col gap-2">
           <Button busy={busy} icon="logout" onClick={() => void confirm()}>
             {t('auth.logout_confirm.accept')}

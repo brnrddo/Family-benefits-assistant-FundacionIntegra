@@ -3,7 +3,7 @@
 # 0.2.0: lo que la fuente no fija se decidió en DEC-041..DEC-043 (valores sintéticos de demo, no normativos) o se
 # calculó desde E-3 (origen CALC: script + sha256 LF del CSV). Explicación en content/VALORES_RANKING.md.
 # `ranking` debe ser idéntico a `content/manifest.yaml#ranking` (SUP-040); `trazabilidad` cita cada hoja.
-content_version: "0.2.0"
+content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 fuente: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md
 ranking:

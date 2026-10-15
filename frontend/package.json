@@ -20,6 +20,7 @@
     "test": "vitest --run",
     "test:e2e": "playwright test",
     "gen:contract": "node scripts/gen-contract.mjs",
+    "gen:proposals": "node scripts/gen-proposals.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "export:i18n-catalog": "node scripts/export-i18n-catalog.mjs",
     "check:budget": "node scripts/check-budget.mjs",
