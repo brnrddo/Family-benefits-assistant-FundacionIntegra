@@ -1,0 +1,13 @@
+# Dependencias SOLO para el despliegue en AWS Lambda (zip + Mangum).
+# No se instalan en local: ahí la API se levanta con uvicorn (ver README.md).
+# El script backend/deploy/build_lambda.sh instala ESTE archivo, que arrastra
+# requirements.txt completo: así hay una sola fuente de verdad y no se olvida
+# ninguna dependencia importada a nivel de módulo (fastapi, PyYAML, jsonschema,
+# boto3) en el arranque en frío de la Lambda.
+-r requirements.txt
+
+# Adaptador ASGI → Lambda: traduce el evento JSON de API Gateway (HTTP API) a
+# una petición que FastAPI entiende, y la respuesta de vuelta. Wheel universal
+# (py3-none-any), así que no depende de --platform; su única dependencia es
+# typing-extensions, que ya entra por fastapi.
+mangum==0.22.0
