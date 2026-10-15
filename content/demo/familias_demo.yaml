@@ -1,0 +1,116 @@
+# Fixtures sintéticos de la demo (CONT-T04 y CONT-T05). Todo es inventado.
+# familias_contexto_llm: contextos LlmContextV1 escritos a mano para probar los prompts de content/prompts/.
+#   Solo roles, edades, bandas, formato, idioma (enum) y resultados ya calculados; sin nombres ni contacto.
+#   amount queda null: los prompts v1 no mencionan montos (PREG-047).
+# candidatas_demo_e3: familias del dataset sintético E-3 para la demo; esperan la salida del motor (Rol 1).
+data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+content_version: "0.1.0"
+estado: PENDIENTE_REVISION_HUMANA
+nota: "Familias inventadas para probar prompts y la demo. No corresponden a personas reales ni salen de documentos reales."
+familias_contexto_llm:
+  - fixture_id: FAM-SIM-DEMO-0001
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    arquetipo: BRECHA
+    proposito: "Podría calificar a un aporte que aún no ha pedido. Prueba el formato de texto."
+    llm_context:
+      composition:
+        - {role: ADULT_REFERENCE, age: 29}
+        - {role: CHILD, age: 4}
+        - {role: CHILD, age: 1}
+      rsh_band: 40
+      income_band: UNDER_110K
+      preferred_format: TEXT
+      language: es
+      benefits:
+        - benefit_id: BEN-001
+          result: SI
+          level: CONFIRMADO
+          access_state: ELEGIBLE_SIN_ASIGNACION
+          reason_codes: [CRITERIOS_CUMPLEN]
+          missing_codes: []
+          amount: null
+          source_ids: [F004, F900]
+        - benefit_id: BEN-005
+          result: SI
+          level: PRELIMINAR
+          access_state: ELEGIBLE_SIN_ASIGNACION
+          reason_codes: [CRITERIOS_CUMPLEN, EVIDENCIA_DECLARADA]
+          missing_codes: []
+          amount: null
+          source_ids: [F008, F900]
+  - fixture_id: FAM-SIM-DEMO-0002
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    arquetipo: SIN_REGISTRO_SOCIAL_HOGARES
+    proposito: "Sin Registro Social de Hogares y con datos por confirmar. Prueba el formato visual."
+    llm_context:
+      composition:
+        - {role: ADULT_REFERENCE, age: 23}
+        - {role: OTHER_ADULT, age: 26}
+        - {role: CHILD, age: 2}
+      rsh_band: null
+      income_band: null
+      preferred_format: VISUAL
+      language: es
+      benefits:
+        - benefit_id: BEN-003
+          result: INDETERMINADO
+          level: null
+          access_state: INDETERMINADO
+          reason_codes: [DATO_RSH_FALTANTE]
+          missing_codes: [semanas_gestacion, tramo_rsh]
+          amount: null
+          source_ids: [F006, F900]
+        - benefit_id: BEN-001
+          result: INDETERMINADO
+          level: null
+          access_state: INDETERMINADO
+          reason_codes: [DATO_RSH_FALTANTE]
+          missing_codes: [tramo_rsh]
+          amount: null
+          source_ids: [F004, F900]
+  - fixture_id: FAM-SIM-DEMO-0003
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    arquetipo: GESTION_EN_CURSO
+    proposito: "Trámite en curso y documentos pendientes. Prueba audio y un idioma distinto del español."
+    llm_context:
+      composition:
+        - {role: ADULT_REFERENCE, age: 34}
+        - {role: CHILD, age: 3}
+        - {role: CHILD, age: 8}
+      rsh_band: 50
+      income_band: 110K_250K
+      preferred_format: AUDIO
+      language: ht
+      benefits:
+        - benefit_id: BEN-001
+          result: SI
+          level: CONFIRMADO
+          access_state: GESTION_EN_CURSO
+          reason_codes: [CRITERIOS_CUMPLEN]
+          missing_codes: []
+          amount: null
+          source_ids: [F004, F900]
+        - benefit_id: BEN-005
+          result: SI
+          level: PRELIMINAR
+          access_state: PENDIENTE_ANTECEDENTES
+          reason_codes: [EVIDENCIA_DECLARADA]
+          missing_codes: []
+          amount: null
+          source_ids: [F008, F900]
+criterio_candidatas:
+  origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L638
+  literal: "Las familias 91–230 son \"brecha\""
+candidatas_demo_e3:
+  - id_familia: FAM-SIM-E3-00091
+    id_jardin: JAR-SIM-E3-00041
+    criterio: ARQUETIPO_BRECHA_FAMILIAS_91_230
+    estado: PENDIENTE_SALIDA_MOTOR
+  - id_familia: FAM-SIM-E3-00140
+    id_jardin: JAR-SIM-E3-00040
+    criterio: ARQUETIPO_BRECHA_FAMILIAS_91_230
+    estado: PENDIENTE_SALIDA_MOTOR
+  - id_familia: FAM-SIM-E3-00187
+    id_jardin: JAR-SIM-E3-00037
+    criterio: ARQUETIPO_BRECHA_FAMILIAS_91_230
+    estado: PENDIENTE_SALIDA_MOTOR
