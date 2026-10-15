@@ -193,6 +193,11 @@ class CatalogEntry:
 
     ``source_id``/``source_url`` valen ``""`` cuando el beneficio no tiene
     fuente oficial con URL (BEN-018/019/020, PREG-045).
+
+    ``actions``/``source_ids`` son aditivos y traen lo que ``content_catalog``
+    ya lee y valida del bundle C4: los exige el envelope interno
+    ``FamilyGenerationRequestV1`` del camino Bedrock. El ``TemplateProvider`` no
+    los usa, por eso llevan default vacío.
     """
     benefit_id: str
     title: str
@@ -201,6 +206,8 @@ class CatalogEntry:
     where_to_go: str | None
     source_id: str
     source_url: str
+    actions: tuple[str, ...] = ()
+    source_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

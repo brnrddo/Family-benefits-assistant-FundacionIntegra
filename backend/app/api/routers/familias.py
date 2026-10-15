@@ -154,7 +154,7 @@ def create_guion(
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
     estados = _estados_familia(id)
-    return generar_guion(body.benefit_ids, request.state.request_id, estados)
+    return generar_guion(body.benefit_ids, request.state.request_id, estados, family_id=id)
 
 
 @router.post("/familias/{id}/mensaje", tags=["genai"])
@@ -165,4 +165,4 @@ def create_mensaje(
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
     estados = _estados_familia(id)
-    return generar_mensaje(body.benefit_ids, request.state.request_id, estados)
+    return generar_mensaje(body.benefit_ids, request.state.request_id, estados, family_id=id)

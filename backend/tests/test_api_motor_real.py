@@ -44,10 +44,14 @@ from app.api.models import validar_benefit_result, validar_opportunity  # noqa: 
 from app.api.routers import tracking  # noqa: E402
 from app.api.serializers import familia_detail_data  # noqa: E402
 from app.engine.model import Nivel, Tri  # noqa: E402
+from app.genai import provider as prov  # noqa: E402
+from app.genai import redaccion  # noqa: E402
+from app.genai.provider import BedrockProvider  # noqa: E402
 from app.priority import content_c4  # noqa: E402
 from app.priority.content_c4 import cargar_contenido_c4  # noqa: E402
 from app.priority.orden import grupo_accion  # noqa: E402
 from app.priority.scoring import OpportunityScore, family_priority_score  # noqa: E402
+from tests._bedrock_dobles import ClienteFalso, _RelojFalso, respuesta_tooluse  # noqa: E402
 from tests.c3_schema import validar, validar_error  # noqa: E402
 
 client = TestClient(app)
@@ -621,6 +625,44 @@ def test_meta_declara_procedencia_de_content(monkeypatch):
     validar("ScriptGenerationEnvelope", r.json())
     assert _de(r.json()["meta"]) == procedencia
     assert _de(_get("/jardines")["meta"]) == (CONTENT_VERSION, CONTENT_BUNDLE_HASH)
+
+
+def test_guion_bedrock_con_snapshot_del_motor_real(monkeypatch):
+    """El camino Bedrock también sobre el snapshot real (E3_MOCK=0, sin red).
+
+    Es la configuración recomendada para la demo: el contexto del LLM se arma
+    desde la ficha del precálculo del Rol 1, no desde ``mock_data``. El cliente
+    ``bedrock-runtime`` se inyecta y el reloj del provider se sustituye.
+    """
+    texto = (
+        "Hola, buenos dias. Conversemos sobre un apoyo que puede consultar. "
+        "Puede preguntar en la institucion que documentos necesita llevar."
+    )
+    monkeypatch.setattr(prov, "time", _RelojFalso())
+    monkeypatch.setattr(BedrockProvider, "_ultima_llamada", 0.0)
+    monkeypatch.setenv("E3_GUARDRAIL_ID", "GUARDRAIL-SINTETICO-TEST")
+    monkeypatch.setenv("E3_GUARDRAIL_VERSION", "1")
+    monkeypatch.setenv("E3_BEDROCK_MODEL_ID", "modelo-sintetico-test")
+    monkeypatch.setenv("E3_LLM_PROVIDER", "bedrock")
+    cliente = ClienteFalso(respuesta_converse=respuesta_tooluse({"script": texto}))
+    monkeypatch.setattr(
+        redaccion, "obtener_proveedor", lambda: BedrockProvider(cliente=cliente)
+    )
+
+    r = client.post(f"/api/v1/familias/{_FAMILIA}/guion", json={"benefit_ids": ["BEN-001"]})
+    assert r.status_code == 200
+    body = r.json()
+    validar("ScriptGenerationEnvelope", body)
+    assert body["provider"] == "BEDROCK"
+    assert body["warnings"] == []
+    assert body["content"]["script"] == f"{texto} {DISCLAIMER}"
+    # Mismas dos barreras Guardrail que con los mocks.
+    assert cliente.operaciones == ["apply_guardrail", "converse", "apply_guardrail"]
+    # La procedencia del bundle sigue declarada en meta (DEC-062).
+    provider = runtime.get_provider()
+    assert provider is not None
+    assert (body["meta"]["content_version"],
+            body["meta"]["content_bundle_hash"]) == provider.procedencia
 
 
 def test_antecedentes_real_404_y_503():
