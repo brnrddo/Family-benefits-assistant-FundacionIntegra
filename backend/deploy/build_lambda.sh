@@ -88,6 +88,7 @@ RUTAS_REQUERIDAS=(
     .kiro/specs/_shared/contracts/C3-api.openapi.yaml
     .kiro/specs/_shared/contracts/C4-contenido-manifest.schema.json
     .kiro/specs/_shared/contracts/schemas/LlmContextV1.schema.json
+    .kiro/specs/_shared/contracts/schemas/FamilyGenerationRequestV1.schema.json
     content/manifest.yaml
 )
 

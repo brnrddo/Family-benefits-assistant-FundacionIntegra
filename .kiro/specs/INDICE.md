@@ -35,7 +35,8 @@ Guía para novatos: [`GUIA_KIRO_EQUIPO.md`](../../docs/GUIA_KIRO_EQUIPO.md). Glo
 | [Rol 3 PWA](./frontend-pwa/requirements.md) | Rol 3 | tía/Integra | `front` | DOCUMENTADO; implementación pendiente | seis vistas, 360 px y pruebas futuras |
 | [Rol 4 Contenido/demo](./producto-contenido-demo/requirements.md) | Rol 4 | Roles 1–3/jurado | `contenido` | DOCUMENTADO; contenido pendiente | C0/C4, revisión humana y demo futura |
 | [Privacidad](../../docs/PRIVACIDAD_DEMO.md) | coordinación/Rol 4 | todos | baseline | DOCUMENTADA | cuatro clases, allowlist y prohibiciones |
-| [Arquitectura AWS](../../docs/ARQUITECTURA_AWS.md) | Rol 2 | todos | `api` | DOCUMENTADA; AWS NO_VERIFICADO | matriz, perfiles, diagrama y evidencia futura |
+| [Arquitectura AWS](../../docs/ARQUITECTURA_AWS.md) | Rol 2 | todos | `api` | DOCUMENTADA; ocho servicios del núcleo VERIFICADO_EN_CUENTA (2026-10-15), el resto NO_VERIFICADO | matriz, perfiles, diagrama y transiciones trazadas a la bitácora |
+| [Evidencia AWS 2026-10-15](../../docs/arquitectura/EVIDENCIA_AWS_2026-10-15.md) | Rol 2 | todos | `api` | FECHADA | bloques A, B, D, E, F y G en `fecha \| región \| operación \| OK/FALLA \| detalle`, más cinco hallazgos operativos y lo que sigue sin verificar |
 | [Guía Kiro](../../docs/GUIA_KIRO_EQUIPO.md) | coordinación | equipo | baseline | DOCUMENTADA | recorrido por rol y adopción retroactiva |
 
 ## Mapa de autoridad
