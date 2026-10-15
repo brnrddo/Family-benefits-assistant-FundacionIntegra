@@ -435,6 +435,29 @@ Cubren (spec §6.7 + §2.7):
 - **Contexto C2 y filtro** (`test_context_filter.py`): forma del contrato,
   NO_INFORMADO, el filtro solo deja campos permitidos, **falla si hay fuga**,
   no muta el original, detecta una fuga inyectada, 500 familias sin fugas.
+- **Reevaluación con DECLARADO** (`test_reevaluacion.py`): un IND por dato
+  ausente se desbloquea a SI PRELIMINAR al declarar el dato; ilegible se ignora;
+  no pisa dato real; puente `declarados_desde_propuesta`.
+- **Contrato C2 formal** (`test_contrato_c2.py`): `a_contrato_c2` valida contra
+  el JSON Schema `urn:brujula:c2:v1` para las 500 familias (requiere
+  `jsonschema`).
+- **Coherencia filtro↔mapeo** (`test_mapeo_coherencia.py`): lo que el filtro
+  deja pasar al LLM == filas `CONTEXTO_MINIMO_LLM` de `content/mapeo_ficha.csv`.
+- **Familias demo** (`test_demo_familias.py`): fija los 3 arquetipos del pitch
+  (ver abajo).
+
+---
+
+## 3 familias demo (arquetipos del pitch)
+
+Tres familias reales del dataset, verificadas y fijadas en
+`tests/test_demo_familias.py` para la demo y como regresión:
+
+| Arquetipo | Familia | Qué muestra |
+|---|---|---|
+| **Brecha** | `FAM-SIM-E3-00231` | Varios `ELEGIBLE_SIN_ASIGNACION` — califica confirmado y nunca lo pidió (BEN-005 SI CONFIRMADO sin gestión). |
+| **Discapacidad** | `FAM-SIM-E3-00361` | BEN-006 (subsidio discapacidad <18) SI CONFIRMADO por binding de discapacidad severa vigente. |
+| **Sin RSH** | `FAM-SIM-E3-00256` | `SIN_REGISTRO`: los beneficios que piden tramo RSH quedan INDETERMINADO (pregunta para la tía), nunca NO. |
 
 ---
 
