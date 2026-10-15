@@ -1,0 +1,30 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "getContextoFamilia",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0203",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00003",
+      "composition": [
+        { "role": "ADULT_REFERENCE", "age": 41 },
+        { "role": "OTHER_ADULT", "age": 67 },
+        { "role": "CHILD", "age": 5 }
+      ],
+      "rsh_band": 50,
+      "income_band": "110K_250K",
+      "preferred_format": "VISUAL",
+      "language": "es",
+      "urgency_signals": { "recent_emergency": false, "limited_quota": false, "precarious_housing": false },
+      "vulnerability_signals": { "rsh_score": 0.7, "income_score": 0.6, "possible_child_disability": false },
+      "inconsistency_codes": [],
+      "missing_codes": []
+    }
+  }
+}

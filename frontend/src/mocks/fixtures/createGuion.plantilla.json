@@ -1,0 +1,21 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createGuion",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0302",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "provider": "PLANTILLA",
+    "warnings": ["LLM_UNAVAILABLE"],
+    "content": {
+      "benefit_ids": ["BEN-001", "BEN-002", "BEN-003"],
+      "script": "Hola. Revisamos algunos apoyos que podrían corresponderle.\n1. Aporte mensual por hijo: vale la pena consultar en el municipio.\n2. Bono de invierno: consulte antes del cierre de la postulación.\n3. Control de salud infantil: falta un dato para saber si corresponde.\nLa institución confirma cada apoyo."
+    },
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+  }
+}

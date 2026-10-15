@@ -1,0 +1,34 @@
+/* Tokens de diseño (design.md §10.2). Único lugar con colores literales (V-06). */
+@theme {
+  --color-canvas: #fff8f0;
+  --color-surface: #ffffff;
+  --color-ink: #2b2118;
+  --color-ink-muted: #5c4a3a;
+  --color-primary: #a63d1c;
+  --color-primary-strong: #8a3015;
+  --color-accent: #f2b544;
+
+  --color-go-bg: #e3f3e8;
+  --color-go-icon: #1e7a46;
+  --color-go-ink: #14532d;
+  --color-ask-bg: #fff1cc;
+  --color-ask-icon: #946000;
+  --color-ask-ink: #6b4300;
+  --color-has-bg: #e4eefa;
+  --color-has-icon: #1d5fa8;
+  --color-has-ink: #163e6c;
+  --color-other-bg: #f0eaf7;
+  --color-other-icon: #6b4a93;
+  --color-other-ink: #4a3366;
+  --color-neutral-bg: #f3ede6;
+  --color-danger-bg: #fdecea;
+  --color-danger-ink: #8f1d14;
+
+  --color-focus: #0b57d0;
+  --color-border: #b9a48f;
+  --color-border-strong: #8c7660;
+  --color-print-ink: #000000;
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, 'Noto Sans', Arial, sans-serif;
+  --radius-card: 1rem;
+}

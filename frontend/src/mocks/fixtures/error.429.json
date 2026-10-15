@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 429,
+  "payload": {
+    "error": {
+      "code": "THROTTLED",
+      "message": "Limite de solicitudes.",
+      "request_id": "REQ-SIM-ERR-429",
+      "retryable": true,
+      "details": []
+    }
+  }
+}

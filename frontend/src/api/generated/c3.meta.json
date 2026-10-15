@@ -1,0 +1,119 @@
+{
+  "generator": "scripts/gen-contract.mjs",
+  "info_version": "1.0.2",
+  "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución.",
+  "files": {
+    "C3-api.openapi.yaml": "889391f5e0f53e2e8b220eaacdc6a21797091dbef0186217d54a83aac8b674ac",
+    "schemas/AssistantRequestV1.schema.json": "9ec9a77a9e37f18737ae7f7ca75ea61e02a3e4336b51acc61c59f18096478753",
+    "schemas/ErrorResponse.schema.json": "92332da1c26ea3c2cffa3eb4d657966d98fd017f348481da878bfd1e8d0f3791",
+    "schemas/FamilyGenerationRequestV1.schema.json": "fb29cb289039d594db9893843742051ddbf2f5b33a794b8fcda23ac6931df84c",
+    "schemas/LlmContextV1.schema.json": "b107817399f46d12d919d49734e47d957e34018fdce6b3cf7a6d75639187a70e",
+    "schemas/TextractFlyerRequestV1.schema.json": "e83a68a4f2156bf329ffb4c6f21affe84ec29872720471adaded102c67c7d11c"
+  },
+  "operations": {
+    "askCatalogAssistant": {
+      "method": "POST",
+      "path": "/asistente",
+      "expectedStatus": 200,
+      "response": "AssistantEnvelope",
+      "request": "AssistantPublicRequest"
+    },
+    "createConversacion": {
+      "method": "POST",
+      "path": "/familias/{id}/conversaciones",
+      "expectedStatus": 201,
+      "response": "ConversationEnvelope",
+      "request": "ConversationRequest"
+    },
+    "createGuion": {
+      "method": "POST",
+      "path": "/familias/{id}/guion",
+      "expectedStatus": 200,
+      "response": "ScriptGenerationEnvelope",
+      "request": "FamilyGenerationPublicRequest"
+    },
+    "createMensaje": {
+      "method": "POST",
+      "path": "/familias/{id}/mensaje",
+      "expectedStatus": 200,
+      "response": "MessageGenerationEnvelope",
+      "request": "FamilyGenerationPublicRequest"
+    },
+    "createPreevaluacion": {
+      "method": "POST",
+      "path": "/familias/nueva/preevaluacion",
+      "expectedStatus": 200,
+      "response": "PreevaluationEnvelope",
+      "request": "PreevaluationRequest"
+    },
+    "getContextoFamilia": {
+      "method": "GET",
+      "path": "/familias/{id}/contexto",
+      "expectedStatus": 200,
+      "response": "FamiliaContextEnvelope",
+      "request": null
+    },
+    "getFamilia": {
+      "method": "GET",
+      "path": "/familias/{id}",
+      "expectedStatus": 200,
+      "response": "FamiliaDetailEnvelope",
+      "request": null
+    },
+    "getKpi": {
+      "method": "GET",
+      "path": "/kpi",
+      "expectedStatus": 200,
+      "response": "KpiEnvelope",
+      "request": null
+    },
+    "ingestSyntheticFlyer": {
+      "method": "POST",
+      "path": "/catalogo/ingesta-afiche",
+      "expectedStatus": 200,
+      "response": "FlyerDraftEnvelope",
+      "request": "TextractFlyerRequestV1"
+    },
+    "listFamiliasByJardin": {
+      "method": "GET",
+      "path": "/jardines/{id}/familias",
+      "expectedStatus": 200,
+      "response": "FamiliaListEnvelope",
+      "request": null
+    },
+    "listJardines": {
+      "method": "GET",
+      "path": "/jardines",
+      "expectedStatus": 200,
+      "response": "JardinListEnvelope",
+      "request": null
+    },
+    "listOportunidades": {
+      "method": "GET",
+      "path": "/familias/{id}/oportunidades",
+      "expectedStatus": 200,
+      "response": "OpportunityListEnvelope",
+      "request": null
+    }
+  },
+  "validators": {
+    "validateAssistantEnvelope": "urn:brujula:c3:components#/$defs/AssistantEnvelope",
+    "validateAssistantPublicRequest": "urn:brujula:c3:components#/$defs/AssistantPublicRequest",
+    "validateConversationEnvelope": "urn:brujula:c3:components#/$defs/ConversationEnvelope",
+    "validateConversationRequest": "urn:brujula:c3:components#/$defs/ConversationRequest",
+    "validateErrorResponse": "urn:brujula:error-response:v1",
+    "validateFamiliaContextEnvelope": "urn:brujula:c3:components#/$defs/FamiliaContextEnvelope",
+    "validateFamiliaDetailEnvelope": "urn:brujula:c3:components#/$defs/FamiliaDetailEnvelope",
+    "validateFamiliaListEnvelope": "urn:brujula:c3:components#/$defs/FamiliaListEnvelope",
+    "validateFamilyGenerationPublicRequest": "urn:brujula:c3:components#/$defs/FamilyGenerationPublicRequest",
+    "validateFlyerDraftEnvelope": "urn:brujula:c3:components#/$defs/FlyerDraftEnvelope",
+    "validateJardinListEnvelope": "urn:brujula:c3:components#/$defs/JardinListEnvelope",
+    "validateKpiEnvelope": "urn:brujula:c3:components#/$defs/KpiEnvelope",
+    "validateMessageGenerationEnvelope": "urn:brujula:c3:components#/$defs/MessageGenerationEnvelope",
+    "validateOpportunityListEnvelope": "urn:brujula:c3:components#/$defs/OpportunityListEnvelope",
+    "validatePreevaluationEnvelope": "urn:brujula:c3:components#/$defs/PreevaluationEnvelope",
+    "validatePreevaluationRequest": "urn:brujula:c3:components#/$defs/PreevaluationRequest",
+    "validateScriptGenerationEnvelope": "urn:brujula:c3:components#/$defs/ScriptGenerationEnvelope",
+    "validateTextractFlyerRequestV1": "urn:brujula:textract-flyer-request:v1"
+  }
+}
