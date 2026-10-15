@@ -197,7 +197,7 @@ beneficios:
     official_url: https://www.ips.gob.cl/fichas/bono-por-hijo
     source_ids: [F021, F900]
   - benefit_id: BEN-018
-    simple_title: "Canasta familiar (ejemplo de programa local)"
+    simple_title: "Canasta familiar (programa de demostración)"
     description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa una canasta de alimentos para familias con dificultad para comprar comida."
     actions:
       - "En la demostración, converse con el jardín sobre una posible derivación."
@@ -207,7 +207,7 @@ beneficios:
     official_url: null  # PREG-045
     source_ids: [F900]
   - benefit_id: BEN-019
-    simple_title: "Traslado a terapias (ejemplo de programa local)"
+    simple_title: "Traslado a terapias (programa de demostración)"
     description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa un apoyo para trasladar a niños y niñas a sus terapias."
     actions:
       - "En la demostración, converse con el jardín sobre el formulario o la derivación."
@@ -217,7 +217,7 @@ beneficios:
     official_url: null  # PREG-045
     source_ids: [F900]
   - benefit_id: BEN-020
-    simple_title: "Apoyo ante emergencias familiares (ejemplo de programa local)"
+    simple_title: "Apoyo ante emergencias familiares (programa de demostración)"
     description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa un apoyo para familias que vivieron una emergencia reciente."
     actions:
       - "En la demostración, converse con el jardín sobre una posible derivación."

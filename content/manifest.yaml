@@ -5,20 +5,20 @@
 # Cualquier edición de un archivo listado obliga a recalcular su sha256 y el content_bundle_hash.
 schema_version: "1.0.0"
 content_version: "0.2.1"
-content_bundle_hash: "413f138b517cfb8213ef9598bc28a059990b1609e94123bba9cfaa195b37e687"
+content_bundle_hash: "871136ccb361fd49a74ebf166a9cf3a6edff62df970374d06acd3ae55a796556"
 canonical_i18n: content/i18n/es.json
 files:
   - path: content/accessibility.yaml
     sha256: "f3a020f6514eb37bc47fbe5bae887c89986aff26533bd9de30449e7538dcf1e5"
     kind: ACCESSIBILITY
   - path: content/beneficios.yaml
-    sha256: "ed7fd7ef5c026fc6d2bcd23c039709a1c0d72d53041f0c3813faa258d79997eb"
+    sha256: "5e23adbb2122e0dd9ccae689457000a7299fac516bc1b47eb182aae90d5794b8"
     kind: BENEFITS
   - path: content/demo/inventario_activos.yaml
     sha256: "6aa8653be77be9e3e3bd7b70f0cd9a6ab98433bb96fd14cc64ab75fb7212e632"
     kind: SYNTHETIC_ASSET_MANIFEST
   - path: content/i18n/es.json
-    sha256: "4041ec6f02bc62df2c83ff4a76c297893f36987e27124f23460c0220d57893c0"
+    sha256: "d2cffd8dec67c16f816bb695cf5eef620d0f27971f6434799494c384f0bc2044"
     kind: I18N
   - path: content/pesos_priorizacion.yaml
     sha256: "cf86e7ebb025ee8c4ecd47de4d4103127ff80fa722e9d74dc606d1d255eb8d0b"
