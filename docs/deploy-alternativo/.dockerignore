@@ -1,0 +1,61 @@
+# .dockerignore — contexto de build = raíz del repo (ver backend/Dockerfile).
+# Mantiene la imagen pequeña y sin secretos. Solo entran backend/ y data/publico/.
+
+# --- Secretos / credenciales (jamás en la imagen) ---
+.env
+.env.*
+!.env.example
+*.env
+.aws/
+*.pem
+*.key
+*.ppk
+credentials.json
+secrets/
+*secret*
+
+# --- Entornos virtuales y cachés de Python ---
+.venv/
+venv/
+env/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+
+# --- Bases locales (se regeneran dentro del build con `make data`) ---
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.dump
+
+# --- Control de versiones y editores ---
+.git/
+.gitattributes
+.idea/
+.vscode/
+*.swp
+
+# --- Node / frontend (no se usa en la imagen del backend) ---
+**/node_modules/
+**/dist/
+**/build/
+**/.next/
+**/out/
+**/.cache/
+*.log
+
+# --- Carpetas de otros roles no necesarias para el backend Rol 1 ---
+frontend/
+ia/
+database/
+dump/
+docs/
+content/
+.kiro/
+
+# --- Datos pesados / no distribuibles ---
+data/interno_no_distribuir/
+data/raw/
+data/local/

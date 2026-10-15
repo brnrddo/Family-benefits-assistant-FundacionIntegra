@@ -8,21 +8,41 @@ from __future__ import annotations
 import sqlite3
 
 from ..config import SUPONER_ANTECEDENTE_EDAD, SUPONER_CONTROL_VIGENTE
-from .facts import (CAMPOS_FALTANTES, EAV_HOGAR, EAV_INTEGRANTE, Repo)
+from .facts import (CAMPOS_FALTANTES, EAV_HOGAR, EAV_INTEGRANTE, Repo,
+                    desde_declarado)
 from .model import Hecho
 
 
 class FamiliaCtx:
-    """Contexto resuelto de una familia para evaluar beneficios."""
+    """Contexto resuelto de una familia para evaluar beneficios.
 
-    def __init__(self, repo: Repo, id_familia: str):
+    ``declarados`` (opcional) permite reevaluar con datos que la familia DECLARA
+    pero que el dataset no trae (P1). Estructura:
+
+        {
+            "hogar": {campo_dato: valor, ...},
+            "integrante": {id_integrante: {campo_dato: valor, ...}, ...},
+        }
+
+    Un hecho declarado nunca viene acreditado -> el beneficio puede dar SI pero
+    solo como PRELIMINAR. Nunca pisa un dato real de la base.
+    """
+
+    def __init__(self, repo: Repo, id_familia: str, declarados: dict | None = None):
         self.repo = repo
         self.id_familia = id_familia
         self.familia = repo.familia(id_familia)
         self.integrantes = repo.integrantes(id_familia)
+        self.declarados = declarados or {}
 
     def existe(self) -> bool:
         return self.familia is not None
+
+    def declarado_hogar(self, campo: str):
+        return self.declarados.get("hogar", {}).get(campo)
+
+    def declarado_integrante(self, id_integrante: str, campo: str):
+        return self.declarados.get("integrante", {}).get(id_integrante, {}).get(campo)
 
 
 def _hogar_directo(campo: str, ctx: FamiliaCtx) -> Hecho | None:
@@ -84,7 +104,9 @@ def _eav_hogar_valor(ctx: FamiliaCtx, tipo: str, subtipo: str):
 
 def resolver_hogar(campo: str, ctx: FamiliaCtx) -> Hecho:
     if campo in CAMPOS_FALTANTES:
-        return Hecho(campo=campo, presente=False)
+        # El dataset no trae el dato; si la familia lo DECLARÓ, usarlo (PRELIMINAR).
+        h = desde_declarado(campo, ctx.declarado_hogar(campo), id_origen=ctx.id_familia)
+        return h if h is not None else Hecho(campo=campo, presente=False)
     h = _hogar_directo(campo, ctx)
     if h is not None:
         return h
@@ -95,7 +117,11 @@ def resolver_hogar(campo: str, ctx: FamiliaCtx) -> Hecho:
         tipo, subtipo, col = EAV_HOGAR[campo]
         hecho = ctx.repo._eav("antecedentes_familia", "id_familia", ctx.id_familia,
                               "tipo_antecedente", tipo, subtipo, col)
-        return hecho or Hecho(campo=campo, presente=False)
+        if hecho is not None:
+            return hecho
+        # Sin dato en la base: permitir declararlo si es un campo declarable.
+        d = desde_declarado(campo, ctx.declarado_hogar(campo), id_origen=ctx.id_familia)
+        return d if d is not None else Hecho(campo=campo, presente=False)
     # subtramo del hogar (rsh_historial)
     if campo == "subtramo_sintetico":
         r = ctx.repo.conn.execute(
@@ -119,7 +145,9 @@ def resolver_integrante(campo: str, ctx: FamiliaCtx, integrante: sqlite3.Row) ->
         if edad is not None and edad < 18:
             return Hecho(campo=campo, valor=True, presente=True,
                          acreditada=False, estado_dato="DECLARADO", id_origen=pid)
-        return Hecho(campo=campo, presente=False, id_origen=pid)
+        # Sin evidencia indirecta: permitir que la familia lo declare.
+        d = desde_declarado(campo, ctx.declarado_integrante(pid, campo), id_origen=pid)
+        return d if d is not None else Hecho(campo=campo, presente=False, id_origen=pid)
 
     if campo == "dias_desde_control" and SUPONER_CONTROL_VIGENTE:
         # Evidencia indirecta: existe un control de salud infantil vigente.
@@ -131,10 +159,13 @@ def resolver_integrante(campo: str, ctx: FamiliaCtx, integrante: sqlite3.Row) ->
             # Se asume dentro de ventana (valor 0 días desde el control).
             return Hecho(campo=campo, valor=0, presente=True,
                          acreditada=False, estado_dato="DECLARADO", id_origen=pid)
-        return Hecho(campo=campo, presente=False, id_origen=pid)
+        # Sin evidencia indirecta: permitir que la familia lo declare.
+        d = desde_declarado(campo, ctx.declarado_integrante(pid, campo), id_origen=pid)
+        return d if d is not None else Hecho(campo=campo, presente=False, id_origen=pid)
 
     if campo in CAMPOS_FALTANTES:
-        return Hecho(campo=campo, presente=False, id_origen=pid)
+        d = desde_declarado(campo, ctx.declarado_integrante(pid, campo), id_origen=pid)
+        return d if d is not None else Hecho(campo=campo, presente=False, id_origen=pid)
     if campo == "edad":
         v = ctx.repo.edad_anios(integrante["fecha_nacimiento_sintetica"])
         return Hecho(campo=campo, valor=v, presente=v is not None, id_origen=pid)

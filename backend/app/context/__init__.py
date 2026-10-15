@@ -12,4 +12,5 @@ Tres piezas:
 
 from .contexto_familia import construir_contexto, ContextoBuilder  # noqa: F401
 from .context_filter import filtrar_para_llm, CAMPOS_PERMITIDOS_LLM  # noqa: F401
+from .contrato_c2 import a_contrato_c2  # noqa: F401
 from .ficha_sintetica import construir_ficha, NO_INFORMADO  # noqa: F401

@@ -19,17 +19,33 @@ def beneficios(conn: sqlite3.Connection) -> list[str]:
         "SELECT id_beneficio FROM beneficios ORDER BY id_beneficio").fetchall()]
 
 
-def evaluar_familia(id_familia: str, conn=None, fecha=FECHA_EVALUACION
-                    ) -> list[ResultadoBeneficio]:
-    """Evalúa los 20 beneficios para una familia (bajo demanda)."""
+def evaluar_familia(id_familia: str, conn=None, fecha=FECHA_EVALUACION,
+                    declarados: dict | None = None) -> list[ResultadoBeneficio]:
+    """Evalúa los 20 beneficios para una familia (bajo demanda).
+
+    ``declarados`` (opcional) inyecta hechos DECLARADO por la familia para
+    desbloquear beneficios que de otro modo quedarían INDETERMINADO por un dato
+    ausente. El resultado nunca será CONFIRMADO por un dato declarado.
+    """
     propia = conn is None
     conn = conn or _conn()
     try:
         ev = Evaluator(conn, fecha)
-        return [ev.evaluar(id_familia, b) for b in beneficios(conn)]
+        return [ev.evaluar(id_familia, b, declarados) for b in beneficios(conn)]
     finally:
         if propia:
             conn.close()
+
+
+def reevaluar_con_declarados(id_familia: str, declarados: dict,
+                             conn=None, fecha=FECHA_EVALUACION
+                             ) -> list[ResultadoBeneficio]:
+    """Reevalúa una familia incorporando hechos DECLARADO (P1).
+
+    Azúcar sobre ``evaluar_familia`` que deja explícito el flujo de la ficha
+    digital: la tía responde preguntas -> se arma ``declarados`` -> se reevalúa.
+    """
+    return evaluar_familia(id_familia, conn=conn, fecha=fecha, declarados=declarados)
 
 
 def precalcular_todo(conn=None, fecha=FECHA_EVALUACION

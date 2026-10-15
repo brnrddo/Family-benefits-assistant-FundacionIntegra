@@ -111,6 +111,36 @@ El dataset no trae algunos datos que ciertas reglas piden. Política:
 El nivel `PRELIMINAR` es la señal visible de que hubo un supuesto. La traza
 muestra siempre el detalle regla-por-regla para auditar la decisión.
 
+### Reevaluación con hechos DECLARADO por la familia
+
+Cuando una regla pide un dato que el dataset no trae (p. ej. `residencia_total_anios`,
+`semanas_gestacion`), el beneficio queda `INDETERMINADO` → se convierte en una
+pregunta para la tía. Si la familia **declara** ese dato (ficha digital), se
+puede reevaluar inyectándolo: el motor lo trata como `DECLARADO` / no acreditado,
+de modo que el beneficio puede pasar a `SI` pero siempre con nivel `PRELIMINAR`
+(nunca `CONFIRMADO`). Un dato declarado **no** pisa un dato real de la base y, si
+viene ilegible, se ignora (sigue INDETERMINADO).
+
+```python
+from app.engine.service import reevaluar_con_declarados
+
+declarados = {
+    "hogar":      {"dias_desde_evento": 10},
+    "integrante": {"INT-...-001": {"residencia_total_anios": 30,
+                                    "residencia_ultimos20_anios": 10}},
+}
+for r in reevaluar_con_declarados("FAM-SIM-E3-00100", declarados):
+    print(r.id_beneficio, r.resultado.value, r.nivel)   # SI -> PRELIMINAR
+```
+
+Campos declarables: `app.engine.facts.CAMPOS_DECLARABLES` (subconjunto de los
+campos ausentes, con su tipo). Puente desde la propuesta del LLM:
+`app.genai.caracterizador.declarados_desde_propuesta(propuesta)` convierte una
+propuesta estructurada (sección `hechos_declarados`) en el dict `declarados`,
+dejando pasar solo campos declarables conocidos. La traza marca cada hecho
+declarado con `nota="declarado"` y el resultado añade el motivo
+`EVIDENCIA_DECLARADA` — auditable.
+
 ### Alcance de M2
 Resuelve elegibilidad. Los beneficios que dependen del cruce con accesos
 previos / gestiones (BEN-004 Aporte Familiar, BEN-016 Asignación Familiar) o de
@@ -386,25 +416,59 @@ funciona en SQLite y migrar a mitad de hackatón es riesgo sin ganancia para la
 demo; SQLite soporta las vistas de cruce que pide la spec. Desviación respecto
 de la spec (que sugiere DuckDB), documentada aquí a propósito.
 
-El artefacto `e3.db` **no se versiona**: se genera en el build. Flujo para la
-nube del equipo (App Runner / Lambda), de modo que la base y el precálculo
-corran igual que en local:
+**Vía oficial: zip + Mangum en AWS Lambda** (dueño: Rol 2). El Rol 1 aporta dos
+cosas al despliegue: (a) el pipeline reproducible `make data` que genera la
+`e3.db` precalculada, y (b) las variables de entorno que la Lambda puede
+sobrescribir. El artefacto `e3.db` **no se versiona**: se genera en el build.
+
+> La vía basada en Docker (imagen con la base embebida) existe solo como
+> **alternativa / plan B** en `docs/deploy-alternativo/` — p. ej. si el zip
+> supera el límite de Lambda (250 MB descomprimido). **No es el camino oficial**
+> y no debe desplegarse en paralelo a la vía zip.
+
+### 1) Generar la base (`make data`)
+
+Tanto la vía oficial (zip) como la alternativa (Docker) parten de la misma
+`e3.db` generada por este pipeline:
 
 ```bash
-# 1) construir la base desde los CSV públicos
-python -m app.loader.load --force
-# 2) precalcular evaluaciones+accesos y crear las vistas
-python -m app.db.build_views
-# 3) empaquetar e3.db dentro de la imagen del contenedor (solo lectura)
+# Linux/mac (desde backend/):
+make data           # loader M1 + precálculo + vistas, en un comando
+
+# Windows (desde backend/, sin `make`):
+.\make.ps1 data
 ```
 
-- El backend (FastAPI, Rol 2) lee `e3.db` de **solo lectura** desde la imagen.
-- Para contenedor: añadir los pasos 1–2 al `Dockerfile` (o a un `make data`)
-  para que cualquiera reproduzca la base en la nube. Documentar el comando de
-  regeneración junto al despliegue.
+Equivale a:
+```bash
+python -m app.loader.load --force   # CSV públicos -> e3.db
+python -m app.db.build_views        # 10.000 evaluaciones + vistas de cruce
+```
+
+### 2) Empaquetar (zip + Mangum) y desplegar
+
+El empaquetado del artefacto Lambda y la definición de infraestructura son
+responsabilidad del Rol 2 (ver su guía). El Rol 1 solo garantiza que:
+
+- `make data` produce una `e3.db` con **10.000 evaluaciones** + las vistas de
+  cruce, lista para servir de **solo lectura** desde la Lambda.
+- La app lee su configuración por entorno, así que el despliegue puede
+  sobrescribir sin tocar código:
+  - `E3_DB_PATH` — ruta de la base dentro del paquete Lambda.
+  - `E3_FECHA_EVALUACION` — fecha de corte de la evaluación.
+  - `E3_LLM_PROVIDER=bedrock` + rol de IAM con `bedrock:InvokeModel` /
+    `bedrock:Converse` para la capa GenAI (el stub local no necesita AWS).
 - Nada de datos personales en logs ni en lo que viaje al LLM (lo garantiza
   `context_filter.py`, §2.7.3).
-- Rutas y fecha configurables por entorno: `E3_DB_PATH`, `E3_FECHA_EVALUACION`.
+
+El adaptador ASGI (Mangum) y el handler de Lambda los define el Rol 2 al montar
+el server FastAPI (`app/api/`).
+
+### Alternativa Docker (plan B)
+
+Documentada en `docs/deploy-alternativo/` (Dockerfile + README). Verificada de
+punta a punta (Python 3.14.5-slim + uv, pipeline embebido, aserción de 10.000
+evaluaciones en build-time, imagen ≈ 492 MB). Usar solo si la vía zip se bloquea.
 
 ---
 
@@ -432,6 +496,29 @@ Cubren (spec §6.7 + §2.7):
 - **Contexto C2 y filtro** (`test_context_filter.py`): forma del contrato,
   NO_INFORMADO, el filtro solo deja campos permitidos, **falla si hay fuga**,
   no muta el original, detecta una fuga inyectada, 500 familias sin fugas.
+- **Reevaluación con DECLARADO** (`test_reevaluacion.py`): un IND por dato
+  ausente se desbloquea a SI PRELIMINAR al declarar el dato; ilegible se ignora;
+  no pisa dato real; puente `declarados_desde_propuesta`.
+- **Contrato C2 formal** (`test_contrato_c2.py`): `a_contrato_c2` valida contra
+  el JSON Schema `urn:brujula:c2:v1` para las 500 familias (requiere
+  `jsonschema`).
+- **Coherencia filtro↔mapeo** (`test_mapeo_coherencia.py`): lo que el filtro
+  deja pasar al LLM == filas `CONTEXTO_MINIMO_LLM` de `content/mapeo_ficha.csv`.
+- **Familias demo** (`test_demo_familias.py`): fija los 3 arquetipos del pitch
+  (ver abajo).
+
+---
+
+## 3 familias demo (arquetipos del pitch)
+
+Tres familias reales del dataset, verificadas y fijadas en
+`tests/test_demo_familias.py` para la demo y como regresión:
+
+| Arquetipo | Familia | Qué muestra |
+|---|---|---|
+| **Brecha** | `FAM-SIM-E3-00231` | Varios `ELEGIBLE_SIN_ASIGNACION` — califica confirmado y nunca lo pidió (BEN-005 SI CONFIRMADO sin gestión). |
+| **Discapacidad** | `FAM-SIM-E3-00361` | BEN-006 (subsidio discapacidad <18) SI CONFIRMADO por binding de discapacidad severa vigente. |
+| **Sin RSH** | `FAM-SIM-E3-00256` | `SIN_REGISTRO`: los beneficios que piden tramo RSH quedan INDETERMINADO (pregunta para la tía), nunca NO. |
 
 ---
 
