@@ -1,0 +1,13 @@
+# Bundle generado por build_lambda.py (no versionar)
+cdk/build/
+
+# Artefactos CDK
+cdk/cdk.out/
+cdk/.cdk.staging/
+
+# Base de datos efímera (se regenera desde los CSV)
+*.db
+
+# Python
+__pycache__/
+*.pyc
