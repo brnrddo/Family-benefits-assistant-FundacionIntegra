@@ -76,8 +76,11 @@ export default defineConfig(({ command, mode }) => {
   };
   const profile = toProfile(env.VITE_PROFILE);
   const allowMock = env.BRUJULA_ALLOW_MOCK_COPY === 'true';
+  // Las pruebas unitarias (mode 'test') son herméticas: sin BRUJULA_CONTENT_DIR explícito usan
+  // siempre el copy mock y no dependen de que ../content exista en la rama.
+  const defaultContentDir = mode === 'test' ? '__sin_contenido_en_pruebas__' : '../content';
   // path.resolve acepta rutas relativas a frontend/ y absolutas de Windows (con espacios).
-  const contentDir = path.resolve(frontendDir, env.BRUJULA_CONTENT_DIR ?? '../content');
+  const contentDir = path.resolve(frontendDir, env.BRUJULA_CONTENT_DIR ?? defaultContentDir);
   const schemaC4Path = path.resolve(repoRoot, '.kiro/specs/_shared/contracts/C4-contenido-manifest.schema.json');
 
   const define = Object.fromEntries(VITE_KEYS.map((key) => [`import.meta.env.${key}`, JSON.stringify(env[key] ?? '')]));

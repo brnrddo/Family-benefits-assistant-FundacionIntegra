@@ -9,13 +9,19 @@
 /// <reference lib="dom" />
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MOCK_COPY } from '../src/i18n/es.mock.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SHOTS = process.env.SCREENSHOT_DIR ?? path.resolve(here, '../../.agents/tasks/frontend-pwa/screenshots');
-const C = MOCK_COPY;
+// El build e2e usa el copy canónico de Rol 4 si existe (misma resolución que vite.config.ts);
+// si no, el mock. La prueba lee la misma fuente para no depender de la rama.
+const CANONICAL_I18N = path.resolve(here, '..', process.env.BRUJULA_CONTENT_DIR ?? '../content', 'i18n', 'es.json');
+const C: typeof MOCK_COPY = existsSync(CANONICAL_I18N)
+  ? { ...MOCK_COPY, ...(JSON.parse(readFileSync(CANONICAL_I18N, 'utf8')) as Partial<typeof MOCK_COPY>) }
+  : MOCK_COPY;
 const NAME = 'Sofía Ficticia';
 const generic = (shortId: string) => C['family.generic_name'].replace('{short_id}', shortId);
 const leaksName = (text: string) => /sof[ií]a|ficticia|sof%c3%ada/i.test(text);
