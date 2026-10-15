@@ -1,0 +1,48 @@
+campo_origen,nivel_privacidad,campo_motor,uso,tipo,permitido_llm,justificacion,responsable_revision
+edad_nino_31_marzo,CONTEXTO_MINIMO_LLM,child.age,MOTOR,INTEGER,true,§2.7.1 L136: la edad al corte la usa el motor y LlmContextV1 solo la recibe como edad por rol dentro de composition.,ROL_4
+composicion_hogar_roles_edades,CONTEXTO_MINIMO_LLM,composition,MOTOR,ENUM,true,§2.7.1 L137 y PRIVACIDAD_DEMO: roles y edades del hogar sin nombres alimentan al motor y son la composición que admite LlmContextV1.,ROL_4
+fecha_nacimiento_nino,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L136 y PRIVACIDAD_DEMO: el motor solo necesita la edad derivada; la fecha completa es un dato vinculable y no se captura.,ROL_4
+hermanos_menores_6,PERMITIDO_MOTOR,siblings.under_6,MOTOR,INTEGER,false,§2.7.1 L137 y §10 L600: conteo de hermanos por tramo para candidatos y control de consistencia; no va al LLM.,ROL_4
+hermanos_6_14,PERMITIDO_MOTOR,siblings.6_14,MOTOR,INTEGER,false,§2.7.1 L137 y §10 L600: conteo de hermanos por tramo para candidatos y control de consistencia; no va al LLM.,ROL_4
+hermanos_15_18,PERMITIDO_MOTOR,siblings.15_18,MOTOR,INTEGER,false,§2.7.1 L137 y §10 L600: conteo de hermanos por tramo para candidatos y control de consistencia; no va al LLM.,ROL_4
+posible_discapacidad_nino,PERMITIDO_MOTOR,child.possible_disability,PREGUNTA,BOOLEAN,false,§2.7.1 L138 y §10 L600: solo un sí o no que orienta la pregunta por credencial; el diagnóstico nunca va al LLM.,ROL_4
+discapacidad_tipo_nee_certificado,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,"§2.7.1 L138 y PRIVACIDAD_DEMO: tipo de discapacidad, NEE y certificado médico son salud detallada; no se capturan ni procesan.",ROL_4
+nino_en_terapia,PERMITIDO_MOTOR,child.in_therapy,PREGUNTA,BOOLEAN,false,§10 L600: pregunta opcional de sí o no sobre terapia para orientar beneficios; no guarda detalle clínico ni va al LLM.,ROL_4
+tiene_registro_social_hogares,PERMITIDO_MOTOR,rsh.has_registry,MOTOR,BOOLEAN,false,§2.7.1 L139: el motor usa la tenencia del Registro Social de Hogares y si falta propone actualizarlo; no va al LLM.,ROL_4
+tramo_registro_social_hogares,CONTEXTO_MINIMO_LLM,rsh.band,MOTOR,ENUM,true,§10 L600 y PRIVACIDAD_DEMO: la banda del Registro Social de Hogares sin folio alimenta al motor y es contexto mínimo de LlmContextV1.,ROL_4
+folio_rsh,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,PRIVACIDAD_DEMO: el folio del Registro Social de Hogares es un código vinculable; no se captura ni procesa.,ROL_4
+ingreso_per_capita_rango,CONTEXTO_MINIMO_LLM,income.per_capita_band,MOTOR,RANGE,true,§2.7.1 L140 y §10 L600: solo el rango de ingreso per cápita declarado alimenta al motor y es contexto mínimo de LlmContextV1.,ROL_4
+subsistema_seguridades_oportunidades,PERMITIDO_MOTOR,ssyo.participation,MOTOR,BOOLEAN,false,§2.7.1 L141: participación declarada en el Subsistema Seguridades y Oportunidades para el motor; no va al LLM.,ROL_4
+chile_crece_contigo,PERMITIDO_MOTOR,chile_crece_contigo.access,MOTOR,BOOLEAN,false,§2.7.1 L142: indica si la familia ya accede a Chile Crece Contigo para el estado de acceso; no va al LLM.,ROL_4
+fecha_ultimo_control_cuaderno_salud,PERMITIDO_MOTOR,child.last_health_control_date,MOTOR,DATE,false,§2.7.1 L143: la fecha del último control resuelve los días desde el control en el motor; no va al LLM.,ROL_4
+prevision_salud_nino,PERMITIDO_MOTOR,senales_vulnerabilidad.prevision_salud,MOTOR,ENUM,false,§2.7.1 L144: categoría de previsión solo para el eje de vulnerabilidad; no decide elegibilidad ni va al LLM.,ROL_4
+puntaje_ficha_cse,PERMITIDO_MOTOR,senales_vulnerabilidad.puntaje_cse,MOTOR,INTEGER,false,§2.7.1 L145: puntaje de la ficha solo para el eje de vulnerabilidad si el jardín lo tiene; no va al LLM.,ROL_4
+tipo_vivienda,PERMITIDO_MOTOR,housing.type,MOTOR,ENUM,false,§2.7.1 L146 y §10 L600: tipo de vivienda como categoría para el eje de urgencia; no va al LLM.,ROL_4
+madre_programa_sernameg_jefas_hogar,PERMITIDO_MOTOR,senales_vulnerabilidad.jefa_hogar_sernameg,MOTOR,BOOLEAN,false,§2.7.1 L147: participación en el programa Jefas de Hogar solo para el eje de vulnerabilidad; no va al LLM.,ROL_4
+comuna_residencia,PERMITIDO_MOTOR,commune_id,MOTOR,STRING,false,§10 L600: la comuna como identificador territorial sintético permite evaluar beneficios locales; no va al LLM.,ROL_4
+embarazo_en_hogar,PERMITIDO_MOTOR,household.pregnancy,PREGUNTA,BOOLEAN,false,§10 L602: pregunta extra de sí o no que el motor necesita; no guarda detalle de salud ni va al LLM.,ROL_4
+adulto_mayor_65_en_hogar,PERMITIDO_MOTOR,household.has_adult_over_65,PREGUNTA,BOOLEAN,false,§10 L602: pregunta extra de sí o no sobre una persona mayor en el hogar que el motor necesita; no va al LLM.,ROL_4
+trabajo_contrato_o_pension,PERMITIDO_MOTOR,household.formal_employment_or_pension,PREGUNTA,BOOLEAN,false,§10 L602: pregunta extra de sí o no sobre trabajo con contrato o previsión que el motor necesita; no va al LLM.,ROL_4
+dificultad_pago_agua,PERMITIDO_MOTOR,household.water_payment_difficulty,PREGUNTA,BOOLEAN,false,§10 L602: pregunta extra de sí o no sobre dificultad para pagar el agua que el motor necesita; no va al LLM.,ROL_4
+dificultad_compra_alimentos,PERMITIDO_MOTOR,household.food_purchase_difficulty,PREGUNTA,BOOLEAN,false,§10 L602: pregunta extra de sí o no sobre dificultad para comprar alimentos que el motor necesita; no va al LLM.,ROL_4
+escolaridad_apoderado,LOCAL_TIA,,FORMATO,ENUM,false,§2.7.1 L148: solo se traduce a formato_preferido en el dispositivo de la tía; la etiqueta original no se guarda ni va al LLM.,ROL_4
+formato_preferido_mensaje,CONTEXTO_MINIMO_LLM,formato_preferido,FORMATO,ENUM,true,§2.7.1 L148: formato del mensaje como enum derivado; es contexto mínimo de LlmContextV1 como preferred_format.,ROL_4
+idioma_mensaje_elegido,CONTEXTO_MINIMO_LLM,idioma_mensaje,FORMATO,ENUM,true,§2.7.1 L149 y PRIVACIDAD_DEMO: la tía elige el idioma del mensaje como enum; es contexto mínimo de LlmContextV1 como language.,ROL_4
+nacionalidad,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L149 y PRIVACIDAD_DEMO: la nacionalidad no va al motor ni al LLM; solo se transmite el idioma elegido como enum.,ROL_4
+cuidador_durante_dia,LOCAL_TIA,,CONTEXTO_TIA,BOOLEAN,false,§2.7.1 L150: contexto solo para la tía; no va al motor ni al LLM.,ROL_4
+nombre_de_trato,LOCAL_TIA,,CONTEXTO_TIA,STRING,false,§2.7.1 L151 y PRIVACIDAD_DEMO: el nombre de trato queda solo en el dispositivo de la tía; no sube a la nube Demo ni al LLM.,ROL_4
+nombres_apellidos_registrales,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L151 y PRIVACIDAD_DEMO: los nombres registrales son identificadores civiles; no se capturan ni procesan.,ROL_4
+rut_nino_y_apoderado,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L151 y PRIVACIDAD_DEMO: el Rol Único Tributario es un identificador civil; no se captura ni procesa.,ROL_4
+telefono_contacto,LOCAL_TIA,,CONTEXTO_TIA,STRING,false,§2.7.1 L151: el teléfono queda solo en el dispositivo de la tía para enviar el mensaje; nunca va al motor ni al LLM.,ROL_4
+correo_contacto,LOCAL_TIA,,CONTEXTO_TIA,STRING,false,§2.7.1 L151: el correo queda solo en el dispositivo de la tía; nunca va al motor ni al LLM.,ROL_4
+domicilio,LOCAL_TIA,,CONTEXTO_TIA,STRING,false,PRIVACIDAD_DEMO: el domicilio es contacto operativo local de la tía; no sube a la nube Demo ni al LLM.,ROL_4
+personas_autorizadas_retiro,LOCAL_TIA,,CONTEXTO_TIA,STRING,false,§2.7.1 L151 y PRIVACIDAD_DEMO: quién retira al niño queda solo en el dispositivo de la tía; nunca va al motor ni al LLM.,ROL_4
+enfermedades_cronicas,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+alergias,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+nae,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+lactancia,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+vacunas,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+control_esfinter,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L152: dato de salud excluido; no hay beneficio asociado y no sale del jardín.,ROL_4
+derivacion_tribunal_familia_sename,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L153 y PRIVACIDAD_DEMO: la información judicial queda excluida totalmente de la herramienta.,ROL_4
+jornada_extension_alimentacion,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,§2.7.1 L154: fuera de alcance; no tiene finalidad en la herramienta y no se captura.,ROL_4
+fotografia_biometria,TOTALMENTE_EXCLUIDO,,EXCLUIDO,NONE,false,PRIVACIDAD_DEMO: la fotografía y la biometría quedan totalmente excluidas; no se capturan ni procesan.,ROL_4
