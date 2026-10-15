@@ -188,6 +188,11 @@ Lo completa B en la tarea 5.
 
 ## 7. Compatibilización con la visión del Rol 2
 
+**Criterio rector: demo primero.** Todo es sintético y se presenta en 5 minutos.
+Lo que se ve debe parecer real: nombres ficticios de familias, niños, tía y jardín
+en toda la interfaz; nunca "Familia 00424" ni "Hijo 1234". Ante la duda entre
+funcional-real y vistoso, gana vistoso, siempre que no rompa contratos ni tests.
+
 Idea común: **la tía quiere acciones concretas, no un informe.** El agente va
 primero; la lista de beneficios queda como opción secundaria. Los límites no
 cambian: el motor decide elegibilidad, acceso y orden; el LLM solo redacta; al LLM
