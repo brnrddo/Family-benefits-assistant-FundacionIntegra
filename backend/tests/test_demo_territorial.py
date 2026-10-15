@@ -23,6 +23,7 @@ from tests.c3_schema import validar
 client = TestClient(app)
 
 _DEMO = "BEN-DEMO-LOCAL-01"
+_DEMO_REGIONAL = "BEN-DEMO-REGIONAL-01"
 _RELEVANTES = {"SI", "INDETERMINADO"}
 _SCHEMA_ALCANCE = (
     Path(__file__).resolve().parents[2]
@@ -89,23 +90,40 @@ def test_ejemplo_aparece_donde_vive_la_familia(monkeypatch, db_demo: Path):
     assert (demo[0]["result"], demo[0]["level"], demo[0]["access_state"]) == (
         "SI", "CONFIRMADO", "ELEGIBLE_SIN_ASIGNACION"
     )
+    # El beneficio regional también aplica: COM-001 pertenece a REG-SIM-01.
+    demo_reg = [b for b in com_001["data"]["benefit_results"]
+                if b["benefit_id"] == _DEMO_REGIONAL]
+    assert len(demo_reg) == 1
+    assert (demo_reg[0]["result"], demo_reg[0]["level"], demo_reg[0]["access_state"]) == (
+        "SI", "CONFIRMADO", "ELEGIBLE_SIN_ASIGNACION"
+    )
     # Sin fuente oficial no hay Opportunity (DEC-050).
     assert _DEMO not in {o["benefit_id"] for o in com_001["data"]["top_opportunities"]}
+    assert _DEMO_REGIONAL not in {o["benefit_id"] for o in com_001["data"]["top_opportunities"]}
     opps = client.get("/api/v1/familias/FAM-SIM-E3-00001/oportunidades",
                       params={"limit": 100}).json()["items"]
     assert _DEMO not in {o["benefit_id"] for o in opps}
+    assert _DEMO_REGIONAL not in {o["benefit_id"] for o in opps}
 
+    # COM-011 pertenece a REG-SIM-03: no aplica ni el comunal ni el regional.
     com_011 = _get("/familias/FAM-SIM-E3-00051")
     validar("FamiliaDetailEnvelope", com_011)
-    assert _DEMO not in {b["benefit_id"] for b in com_011["data"]["benefit_results"]}
+    presentes = {b["benefit_id"] for b in com_011["data"]["benefit_results"]}
+    assert _DEMO not in presentes
+    assert _DEMO_REGIONAL not in presentes
 
 
 def test_textos_demo_sin_promesas_ni_url():
     from app.catalog import territorial
     from app.genai.template_provider import contiene_promesa, es_texto_plano
 
-    for texto in (territorial.DEMO_TITULO, territorial.DEMO_DONDE_IR,
-                  territorial.DEMO_DESCRIPCION, territorial.DEMO_INSTITUCION):
+    textos = (
+        territorial.DEMO_TITULO, territorial.DEMO_DONDE_IR,
+        territorial.DEMO_DESCRIPCION, territorial.DEMO_INSTITUCION,
+        territorial.DEMO_TITULO_REGIONAL, territorial.DEMO_DONDE_IR_REGIONAL,
+        territorial.DEMO_DESCRIPCION_REGIONAL, territorial.DEMO_INSTITUCION_REGIONAL,
+    )
+    for texto in textos:
         assert es_texto_plano(texto) and not contiene_promesa(texto)
         assert "solo demo" in texto.lower()
 
@@ -125,25 +143,28 @@ def test_alcance_marca_local_y_nacional(monkeypatch, db_demo: Path):
     _validar_alcance(body)
     por_id = {i["benefit_id"]: i for i in body["items"]}
     assert (por_id[_DEMO]["scope"], por_id[_DEMO]["demo"]) == ("LOCAL", True)
+    assert (por_id[_DEMO_REGIONAL]["scope"], por_id[_DEMO_REGIONAL]["demo"]) == ("LOCAL", True)
     for bid in ("BEN-001", "BEN-018"):
         assert (por_id[bid]["scope"], por_id[bid]["demo"]) == ("NACIONAL", False)
     assert "COM-" not in r.text and "Comuna" not in r.text
+    assert "REG-" not in r.text
 
 
 def test_sin_ejemplo_no_cambia_nada(monkeypatch, db_motor_path: Path, db_demo: Path):
     _modo_real(monkeypatch, db_motor_path)
     body = _get("/catalogo/alcance")
     _validar_alcance(body)
-    assert _DEMO not in {i["benefit_id"] for i in body["items"]}
+    ids = {i["benefit_id"] for i in body["items"]}
+    assert _DEMO not in ids and _DEMO_REGIONAL not in ids
     assert {i["scope"] for i in body["items"]} == {"NACIONAL"}
 
     sql = (
         "SELECT id_familia, id_beneficio, resultado, nivel, monto_estimado, "
-        "datos_faltantes, traza_json FROM evaluaciones WHERE id_beneficio != ? "
-        "ORDER BY id_familia, id_beneficio"
+        "datos_faltantes, traza_json FROM evaluaciones "
+        "WHERE id_beneficio NOT IN (?, ?) ORDER BY id_familia, id_beneficio"
     )
     with sqlite3.connect(db_motor_path) as a, sqlite3.connect(db_demo) as b:
-        originales = a.execute(sql, (_DEMO,)).fetchall()
-        con_demo = b.execute(sql, (_DEMO,)).fetchall()
+        originales = a.execute(sql, (_DEMO, _DEMO_REGIONAL)).fetchall()
+        con_demo = b.execute(sql, (_DEMO, _DEMO_REGIONAL)).fetchall()
     assert len(originales) == 10_000
     assert originales == con_demo

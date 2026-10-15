@@ -1,9 +1,10 @@
-"""Beneficio territorial SOLO DEMO (B2, propuesta DEC-071).
+"""Beneficios territoriales SOLO DEMO (B2, propuesta DEC-071).
 
-``BEN-DEMO-LOCAL-01`` es inventado: no existe y no viene en los datos del
-Rol 1. Se agrega a la SQLite local con ``python -m app.demo_territorial.cargar``
-para mostrar un apoyo que solo aplica a quienes viven en una comuna. El motor
-del Rol 1 lo evalúa sin cambios; este paquete no decide elegibilidad.
+``BEN-DEMO-LOCAL-01`` (comunal) y ``BEN-DEMO-REGIONAL-01`` (regional) son
+inventados: no existen ni vienen en los datos del Rol 1. Se agregan a la SQLite
+local con ``python -m app.demo_territorial.cargar`` para mostrar apoyos que solo
+aplican por comuna o por región. El motor del Rol 1 los evalúa sin cambios; este
+paquete no decide elegibilidad.
 """
 from __future__ import annotations
 
@@ -11,6 +12,11 @@ import sqlite3
 from pathlib import Path
 
 DEMO_BENEFIT_ID = "BEN-DEMO-LOCAL-01"
+DEMO_BENEFIT_ID_REGIONAL = "BEN-DEMO-REGIONAL-01"
+
+# Todos los IDs demo territoriales (comunal + regional). El overlay de
+# presentación C4 y el texto de catálogo cubren a todos.
+DEMO_BENEFIT_IDS = (DEMO_BENEFIT_ID, DEMO_BENEFIT_ID_REGIONAL)
 
 FIXTURE_PATH = (
     Path(__file__).resolve().parents[2]
@@ -19,15 +25,17 @@ FIXTURE_PATH = (
 
 
 def demo_cargado(db_path: str | Path) -> bool:
-    """True si la DB trae el beneficio demo. False ante cualquier error o ausencia."""
+    """True si la DB trae algún beneficio demo. False ante error o ausencia."""
     path = Path(db_path)
     if not path.is_file():
         return False
     try:
         conn = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
         try:
+            marcas = ",".join("?" for _ in DEMO_BENEFIT_IDS)
             fila = conn.execute(
-                "SELECT 1 FROM beneficios WHERE id_beneficio = ?", (DEMO_BENEFIT_ID,)
+                f"SELECT 1 FROM beneficios WHERE id_beneficio IN ({marcas})",
+                DEMO_BENEFIT_IDS,
             ).fetchone()
         finally:
             conn.close()

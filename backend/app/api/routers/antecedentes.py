@@ -72,6 +72,29 @@ def _log(request: Request, status: int, inicio: float) -> None:
     )
 
 
+def _reevaluar_con_motor(family_id: str, acumulados: list[dict]) -> dict | None:
+    """Ficha C3 reevaluada por el motor real (B2), o ``None`` si no puede operar.
+
+    Reconstruye el cuerpo declarado (campo de pantalla -> último valor conocido)
+    desde los hechos acumulados y delega en ``motor_real``, que traduce lo que el
+    motor sabe usar (hoy, la fecha del control de salud) y reevalúa la familia.
+    Un valor "No sé" no fuerza un dato: se omite y el campo sigue indeterminado.
+    """
+    campos: dict = {}
+    for hecho in acumulados:
+        if hecho["desconocido"]:
+            campos.pop(hecho["campo"], None)
+        else:
+            campos[hecho["campo"]] = hecho["valor"]
+    familia = motor_real.reconstruir_familia_declarada(family_id, campos)
+    if familia is None:
+        return None
+    try:
+        return familia_detail_data(familia)
+    except InvarianteError:
+        return None
+
+
 def _procesar(
     request: Request,
     id: str,
@@ -94,12 +117,6 @@ def _procesar(
         # minProperties: 2 del schema del Rol 3: familia sin datos que declarar.
         raise ApiError(status_code=422)
 
-    if not mock_habilitado():
-        # Punto único de enganche del motor determinista real (Rol 1). Hasta que
-        # exista, con E3_MOCK=0 se falla cerrado y retryable: la respuesta de C3
-        # no tiene dónde avisar que la reevaluación sería simulada.
-        raise ApiError(status_code=503)
-
     # El hash incluye la familia del path: la misma clave contra otro recurso es
     # un conflicto (409), nunca la ficha de la familia anterior.
     bhash = store.body_hash(id, body.model_dump(exclude_unset=True))
@@ -113,6 +130,22 @@ def _procesar(
 
     hechos = hechos_declarados(body)
     acumulados = store.declarados_get(id) + hechos
+
+    if not mock_habilitado():
+        # B2 · motor real: la fecha del último control de salud se convierte a
+        # ``dias_desde_control`` del niño o niña más joven y se reevalúa la
+        # familia con el motor determinista (R01203, versión vigente). El resto
+        # de los campos no tiene mapeo al motor (ver antecedentes_motor.py): se
+        # registran, pero no mueven elegibilidad por esta vía. Un dato declarado
+        # nunca da CONFIRMADO. Si el motor no puede operar (sin DB/precálculo),
+        # se falla cerrado y retryable (503).
+        data = _reevaluar_con_motor(id, acumulados)
+        if data is None:
+            raise ApiError(status_code=503)
+        store.declarados_add(id, hechos)
+        store.idem_put(idempotency_key, bhash, data)
+        return {"meta": construir_meta(request.state.request_id), "data": data}
+
     try:
         data = familia_detail_data(aplicar_declarados(mock_data.FAMILIAS[id], acumulados))
     except InvarianteError:

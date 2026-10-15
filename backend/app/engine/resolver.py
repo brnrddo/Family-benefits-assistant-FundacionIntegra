@@ -78,6 +78,18 @@ def _hogar_derivado(campo: str, ctx: FamiliaCtx) -> Hecho | None:
         if cuenta is None or resid is None:
             return Hecho(campo=campo, presente=False)
         return Hecho(campo=campo, valor=(str(cuenta) == str(resid)), presente=True)
+    if campo == "region_residencia":
+        # Región derivada de la comuna de residencia vía la tabla `comunas`.
+        # Sin comuna conocida o sin fila en `comunas` -> presente=False (INDETERMINADO),
+        # nunca NO: el beneficio regional queda "falta confirmar", no excluido.
+        com = _eav_hogar_valor(ctx, "RESIDENCIA", "COMUNA")
+        if com is None:
+            return Hecho(campo=campo, presente=False)
+        fila = ctx.repo.conn.execute(
+            "SELECT region_codigo FROM comunas WHERE id_comuna = ?", (str(com),)
+        ).fetchone()
+        v = fila["region_codigo"] if fila is not None else None
+        return Hecho(campo=campo, valor=v, presente=v not in (None, ""))
     return None
 
 
