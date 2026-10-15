@@ -1,0 +1,4 @@
+# ESBOZO — dependencias de la app CDK (IaC). Separado del backend.
+# Pins exactos se fijan al implementar (DEC-002: "versiones se fijarán al implementar").
+aws-cdk-lib>=2.160.0
+constructs>=10.0.0
