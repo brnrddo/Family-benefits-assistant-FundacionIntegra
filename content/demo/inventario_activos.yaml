@@ -3,7 +3,7 @@
 # Si se edita un activo hay que recalcular su sha256/bytes aquí y luego el sha256 de este archivo en content/manifest.yaml.
 # El afiche solo viaja a Textract como TextractFlyerRequestV1 (metadata); nunca bytes, base64, URL ni clave S3 (PRIVACIDAD_DEMO).
 data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
-content_version: "0.2.0"
+content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 nota: "Activos inventados para la demo. Ninguno deriva de una persona, documento o afiche real."
 activos:
