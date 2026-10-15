@@ -23,6 +23,11 @@ al final**.
 | 7 | Búsqueda de niño en Inicio | B |
 | 8 | Quitar "Familia nueva" manual | B |
 
+> **Ajustes de la sección 7:** los arreglos 1, 2, 4, 5 y * se complementan con la
+> visión del Rol 2 (agente por familia, preguntas del jardín, estadísticas al
+> entrar, jardín asignado por sesión). Lo que cabe ahora entra en las tareas 4–6
+> sin mover archivos de dueño; lo que exige contrato nuevo queda en Fase 2.
+
 Decisiones tomadas:
 
 - **Chat:** texto libre; cada mensaje se responde solo; el historial se ve en
@@ -180,3 +185,60 @@ Lo completa B en la tarea 5.
   riesgo, no lo eliminan. El aviso "no escriba datos personales" queda visible.
 - Las respuestas Sí/No se pierden al reiniciar el backend. Guardarlas queda como tarea aparte.
 - Embarazo y discapacidad son sensibles: las preguntas quedan opcionales ("si desea responder").
+
+## 7. Compatibilización con la visión del Rol 2
+
+Idea común: **la tía quiere acciones concretas, no un informe.** El agente va
+primero; la lista de beneficios queda como opción secundaria. Los límites no
+cambian: el motor decide elegibilidad, acceso y orden; el LLM solo redacta; al LLM
+solo llega `LlmContextV1` (máximo 3 beneficios, sin nombres ni diagnósticos); C3
+sigue congelado en 1.0.2.
+
+### 7.1 Qué se ajusta y quién
+
+| # | Plan original | Visión Rol 2 | Acuerdo para la demo | Quién |
+|---|---|---|---|---|
+| 1 | Chat de situaciones en texto libre, sin familia | Agente conversacional anclado a una familia, con acciones concretas | **Ahora:** el chat de situaciones se mantiene (Tarea 4) y además se abre desde la ficha con la familia como contexto de pantalla. Arriba van **2–3 preguntas tipo** armadas de forma determinista con `suggested_questions`, `missing_codes` y `why_first` de `/familias/{id}/oportunidades`. La respuesta nombra hasta 3 beneficios concretos del ranking y una acción por cada uno ("presentarles X", "pedir el antecedente Y"). **Fase 2:** pregunta libre por familia hacia Bedrock (ver 7.2). | B (`features/assistant/`, componente reutilizable); A solo lo monta en `FamilyPage.tsx` |
+| 2 | Quitar preguntas generales | Mantenerlas, pero sobre el jardín ("tengo reunión de apoderados el jueves") | Se quitan las preguntas generales de ejemplo actuales. Se reemplazan por **ejemplos del jardín** respondidos con datos agregados de `/kpi` (`top_gaps`: beneficio, número de familias, monto potencial). La respuesta es plantilla determinista: "Para la reunión, el tema con más familias cerca de acceder es X (N familias)". Sin LLM en esta fase. | B (`features/assistant/`, `genai/template_provider.py`) |
+| 3 | Tarjeta "Datos del hogar" con "Datos por confirmar" y "Agregar información" | Igual | Sin cambios: Tareas 1–3. | A |
+| 4 | Tía ficticia, nombres y familias elegidas | Datos poco dinámicos; mostrar estadísticas al entrar junto al chat | Se mantiene la Tarea 5 y se exige que las familias elegidas tengan progreso visible (brechas, PRELIMINAR, SIN_CUPO). **Inicio** muestra arriba un bloque de estadísticas del jardín desde `/kpi` (familias, % informadas, top 3 brechas) y el acceso al chat; luego búsqueda y lista. | B (`features/home/`) |
+| 5 | Orden visual de beneficios, al final | Agente primero, lista secundaria | En la ficha el orden queda: preguntas tipo + agente → "Datos del hogar" → lista de beneficios plegada ("Ver todos los beneficios"). El orden de la lista lo sigue dando el motor. | A (orden de bloques), después de la Tarea 7 |
+| * | Encabezado con la profe; selector muestra solo jardines demo | **Sin elegir jardín:** el usuario queda asignado a su jardín | Se **quita el selector de jardín**. La sesión demo asigna un jardín fijo a la tía desde la semilla local. La asignación no usa el correo ni el `sub` de Cognito en el repo: la semilla dice "Tía X → jardín J". Si un solo jardín no cubre todos los casos de la sección 5, se crean 2 o 3 tías demo, una por jardín. | B (`features/demo-session/`, `localNamesSeed.json`) |
+| 6, 7, 8 | Quitar guion/mensaje, búsqueda de niño, quitar "Familia nueva" | Igual | Sin cambios. | A / B |
+
+### 7.2 Lo que NO entra así, y por qué
+
+- **"Entregar al LLM toda la información de la familia y todos los beneficios":**
+  no se puede. `PRIVACIDAD_DEMO.md` solo permite `LlmContextV1` (roles/edades,
+  bandas RSH/ingreso, formato, idioma y hasta 3 beneficios del motor). Coincide con
+  la idea de no saturar: el agente habla de los 3 primeros del ranking.
+- **"Su hija registra una enfermedad":** diagnósticos y salud detallada están en la
+  clase *totalmente excluido*; no se capturan ni se envían. Lo que sí se puede: si
+  el motor deja BEN-006 en `PENDIENTE_ANTECEDENTES`/`INDETERMINADO` por un
+  `missing_code` de credencial de discapacidad, el agente dice "si algún integrante
+  tiene o puede tramitar la credencial de discapacidad, revise BEN-006", sin nombrar
+  a la persona ni la condición. El nombre del niño lo pone la pantalla, localmente.
+- **Pregunta libre por familia hacia Bedrock (Fase 2):** `/asistente` solo acepta
+  `{question}` sin familia, y `FamilyGenerationRequestV1` no tiene campo de pregunta.
+  Requiere un envelope interno nuevo (`FamilyAssistantRequestV1`: `LlmContextV1` +
+  pregunta filtrada + hasta 3 ítems de catálogo) y una ruta de propuesta fuera de
+  C3 1.0.2, como se hizo con antecedentes. Necesita revisión de privacidad. Dueño:
+  Rol 2.
+- **Agente del jardín con LLM (Fase 2):** el contexto agregado (`top_gaps`, región)
+  tampoco cabe en los envelopes actuales. Mientras tanto, plantilla determinista.
+- **Tono:** "te recomiendo presentarles" se acepta como acción para la tía; siguen
+  prohibidas "podría calificar", "le corresponde" y "vale la pena consultar". El
+  aviso de orientación referencial va en toda respuesta.
+
+### 7.3 Pendientes para la Tarea 7 (registro de decisiones)
+
+No se edita el registro ahora. En la Tarea 7, dentro del rango reservado a B
+(DEC-085 a DEC-089), se registran:
+
+- Chat anclado a la ficha con preguntas tipo deterministas.
+- Preguntas del jardín respondidas desde `/kpi`, sin LLM.
+- Jardín asignado por sesión demo y selector eliminado (desviación de FE).
+- Estadísticas de `/kpi` en Inicio.
+
+Y como `PREG-*` con dueño Rol 2: envelope `FamilyAssistantRequestV1` y contexto
+agregado del jardín para Bedrock (Fase 2).
