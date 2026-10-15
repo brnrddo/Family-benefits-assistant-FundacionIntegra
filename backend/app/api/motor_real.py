@@ -37,7 +37,7 @@ import re
 import sqlite3
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import yaml
@@ -826,3 +826,107 @@ def _construir(db: Path, contenido: ContenidoC4, huella: str) -> MotorSnapshot:
         segundos_build=time.perf_counter() - inicio,
         huella=huella,
     )
+
+
+# --- reevaluación en vivo de UNA familia con hechos declarados (B2) -----------
+# El flujo normal sirve un snapshot inmutable precalculado. Cuando la familia
+# declara un dato (``POST /familias/{id}/antecedentes``) hay que recalcular SOLO
+# esa familia incorporando el dato. Se reusa ``_familia`` (la misma maquinaria
+# del batch) sustituyendo las filas de ``evaluaciones`` de esa familia por el
+# resultado reevaluado del motor; los ``accesos`` (estado ASIGNADO/SIN_CUPO,
+# que NO los decide el motor de elegibilidad) se preservan del precálculo.
+
+
+def _fila_evaluacion_declarada(res, periodicidad: dict[str, str | None]) -> dict:
+    """``ResultadoBeneficio`` reevaluado -> fila con la forma que lee ``_familia``.
+
+    ``_familia`` consume la evaluación como un ``sqlite3.Row`` (acceso por clave);
+    un dict sirve igual. Se serializan ``datos_faltantes`` y la traza a JSON,
+    exactamente como vienen de la tabla ``evaluaciones`` del precálculo.
+    """
+    d = res.to_dict()
+    traza = [
+        {
+            "id_regla": t["id_regla"],
+            "campo": t["campo"],
+            "operador": t["operador"],
+            "resultado": t["resultado"],
+        }
+        for t in d["traza"]
+    ]
+    return {
+        "id_familia": d["id_familia"],
+        "id_beneficio": d["id_beneficio"],
+        "id_version": d["id_version"],
+        "resultado": d["resultado"],
+        "nivel": d["nivel"],
+        "monto_estimado": d["monto_estimado"],
+        "datos_faltantes": json.dumps(d["datos_faltantes"]),
+        "traza_json": json.dumps(traza),
+    }
+
+
+def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
+    """Ficha C3 (``FamiliaDetailEnvelope.data``) de una familia reevaluada en vivo.
+
+    Lee la DB real (solo lectura), traduce los campos declarados por la familia
+    (``campos``: el cuerpo de la pantalla sin ``data_classification``) a hechos
+    del motor, reevalúa los beneficios de ``family_id`` incorporándolos y
+    reconstruye su vista C3 con la misma maquinaria del snapshot. ``None`` si no
+    se puede operar sobre el motor real (sin DB/precálculo/C4 válidos): el
+    llamador decide el fallback.
+
+    Si ``campos`` no aporta ningún dato que el motor pueda usar (hoy, solo la
+    fecha del último control de salud), se reevalúa sin ``declarados``: la ficha
+    sale del motor igual, sin cambios por declaración. No muta el snapshot
+    cacheado ni la DB. Un dato declarado nunca da CONFIRMADO (lo garantiza el
+    motor), así que la ficha resultante respeta las invariantes.
+    """
+    # Imports locales: evitan un ciclo con engine.service y aíslan el puente B2.
+    from app.api.antecedentes_motor import declarados_para_motor
+    from app.engine.service import evaluar_familia
+
+    db = Path(runtime.DB_PATH)
+    manifest = Path(content_c4.CONTENT_MANIFEST)
+    if _estado_archivo(db) is None or _estado_archivo(manifest) is None:
+        return None
+    try:
+        contenido = cargar_contenido_c4(manifest)
+    except ConfigInvalida:
+        return None
+
+    conn = _conectar_solo_lectura(db)
+    try:
+        try:
+            datos = _leer_precalculo(conn)
+        except (_PrecalculoAusente, sqlite3.Error):
+            return None
+        garden_id = dict(datos.familias).get(family_id)
+        if garden_id is None:
+            return None
+
+        declarados = declarados_para_motor(conn, family_id, campos, datos.fecha)
+        contenido = territorial.con_overlay(contenido, datos.beneficios)
+        resultados = evaluar_familia(family_id, conn=conn, fecha=datos.fecha,
+                                     declarados=declarados or None)
+
+        # Sustituye SOLO las evaluaciones de esta familia; conserva las de las
+        # demás y todos los accesos (el estado de acceso no lo decide el motor).
+        evaluaciones = dict(datos.evaluaciones)
+        for res in resultados:
+            evaluaciones[(family_id, res.id_beneficio)] = _fila_evaluacion_declarada(
+                res, datos.periodicidad)
+        datos_mod = replace(datos, evaluaciones=evaluaciones)
+
+        c2 = ContextoBuilder(conn, datos.fecha).build(family_id)
+        if c2 is None:
+            return None
+        try:
+            familia, _prioridades, _ordenes = _familia(
+                family_id, garden_id, datos_mod, c2, contenido)
+        except (ValueError, KeyError, TypeError, ConfigInvalida):
+            # Combinación incoherente: no se emite una ficha dudosa.
+            return None
+        return familia
+    finally:
+        conn.close()

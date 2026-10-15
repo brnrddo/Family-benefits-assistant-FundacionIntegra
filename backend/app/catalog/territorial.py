@@ -5,9 +5,10 @@
   texto de catálogo, sin fuente ni URL. Si ``content/`` ya lo trae, manda
   ``content/``. Sin el ID en la DB no cambian nada.
 - ``alcance``: marca cada beneficio de la DB como ``LOCAL`` (todas sus
-  alternativas de la versión vigente restringen ``comuna_residencia`` a una
-  lista que no cubre todas las comunas) o ``NACIONAL``. Solo lee reglas: la
-  elegibilidad de cada familia la decide el motor del Rol 1.
+  alternativas de la versión vigente restringen el territorio -por comuna
+  (``comuna_residencia``) o por región (``region_residencia``)- a una lista que
+  no cubre todo el país) o ``NACIONAL``. Solo lee reglas: la elegibilidad de
+  cada familia la decide el motor del Rol 1.
 
 Las respuestas nunca llevan IDs ni nombres de comuna.
 """
@@ -21,7 +22,8 @@ from pathlib import Path
 
 from app.api import mock_data
 from app.api.deps import mock_habilitado
-from app.demo_territorial import DEMO_BENEFIT_ID, demo_cargado
+from app.demo_territorial import (DEMO_BENEFIT_ID, DEMO_BENEFIT_ID_REGIONAL,
+                                  demo_cargado)
 from app.engine.evaluator import Evaluator
 from app.engine.facts import Repo
 from app.genai.content_catalog import CatalogoContenido
@@ -36,44 +38,89 @@ DEMO_DESCRIPCION = (
 )
 DEMO_INSTITUCION = "Municipalidad Sintética (solo demo)"
 
+DEMO_TITULO_REGIONAL = "Programa Regional Sintético de Apoyo Familiar (solo demo)"
+DEMO_DONDE_IR_REGIONAL = "Oficina regional de su zona (solo demo)"
+DEMO_DESCRIPCION_REGIONAL = (
+    "SOLO DEMO. Beneficio inventado para mostrar un apoyo que existe solo en una "
+    "región. No es un beneficio real."
+)
+DEMO_INSTITUCION_REGIONAL = "Gobierno Regional Sintético (solo demo)"
+
+
+class _PresentacionDemo:
+    """Presentación C4 fija de un beneficio demo (sin fuente ni URL)."""
+
+    __slots__ = ("titulo", "donde_ir", "descripcion", "institucion")
+
+    def __init__(self, titulo, donde_ir, descripcion, institucion):
+        self.titulo = titulo
+        self.donde_ir = donde_ir
+        self.descripcion = descripcion
+        self.institucion = institucion
+
+
+# Presentación por ID demo: habilita el overlay C4 de cada beneficio inventado.
+_PRESENTACION_DEMO: dict[str, _PresentacionDemo] = {
+    DEMO_BENEFIT_ID: _PresentacionDemo(
+        DEMO_TITULO, DEMO_DONDE_IR, DEMO_DESCRIPCION, DEMO_INSTITUCION),
+    DEMO_BENEFIT_ID_REGIONAL: _PresentacionDemo(
+        DEMO_TITULO_REGIONAL, DEMO_DONDE_IR_REGIONAL,
+        DEMO_DESCRIPCION_REGIONAL, DEMO_INSTITUCION_REGIONAL),
+}
+
 LOCAL = "LOCAL"
 NACIONAL = "NACIONAL"
 
+# Campos territoriales que, con operador IN y una lista que no cubre todo el
+# país, restringen un beneficio a un territorio -> LOCAL.
 _CAMPO_COMUNA = "comuna_residencia"
+_CAMPO_REGION = "region_residencia"
+_CAMPOS_TERRITORIALES = (_CAMPO_COMUNA, _CAMPO_REGION)
 
 
 # --- overlay de presentación y texto -----------------------------------------
 
 
 def con_overlay(contenido: ContenidoC4, beneficios_db) -> ContenidoC4:
-    """Agrega la presentación C4 del ejemplo demo si la DB lo trae y content/ no."""
-    if DEMO_BENEFIT_ID not in beneficios_db or DEMO_BENEFIT_ID in contenido.beneficios:
-        return contenido
+    """Agrega la presentación C4 de los ejemplos demo que la DB trae y content/ no."""
     beneficios = dict(contenido.beneficios)
-    beneficios[DEMO_BENEFIT_ID] = BeneficioC4(
-        benefit_id=DEMO_BENEFIT_ID,
-        simple_title=DEMO_TITULO,
-        where_to_go=DEMO_DONDE_IR,
-        official_source_id=None,
-        official_url=None,
-    )
+    cambiado = False
+    for bid, pres in _PRESENTACION_DEMO.items():
+        if bid in beneficios_db and bid not in beneficios:
+            beneficios[bid] = BeneficioC4(
+                benefit_id=bid,
+                simple_title=pres.titulo,
+                where_to_go=pres.donde_ir,
+                official_source_id=None,
+                official_url=None,
+            )
+            cambiado = True
+    if not cambiado:
+        return contenido
     return dataclasses.replace(contenido, beneficios=beneficios)
 
 
 def catalogo_texto(cat: CatalogoContenido, db_path) -> CatalogoContenido:
-    """Agrega la entrada de texto del ejemplo demo (modo real y DB con el ID)."""
-    if mock_habilitado() or DEMO_BENEFIT_ID in cat.entradas or not demo_cargado(db_path):
+    """Agrega la entrada de texto de los ejemplos demo (modo real y DB con el ID)."""
+    if mock_habilitado() or not demo_cargado(db_path):
         return cat
     entradas = dict(cat.entradas)
-    entradas[DEMO_BENEFIT_ID] = CatalogEntry(
-        benefit_id=DEMO_BENEFIT_ID,
-        title=DEMO_TITULO,
-        description=DEMO_DESCRIPCION,
-        institution=DEMO_INSTITUCION,
-        where_to_go=DEMO_DONDE_IR,
-        source_id="",
-        source_url="",
-    )
+    cambiado = False
+    for bid, pres in _PRESENTACION_DEMO.items():
+        if bid in entradas:
+            continue
+        entradas[bid] = CatalogEntry(
+            benefit_id=bid,
+            title=pres.titulo,
+            description=pres.descripcion,
+            institution=pres.institucion,
+            where_to_go=pres.donde_ir,
+            source_id="",
+            source_url="",
+        )
+        cambiado = True
+    if not cambiado:
+        return cat
     return dataclasses.replace(cat, entradas=entradas)
 
 
@@ -107,7 +154,14 @@ def _lista_comunas(conn: sqlite3.Connection, regla: sqlite3.Row) -> list | None:
     return valor if isinstance(valor, list) else None
 
 
-def _es_local(conn: sqlite3.Connection, ev: Evaluator, bid: str, comunas: set) -> bool:
+def _es_local(conn: sqlite3.Connection, ev: Evaluator, bid: str,
+              universos: dict[str, set]) -> bool:
+    """``LOCAL`` si todos los grupos OR de la versión vigente restringen el
+    territorio (comuna o región) a una lista que no cubre todo el país.
+
+    ``universos`` mapea cada campo territorial a su conjunto completo de valores
+    (todas las comunas / todas las regiones de la tabla ``comunas``).
+    """
     version = ev.version_vigente(bid)
     if version is None:
         return False
@@ -117,13 +171,15 @@ def _es_local(conn: sqlite3.Connection, ev: Evaluator, bid: str, comunas: set) -
         (version["id_version"],),
     ):
         restringe = False
+        campo = regla["campo_dato"]
         if (
             Repo._vig(regla["vigencia_desde"], regla["vigencia_hasta"], ev.fecha)
-            and regla["campo_dato"] == _CAMPO_COMUNA
+            and campo in _CAMPOS_TERRITORIALES
             and regla["operador"] == "IN"
         ):
             lista = _lista_comunas(conn, regla)
-            restringe = lista is not None and not comunas <= set(lista)
+            universo = universos.get(campo, set())
+            restringe = lista is not None and not universo <= set(lista)
         grupos[regla["grupo_or"]] = grupos.get(regla["grupo_or"], False) or restringe
     return bool(grupos) and all(grupos.values())
 
@@ -137,6 +193,11 @@ def _calcular(db_path: Path, manifest_path: Path) -> list[dict]:
             r[0] for r in conn.execute("SELECT id_beneficio FROM beneficios ORDER BY id_beneficio")
         ]
         comunas = {r[0] for r in conn.execute("SELECT id_comuna FROM comunas")}
+        regiones = {
+            r[0] for r in conn.execute("SELECT DISTINCT region_codigo FROM comunas")
+            if r[0] not in (None, "")
+        }
+        universos = {_CAMPO_COMUNA: comunas, _CAMPO_REGION: regiones}
         ev = Evaluator(conn, fecha)
         contenido = con_overlay(cargar_contenido_c4(manifest_path), beneficios)
         items = []
@@ -146,9 +207,9 @@ def _calcular(db_path: Path, manifest_path: Path) -> list[dict]:
                 raise KeyError("beneficio sin presentación C4")
             items.append({
                 "benefit_id": bid,
-                "scope": LOCAL if _es_local(conn, ev, bid, comunas) else NACIONAL,
+                "scope": LOCAL if _es_local(conn, ev, bid, universos) else NACIONAL,
                 "simple_title": presentacion.simple_title,
-                "demo": bid == DEMO_BENEFIT_ID,
+                "demo": bid in _PRESENTACION_DEMO,
             })
         return items
     finally:

@@ -665,9 +665,19 @@ def test_guion_bedrock_con_snapshot_del_motor_real(monkeypatch):
             body["meta"]["content_bundle_hash"]) == provider.procedencia
 
 
-def test_antecedentes_real_404_y_503():
+def test_antecedentes_real_404_y_reevalua():
+    """B2: con el motor real, declarar antecedentes reevalúa la familia (200).
+
+    La familia inexistente se oculta con 404. Para una familia real, el endpoint
+    ya no falla cerrado (503): traduce lo que el motor sabe usar y devuelve una
+    ``FamiliaDetailEnvelope`` válida. ``has_rsh`` no es declarable al motor, así
+    que la ficha sale del motor sin cambios de elegibilidad por esa vía.
+    """
     import uuid
 
+    from app.api import antecedentes_store
+
+    antecedentes_store.reset()
     cuerpo = {"data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON", "has_rsh": True}
     r = client.post("/api/v1/familias/FAM-SIM-E3-99999/antecedentes", json=cuerpo,
                     headers={"Idempotency-Key": str(uuid.uuid4())})
@@ -675,9 +685,36 @@ def test_antecedentes_real_404_y_503():
     validar_error(r.json())
     r = client.post(f"/api/v1/familias/{_FAMILIA}/antecedentes", json=cuerpo,
                     headers={"Idempotency-Key": str(uuid.uuid4())})
-    assert r.status_code == 503
-    validar_error(r.json())
-    assert r.json()["error"]["retryable"] is True
+    assert r.status_code == 200
+    validar("FamiliaDetailEnvelope", r.json())
+    assert r.json()["data"]["family_id"] == _FAMILIA
+
+
+def test_antecedentes_real_fecha_control_reevalua():
+    """Declarar la fecha del último control de salud reevalúa con el motor.
+
+    Es el único campo de la pantalla que el motor puede usar hoy
+    (``dias_desde_control`` del niño más joven, regla R01203). La respuesta es
+    una ``FamiliaDetailEnvelope`` válida y ningún beneficio sustentado en un dato
+    declarado queda CONFIRMADO (el motor da PRELIMINAR como máximo).
+    """
+    import uuid
+
+    from app.api import antecedentes_store
+
+    antecedentes_store.reset()
+    cuerpo = {
+        "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+        "last_child_health_control_date": "2026-10-01",
+    }
+    r = client.post(f"/api/v1/familias/{_FAMILIA}/antecedentes", json=cuerpo,
+                    headers={"Idempotency-Key": str(uuid.uuid4())})
+    assert r.status_code == 200
+    data = r.json()["data"]
+    validar("FamiliaDetailEnvelope", r.json())
+    for br in data["benefit_results"]:
+        if br["result"] == "SI":
+            assert br["level"] in ("CONFIRMADO", "PRELIMINAR")
 
 
 @pytest.mark.parametrize("path", ["/jardines", "/jardines/JAR-SIM-E3-00001/familias"])

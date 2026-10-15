@@ -54,7 +54,7 @@ Si el mismo campo se declara dos veces, gana el último hecho: la tía puede cor
 | `422` | cuerpo inválido, `Idempotency-Key` ausente o no-UUID, o familia sin datos que declarar |
 | `401` | credencial de demo sin scopes |
 | `404` | familia inexistente o fuera de scope |
-| `503` | motor no disponible |
+| `503` | motor real no disponible con `E3_MOCK=0` (sin DB/precálculo/C4 válidos) |
 
 Nunca `201`: la operación no crea un recurso visible. El `404` **no está en la tabla de la propuesta del Rol 3**: se agregó porque todas las rutas `/familias/{id}` de este backend ocultan la existencia con 404 (API-005). Para el cliente, cuyo `expectedStatus` es 200, cae como error de contrato, que es el comportamiento seguro.
 
@@ -65,7 +65,20 @@ Con `E3_MOCK=1` (modo de la demo) la reevaluación es **simulada, determinista y
 - **sí**: resuelve o conserva `missing_codes` (en el `BenefitResult`, en la `Opportunity` del mismo beneficio y en el contexto), baja el nivel a `PRELIMINAR` y refleja `rsh_band` / `income_band` declarados **con valor conocido** (mismo campo y mismo enum de C3, no una inferencia);
 - **no**: no cambia ningún `result`, no promueve `INDETERMINADO → SI`, no recalcula U/B/V, `score`, `position` ni los `*_score` del contexto, y no borra datos de C1/C2. Esos números son del motor determinista (Rol 1) y del bundle C4; inventarlos sería decidir elegibilidad.
 
-Con `E3_MOCK=0` la ruta responde `503 UNAVAILABLE` (`retryable: true`, que es el reintento manual que espera el Rol 3) en vez de devolver una simulación como si fuera reevaluación real: `FamiliaDetailEnvelope` es cerrado y no tiene dónde avisar que el dato es simulado. El enganche del motor real está en un único punto de `app/api/routers/antecedentes.py`.
+Con `E3_MOCK=0` (B2) la ruta **reevalúa de verdad con el motor determinista** y devuelve una `FamiliaDetailEnvelope` recalculada (elegibilidad, nivel, `missing_codes`, U/B/V, `score`, `position` y oportunidades), reusando la misma maquinaria que el snapshot. De los campos de la pantalla, el **único** que el motor puede convertir en elegibilidad hoy es `last_child_health_control_date`: se transforma en `dias_desde_control` (días hasta la fecha de evaluación, nunca negativo) del niño o niña **más joven** de la familia (menor de 18) y alimenta la regla `R01203` del subsistema SSyO. Un dato declarado nunca da `CONFIRMADO` (el motor da `PRELIMINAR` como máximo). El resto de los campos **no tiene mapeo al motor** y no mueve elegibilidad por esta vía:
+
+- `household_pregnancy` llega como booleano; el motor pide `semanas_gestacion` (número), que no se puede derivar de un sí/no sin inventar;
+- RSH, ingreso, Chile Crece Contigo y SSyO vienen de registros oficiales (no declarables por diseño);
+- discapacidad, terapia, vivienda, empleo, agua y alimentación no existen como `campo_dato` del motor.
+
+Si el motor real no puede operar (sin DB, sin precálculo o sin C4 válido) la ruta falla cerrada con `503 UNAVAILABLE` (`retryable: true`). El enganche vive en un único punto de `app/api/routers/antecedentes.py` (helper `_reevaluar_con_motor`) y la reconstrucción de la ficha en `app/api/motor_real.py` (`reconstruir_familia_declarada`); la traducción pantalla→motor está aislada en `app/api/antecedentes_motor.py`.
+
+> **Nota para la demo (efecto visible de declarar la fecha del control).** Declarar `last_child_health_control_date` **no siempre cambia la ficha**, y eso es correcto, no un fallo del cableado. El motor resuelve `dias_desde_control` por dos caminos (ver `app/engine/resolver.py`, con `SUPONER_CONTROL_VIGENTE=True`, el default):
+>
+> 1. **La familia ya tiene un control infantil vigente en la base.** El motor asume `0 días` por evidencia indirecta y resuelve la regla por su cuenta; el beneficio del control ya daba `SI` (`PRELIMINAR`) sin declaración. En este caso la fecha declarada **no se usa** y la ficha no cambia.
+> 2. **La familia NO tiene ese control vigente en la base.** El dato faltaba y el beneficio estaba en `INDETERMINADO`; aquí la fecha declarada → días lo desbloquea a `SI` (`PRELIMINAR`). En este caso el cambio **sí es visible**.
+>
+> Para mostrar el efecto en la demo, elegir una familia con un niño o niña menor de 18 **sin** control infantil vigente registrado (grupo 2). No es un comportamiento que introduzca B2: es el supuesto preexistente del motor, que ahora decide si una declaración por pantalla tiene efecto observable.
 
 ## Idempotencia, persistencia y logs
 
