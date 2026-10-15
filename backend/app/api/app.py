@@ -22,6 +22,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from app.api.deps import nuevo_request_id
 from app.api.errors import registrar_handlers
 from app.api.routers import (
+    antecedentes,
     catalogo,
     familias,
     genai,
@@ -106,7 +107,9 @@ def crear_app() -> FastAPI:
         )
 
     # --- routers bajo /api/v1 --------------------------------------------
-    for modulo in (jardines, familias, tracking, genai, kpi, catalogo):
+    # ``antecedentes`` es la propuesta del Rol 3 (DEC-039): se sirve, pero NO
+    # está en el contrato C3 1.0.2 que publica /docs (ver PROPUESTA_ANTECEDENTES.md).
+    for modulo in (jardines, familias, antecedentes, tracking, genai, kpi, catalogo):
         app.include_router(modulo.router, prefix=_API_PREFIX)
 
     return app
