@@ -10,6 +10,8 @@
 - Guion y mensaje validan antes contra las oportunidades de la familia
   (DEC-060): un ID ajeno responde 422 sin eco; ASIGNADO se omite con
   ``BENEFICIO_ASIGNADO_OMITIDO`` (422 si no queda ninguno).
+- ``meta`` de guion y mensaje declara la versión y el hash del bundle
+  ``content/`` del catálogo (DEC-062); sin catálogo, los placeholders.
 - La integración del motor (FEAT-001 priority + FEAT-002 filtro) vive detrás de
   la bandera ``E3_MOCK``. Por defecto (``E3_MOCK=1``) todo es mock. Con
   ``E3_MOCK=0`` se intenta tocar la DB; si falta, se degrada a mocks con un
@@ -72,7 +74,10 @@ def get_provider() -> TemplateProvider | None:
             except content_catalog.ContenidoInvalido as exc:
                 _log_sin_catalogo(exc.codigo)
                 return None
-            _provider = TemplateProvider(cat.entradas, cat.plantillas)
+            _provider = TemplateProvider(
+                cat.entradas, cat.plantillas,
+                procedencia=(cat.content_version, cat.content_bundle_hash),
+            )
     return _provider
 
 
@@ -112,9 +117,11 @@ def _validar_para_familia(
     return ids, [WARNING_ASIGNADO_OMITIDO] if len(ids) < len(benefit_ids) else []
 
 
-def _envelope(request_id: str, content: dict, warnings: list[str]) -> dict:
+def _envelope(request_id: str, content: dict, warnings: list[str],
+              procedencia: tuple[str, str] | None) -> dict:
+    """``procedencia``: bundle ``content/`` del texto (DEC-062) o ``None``."""
     return {
-        "meta": construir_meta(request_id),
+        "meta": construir_meta(request_id, contenido=procedencia),
         "provider": TemplateProvider.provider,
         "warnings": warnings,
         "content": content,
@@ -124,12 +131,12 @@ def _envelope(request_id: str, content: dict, warnings: list[str]) -> dict:
 
 def _guion_sin_catalogo(benefit_ids: list[str], request_id: str,
                         warnings: list[str]) -> dict:
-    """Guion fijo sin nombre de ningún beneficio (DEC-058)."""
+    """Guion fijo sin nombre de ningún beneficio (DEC-058); ``meta`` con placeholders."""
     content = {
         "benefit_ids": list(dict.fromkeys(benefit_ids))[:3],
         "script": f"{GUION_SIN_CATALOGO} {DISCLAIMER}",
     }
-    return _envelope(request_id, content, [*warnings, WARNING_SIN_CATALOGO])
+    return _envelope(request_id, content, [*warnings, WARNING_SIN_CATALOGO], None)
 
 
 def generar_guion(benefit_ids: list[str], request_id: str, estados: dict[str, str]) -> dict:
@@ -149,7 +156,7 @@ def generar_guion(benefit_ids: list[str], request_id: str, estados: dict[str, st
         # Invariante roto tras validar: se responde sin texto de beneficios.
         _log_sin_catalogo("INVARIANTE_PLANTILLA")
         return _guion_sin_catalogo(ids, request_id, warnings)
-    return _envelope(request_id, content, warnings)
+    return _envelope(request_id, content, warnings, provider.procedencia)
 
 
 def generar_mensaje(benefit_ids: list[str], request_id: str, estados: dict[str, str]) -> dict:
@@ -175,7 +182,7 @@ def generar_mensaje(benefit_ids: list[str], request_id: str, estados: dict[str, 
         raise ApiError(status_code=503) from None
     if len(content["benefit_ids"]) > len(content["printable_card"]["sections"]):
         warnings = [*warnings, WARNING_SECCION_OMITIDA]
-    return _envelope(request_id, content, warnings)
+    return _envelope(request_id, content, warnings, provider.procedencia)
 
 
 def responder_asistente(question: str, request_id: str) -> dict:

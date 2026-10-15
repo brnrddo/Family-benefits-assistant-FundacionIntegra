@@ -355,15 +355,27 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   invariante rota, las rutas responden los mocks (nunca 500) y el log registra
   `runtime_degradado_a_mock: motivo=<CODIGO>` (`DB_AUSENTE`,
   `PRECALCULO_AUSENTE`, `DB_ILEGIBLE`, `C4_INVALIDO`, `INVARIANTE_MOTOR`).
-  El fallo se registra una vez y no se reintenta hasta que cambie la DB o el
-  manifest C4 (mtime o tamaño).
+  El fallo se registra una vez y no se reintenta hasta que cambie la DB, el
+  manifest C4 o cualquier archivo de su `files[]` (mtime o tamaño; propuesta
+  DEC-063): corregir un archivo de `content/` recupera el motor real sin
+  reiniciar, y editarlo reconstruye el snapshot (los cursores previos dan 422).
 - **`why_first`:** frase fija por estado de acceso, con la forma "podría
   calificar… / vale la pena consultar…" (fuente funcional §2.4.2) y sin cifras.
 - **Front:** con la API en `:8000`, desde `frontend/` usa `npm run dev:api` y
   `npm run check:api -- http://127.0.0.1:8000/api/v1`. En otro puerto, exporta
   `$env:BRUJULA_DEV_API_PROXY='http://127.0.0.1:<puerto>'`.
-- `meta` mantiene `snapshot_id`/hashes constantes de demo (el front compara
-  `snapshot_id`); los hashes reales quedan pendientes.
+- `meta` (propuesta DEC-062): `content_version` y `content_bundle_hash` son los
+  del bundle `content/` que produjo la respuesta: el del snapshot en las rutas
+  del motor real (jardines, familias, contexto, oportunidades y conversaciones)
+  y el del catálogo en `/guion` y `/mensaje` (en ambos modos). Mocks, KPI,
+  preevaluación, afiche, antecedentes y el guion sin catálogo conservan los
+  placeholders `0.1.0`/`0…0` (el asistente no lleva `meta`). `snapshot_id` sigue constante (el
+  front lo compara) y `eligibility_bundle_hash` sigue como placeholder
+  (PREG-066).
+- Guion y mensaje validan los `benefit_ids` contra las oportunidades de esa
+  familia en ambos modos (DEC-060): ajeno → 422 sin eco, ASIGNADO omitido con
+  `BENEFICIO_ASIGNADO_OMITIDO` y frase por estado del Rol 4 para GESTION_* y
+  SIN_CUPO.
 
 > Estado AWS: `NO_VERIFICADO`. No hay Cognito real; la autorización por scope es
 > un stub de demo por header (`X-Demo-Scopes`): la API local no tiene

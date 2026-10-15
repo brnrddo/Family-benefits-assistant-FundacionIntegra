@@ -12,6 +12,11 @@ from app.api.runtime import warnings_runtime
 router = APIRouter(tags=["jardines"])
 
 
+def _meta_real(request: Request, snap: motor_real.MotorSnapshot) -> dict:
+    """``meta`` con el bundle ``content/`` del snapshot (DEC-062)."""
+    return construir_meta(request.state.request_id, contenido=motor_real.procedencia(snap))
+
+
 @router.get("/jardines")
 def list_jardines(
     request: Request,
@@ -26,7 +31,7 @@ def list_jardines(
         todos = [motor_real.resumen_jardin(snap, g, conversadas) for g in snap.orden_jardines]
         items, siguiente = motor_real.paginar(snap, todos, limit, cursor)
         return {
-            "meta": construir_meta(request.state.request_id),
+            "meta": _meta_real(request, snap),
             "items": items,
             "next_cursor": siguiente,
         }
@@ -61,7 +66,7 @@ def list_familias_by_jardin(
         ]
         items, siguiente = motor_real.paginar(snap, todas, limit, cursor)
         return {
-            "meta": construir_meta(request.state.request_id),
+            "meta": _meta_real(request, snap),
             "items": items,
             "next_cursor": siguiente,
         }

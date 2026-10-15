@@ -54,9 +54,12 @@ def create_conversacion(
 ) -> dict:
     # Existencia y jardín desde UN mismo snapshot (motor real si está activo; si
     # no, el mock): si la DB cambia entre medio, nunca se mezclan fuentes.
-    garden_id = motor_real.garden_de(motor_real.obtener_snapshot(), id)
+    snap = motor_real.obtener_snapshot()
+    garden_id = motor_real.garden_de(snap, id)
     if garden_id is None:
         raise ApiError(status_code=404)
+    # Con el motor real, meta declara el bundle content/ del snapshot (DEC-062).
+    meta = construir_meta(request.state.request_id, contenido=motor_real.procedencia(snap))
 
     bhash = _body_hash(body)
 
@@ -67,7 +70,7 @@ def create_conversacion(
             if prev_hash != bhash:
                 # Misma clave, body distinto: conflicto de idempotencia.
                 raise ApiError(status_code=409)
-            return {"meta": construir_meta(request.state.request_id), "data": record}
+            return {"meta": meta, "data": record}
 
         record = {
             "conversation_id": str(uuid.uuid4()),
@@ -82,4 +85,4 @@ def create_conversacion(
             "status": "CONFIRMED",
         }
         _IDEMPOTENCIA[idempotency_key] = (bhash, record)
-    return {"meta": construir_meta(request.state.request_id), "data": record}
+    return {"meta": meta, "data": record}

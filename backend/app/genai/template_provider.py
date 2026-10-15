@@ -327,10 +327,14 @@ class TemplateProvider:
     provider = PROVIDER
 
     def __init__(self, catalogo: dict[str, CatalogEntry],
-                 plantillas: PlantillasTexto | None = None):
+                 plantillas: PlantillasTexto | None = None, *,
+                 procedencia: tuple[str, str] | None = None):
         # Catálogo indexado por benefit_id (ya autorizado y validado por C4).
         self._catalogo = dict(catalogo)
         self._plantillas = plantillas or PLANTILLAS_NEUTRAS
+        # (content_version, content_bundle_hash) del bundle del catálogo, para
+        # ``meta`` (DEC-062); ``None`` si el catálogo no viene de ``content/``.
+        self.procedencia = procedencia
 
     # -- catálogo -----------------------------------------------------------
 
