@@ -1,22 +1,57 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:brujula:c0:mapeo-ficha:v1",
-  "title": "C0 Mapeo de ficha v1",
+  "$id": "urn:brujula:c0:mapeo-ficha:v2",
+  "title": "C0 Mapeo de ficha v2",
+  "description": "Metadatos de la plantilla vacía. Migración in-place aprobada por DEC-023; no existe runtime consumidor. permitido_llm es revisión, no autorización.",
   "type": "array",
   "minItems": 1,
   "items": {
     "type": "object",
     "additionalProperties": false,
-    "required": ["campo_origen", "nivel_privacidad", "campo_motor", "uso", "tipo", "permitido_llm", "justificacion", "responsable_revision"],
+    "required": ["mapping_scope", "form_id", "form_version", "page", "section", "field_id", "field_label", "stage", "requiredness", "availability", "data_type", "allowed_values_or_rule", "classification", "destinations", "normalization", "permitido_llm", "justification", "validation_status", "responsable_revision"],
     "properties": {
-      "campo_origen": {"type": "string", "minLength": 1, "maxLength": 120},
-      "nivel_privacidad": {"enum": ["PERMITIDO_MOTOR", "CONTEXTO_MINIMO_LLM", "LOCAL_TIA", "TOTALMENTE_EXCLUIDO"]},
-      "campo_motor": {"type": ["string", "null"], "maxLength": 120},
-      "uso": {"enum": ["MOTOR", "CONTEXTO_TIA", "FORMATO", "PREGUNTA", "EXCLUIDO"]},
-      "tipo": {"enum": ["BOOLEAN", "INTEGER", "NUMBER", "STRING", "DATE", "ENUM", "RANGE", "NONE"]},
-      "permitido_llm": {"type": "boolean", "description": "Metadato de revisión; no autoriza uso runtime."},
-      "justificacion": {"type": "string", "minLength": 1, "maxLength": 500},
-      "responsable_revision": {"type": "string", "minLength": 1, "maxLength": 80}
-    }
+      "mapping_scope": {"const": "EMPTY_TEMPLATE_METADATA_NO_PERSON_VALUES"},
+      "form_id": {"const": "INTEGRA_FICHA_INSCRIPCION_MATRICULA"},
+      "form_version": {"const": "2019"},
+      "page": {"enum": [1, 2, 3, "1", "2", "3"]},
+      "section": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_]{0,79}$"},
+      "field_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,119}$"},
+      "field_label": {"type": "string", "minLength": 1, "maxLength": 180},
+      "stage": {"enum": ["INSCRIPCION_INICIAL", "MATRICULA"]},
+      "requiredness": {"enum": ["REQUIRED_FOR_STAGE", "OPTIONAL_FOR_STAGE", "NOT_APPLICABLE_IN_STAGE", "PENDING_VALIDATION_INTEGRA"]},
+      "availability": {"enum": ["AVAILABLE_AT_INSCRIPTION", "AVAILABLE_AFTER_ENROLLMENT_EVENT", "NEVER_CAPTURE_IN_DEMO"]},
+      "data_type": {"enum": ["BOOLEAN", "INTEGER", "NUMBER", "DATE", "ENUM", "RANGE", "ROLE_AGE_LIST", "COUNT", "STRING", "NONE"]},
+      "allowed_values_or_rule": {"type": "string", "minLength": 1, "maxLength": 240},
+      "classification": {"enum": ["PERMITIDO_MOTOR", "CONTEXTO_MINIMO_LLM_DERIVADO", "LOCAL_TIA", "TOTALMENTE_EXCLUIDO"]},
+      "destinations": {"enum": ["C2_CONTEXT", "ENGINE_FACT", "LLM_CONTEXT_V1_DERIVATION", "C2_CONTEXT|ENGINE_FACT", "C2_CONTEXT|LLM_CONTEXT_V1_DERIVATION", "ENGINE_FACT|LLM_CONTEXT_V1_DERIVATION", "C2_CONTEXT|ENGINE_FACT|LLM_CONTEXT_V1_DERIVATION", "LOCAL_TIA_ONLY", "NONE"]},
+      "normalization": {"type": "string", "minLength": 1, "maxLength": 240},
+      "permitido_llm": {"enum": [true, false, "true", "false"], "description": "Booleano JSON o representación CSV equivalente. Metadato de revisión; jamás habilita runtime ni amplía LlmContextV1."},
+      "justification": {"type": "string", "minLength": 1, "maxLength": 500},
+      "validation_status": {"enum": ["PENDIENTE_VALIDACION_INTEGRA", "VALIDADO_INTEGRA"]},
+      "responsable_revision": {"type": "string", "pattern": "^[A-Z0-9_]{2,80}$"}
+    },
+    "allOf": [
+      {
+        "if": {"properties": {"page": {"enum": [1, 2, "1", "2"]}}},
+        "then": {"properties": {"stage": {"const": "INSCRIPCION_INICIAL"}}},
+        "else": {"properties": {"stage": {"const": "MATRICULA"}}}
+      },
+      {
+        "if": {"properties": {"classification": {"const": "TOTALMENTE_EXCLUIDO"}}},
+        "then": {"properties": {"availability": {"const": "NEVER_CAPTURE_IN_DEMO"}, "destinations": {"const": "NONE"}, "permitido_llm": {"enum": [false, "false"]}}}
+      },
+      {
+        "if": {"properties": {"classification": {"const": "LOCAL_TIA"}}},
+        "then": {"properties": {"destinations": {"const": "LOCAL_TIA_ONLY"}, "permitido_llm": {"enum": [false, "false"]}}}
+      },
+      {
+        "if": {"properties": {"classification": {"const": "CONTEXTO_MINIMO_LLM_DERIVADO"}}},
+        "then": {"properties": {"destinations": {"pattern": "(^|\\|)LLM_CONTEXT_V1_DERIVATION($|\\|)"}, "permitido_llm": {"enum": [true, "true"]}}}
+      },
+      {
+        "if": {"properties": {"classification": {"const": "PERMITIDO_MOTOR"}}},
+        "then": {"properties": {"destinations": {"enum": ["C2_CONTEXT", "ENGINE_FACT", "C2_CONTEXT|ENGINE_FACT"]}, "permitido_llm": {"enum": [false, "false"]}}}
+      }
+    ]
   }
 }

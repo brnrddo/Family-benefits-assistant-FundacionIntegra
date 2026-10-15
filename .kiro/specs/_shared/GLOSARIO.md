@@ -1,11 +1,13 @@
 # Glosario compartido
 
 - **C0–C4:** contratos documentales únicos entre roles; aún no son contratos runtime implementados.
-- **C0 / mapeo de ficha:** clasificación de campos sin valores personales. `permitido_llm` es metadato, no autorización runtime.
+- **C0 / mapeo de ficha v2:** metadatos de la plantilla vacía por versión/página/sección/etapa/clase/destino, sin respuestas. Es gate documental para altas nuevas. `permitido_llm` no autoriza runtime.
 - **C1 / salida del motor:** resultado determinista por familia sintética y beneficio, con nivel y traza.
-- **C2 / contexto familiar:** hechos tipados para motor/UI. No equivale al contexto permitido para IA.
-- **C3 / API:** OpenAPI versionada bajo `/api/v1`, con requests públicos mínimos y respuestas funcionales cerradas; autoridad para mocks y consumidores. Los envelopes Bedrock son internos y no son cuerpos públicos.
-- **C4 / contenido:** manifiesto versionado de pesos, equivalencias, preguntas, copy, prompts y accesibilidad.
+- **C2 / contexto familiar y expediente v2:** hechos tipados para motor/UI y un `form_record_id` único con páginas `[1,2,3]` y dos etapas. No equivale al contexto permitido para IA.
+- **C3 / API 2.0.0:** única OpenAPI bajo `/api/v2`, sin aliases, con ciclo cerrado de expediente/gate/reevaluación y demás respuestas funcionales. Los envelopes Bedrock son internos, no cuerpos públicos.
+- **C4 / contenido:** manifiesto versionado de pesos, equivalencias, preguntas, copy, prompts y accesibilidad; preguntas/copy pueden etiquetarse por etapa, pero C4 no decide gate ni elegibilidad.
+- **`INSCRIPCION_INICIAL`:** páginas 1–2; solo `COMPLETA` habilita alta y primera preevaluación de una familia nueva.
+- **`MATRICULA`:** página 3 del mismo expediente; diferida al inicio y obligatoria al concretar matrícula.
 - **LlmContextV1:** única allowlist estructural de contexto que puede entrar a una operación Bedrock de texto.
 - **E-3:** dataset público y completamente sintético descrito en [`data/README.md`](../../../data/README.md).
 - **Resultado ternario:** `SI`, `NO` o `INDETERMINADO`; `NO_APLICA` representa ausencia de versión vigente.

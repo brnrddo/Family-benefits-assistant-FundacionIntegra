@@ -37,10 +37,13 @@ WHEN se publica un snapshot, THE SYSTEM MUST validar 500×20 resultados Demo, ha
 ### PROD-014 — Cierre operativo reproducible (§17)
 BEFORE declarar terminado el MVP, THE SYSTEM MUST disponer de un comando equivalente a `make setup && make run`, precalcular 10.000 evaluaciones en menos de 30 segundos en el ambiente documentado y explicar en el README futuro arquitectura, ejecución y supuestos de datos faltantes, incluida la desactivación inicial de la ventana.
 
+### PROD-015 — Alta por ficha obligatoria y expediente por etapas (Adenda y DEC-023)
+WHEN se crea una familia nueva, THE SYSTEM MUST mantener un único expediente de la Ficha de Inscripción y Matrícula formato declarado 2019 con exactamente tres páginas; `INSCRIPCION_INICIAL` MUST comprender páginas `[1,2]` y estar `COMPLETA` antes de crear/evaluar la familia. `MATRICULA` MUST conservar página `[3]` en el mismo `form_record_id`, inicialmente `NO_DISPONIBLE_AUN`, habilitarla solo por evento autorizado y exigirla `COMPLETA` al concretar matrícula. RSH MUST complementar/corroborar y MUST NOT sustituir el gate.
+
 ## SHOULD
 
-### PROD-011 — Familia nueva y mensaje (§§3, 9.2, 10)
-WHEN la tía completa una ficha digital sintética con “No sé”, THE SYSTEM SHOULD crear hechos `DECLARADO`, preevaluación `PRELIMINAR` y vista previa para copiar a WhatsApp o imprimir; la tarjeta MUST cruzar C3 como campos estructurados y renderizarse con una plantilla propia, nunca como markup generado; THE SYSTEM MUST NOT enviar WhatsApp automáticamente.
+### PROD-011 — Vista previa de mensaje para la familia (§§3, 9.2)
+WHEN existe una evaluación autorizada, THE SYSTEM SHOULD crear una vista previa para copiar a WhatsApp o imprimir; la tarjeta MUST cruzar C3 como campos estructurados y renderizarse con una plantilla propia, nunca como markup generado; THE SYSTEM MUST NOT enviar WhatsApp automáticamente.
 
 ### PROD-012 — Asistente y accesibilidad (§§3, 9, 14)
 WHEN se consulta información general, THE SYSTEM SHOULD responder desde catálogo/fuentes con fallback; Polly/Translate SHOULD ser recuperables y una consulta individual MUST volver al motor sin Bedrock.

@@ -1,18 +1,164 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:brujula:c2:contexto-familia:v1",
-  "title": "C2 Contexto familiar v1",
+  "$id": "urn:brujula:c2:contexto-familia:v2",
+  "title": "C2 Contexto familiar y expediente v2",
+  "description": "Migración in-place aprobada por DEC-023. Modela un expediente sintético de tres páginas y dos etapas; no es LLM-safe. x-c0-field-crosswalk es la autoridad cerrada del handoff para todo field_id con destino C2_CONTEXT.",
+  "x-c0-field-crosswalk": {
+    "p1.admin.garden_reference": "scope.garden_reference",
+    "p1.child.age": "child.age",
+    "p1.nee.possible_disability": "child.possible_disability",
+    "p1.siblings.under_6": "siblings.under_6",
+    "p1.siblings.6_14": "siblings.6_14",
+    "p1.siblings.15_18": "siblings.15_18",
+    "p1.household.roles_ages": "composition",
+    "p1.household.day_caregiver": "household.day_caregiver",
+    "p1.child.health_coverage_band": "child.health_coverage_band",
+    "p1.mother.education_format_signal": "adult.mother.education_format_signal",
+    "p1.mother.formal_employment": "adult.mother.formal_employment",
+    "p1.mother.age": "adult.mother.age",
+    "p1.mother.household_head_signal": "adult.mother.household_head_signal",
+    "p1.father.education_format_signal": "adult.father.education_format_signal",
+    "p1.father.formal_employment": "adult.father.formal_employment",
+    "p1.father.age": "adult.father.age",
+    "p1.father.household_head_signal": "adult.father.household_head_signal",
+    "p1.guardian.education_format_signal": "adult.guardian.education_format_signal",
+    "p1.guardian.formal_employment": "adult.guardian.formal_employment",
+    "p1.guardian.age": "adult.guardian.age",
+    "p1.guardian.household_head_signal": "adult.guardian.household_head_signal",
+    "p2.mother.household_head_continuation": "adult.mother.household_head_signal",
+    "p2.father.household_head_continuation": "adult.father.household_head_signal",
+    "p2.guardian.household_head_continuation": "adult.guardian.household_head_signal",
+    "p2.rsh.has_registry": "rsh.has_registry",
+    "p2.rsh.band": "rsh.band",
+    "p2.housing.camp_occupation": "housing.camp_occupation",
+    "p2.housing.room_other_home": "housing.room_other_home",
+    "p2.housing.serviu_status": "housing.serviu_status",
+    "p2.housing.tenure": "housing.tenure",
+    "p2.housing.sanitation": "housing.sanitation",
+    "p2.housing.electricity": "housing.electricity",
+    "p2.housing.water_difficulty": "household.water_payment_difficulty",
+    "p2.housing.bedroom_count": "housing.bedroom_count",
+    "p2.household.roles_ages": "composition",
+    "p2.income.band": "income.household_band",
+    "p2.benefits.access_flags": "benefits.access_flags",
+    "p2.priority.cse_score": "priority.cse_score",
+    "p3.nee.flag": "child.possible_disability",
+    "p3.health.pregnancy_flag": "household.pregnancy",
+    "p3.coverage.health_band": "child.enrollment_health_coverage_band"
+  },
+  "x-c0-many-to-one-policy-v1": {
+    "description": "Política versionada y determinista para todo destino C2 con más de un field_id fuente en x-c0-field-crosswalk. Conserva un hecho por field_id fuente con su procedencia; el hecho efectivo se deriva por fórmula versionada y nunca sobrescribe ni elige en silencio. Ante respuestas incompatibles o ambiguas cierra a valor nulo, estado_dato DESCONOCIDO y registra la inconsistencia; en no_informado agrega el campo destino. UNKNOWN de una fuente nunca se convierte a false ni 0. El orden de página o de llegada jamás resuelve el valor efectivo.",
+    "validation_status": "PENDIENTE_VALIDACION_INTEGRA",
+    "policy_version": "C0-MANY-TO-ONE-V1",
+    "unknown_token": "UNKNOWN",
+    "rules": [
+      {
+        "target": "composition",
+        "sources": ["p1.household.roles_ages", "p2.household.roles_ages"],
+        "formula_id": "COMPOSITION-COMBINE-V1",
+        "combination": "EQUAL_OR_SINGLE_ANSWERED",
+        "inconsistency_code": "COMPOSITION_MISMATCH",
+        "table": [
+          {"when": "ambos UNKNOWN", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=composition"},
+          {"when": "solo p1 respondida", "result": "valor=p1, estado_dato segun fuente"},
+          {"when": "solo p2 respondida", "result": "valor=p2, estado_dato segun fuente"},
+          {"when": "ambas respondidas e iguales", "result": "valor=comun, estado_dato segun fuentes"},
+          {"when": "ambas respondidas y distintas", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=composition, inconsistencia=COMPOSITION_MISMATCH"}
+        ]
+      },
+      {
+        "target": "adult.mother.household_head_signal",
+        "sources": ["p1.mother.household_head_signal", "p2.mother.household_head_continuation"],
+        "formula_id": "HOUSEHOLD-HEAD-SIGNAL-COMBINE-V1",
+        "combination": "EQUAL_OR_SINGLE_ANSWERED",
+        "inconsistency_code": "HOUSEHOLD_HEAD_SIGNAL_MISMATCH",
+        "attribute_facts_separados": true,
+        "table": [
+          {"when": "ambos UNKNOWN", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.mother.household_head_signal"},
+          {"when": "solo pagina 1 respondida", "result": "valor=p1"},
+          {"when": "solo continuacion pagina 2 respondida", "result": "valor=p2"},
+          {"when": "ambas respondidas e iguales", "result": "valor=comun"},
+          {"when": "ambas respondidas y distintas (true/false)", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.mother.household_head_signal, inconsistencia=HOUSEHOLD_HEAD_SIGNAL_MISMATCH"}
+        ]
+      },
+      {
+        "target": "adult.father.household_head_signal",
+        "sources": ["p1.father.household_head_signal", "p2.father.household_head_continuation"],
+        "formula_id": "HOUSEHOLD-HEAD-SIGNAL-COMBINE-V1",
+        "combination": "EQUAL_OR_SINGLE_ANSWERED",
+        "inconsistency_code": "HOUSEHOLD_HEAD_SIGNAL_MISMATCH",
+        "attribute_facts_separados": true,
+        "table": [
+          {"when": "ambos UNKNOWN", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.father.household_head_signal"},
+          {"when": "solo pagina 1 respondida", "result": "valor=p1"},
+          {"when": "solo continuacion pagina 2 respondida", "result": "valor=p2"},
+          {"when": "ambas respondidas e iguales", "result": "valor=comun"},
+          {"when": "ambas respondidas y distintas (true/false)", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.father.household_head_signal, inconsistencia=HOUSEHOLD_HEAD_SIGNAL_MISMATCH"}
+        ]
+      },
+      {
+        "target": "adult.guardian.household_head_signal",
+        "sources": ["p1.guardian.household_head_signal", "p2.guardian.household_head_continuation"],
+        "formula_id": "HOUSEHOLD-HEAD-SIGNAL-COMBINE-V1",
+        "combination": "EQUAL_OR_SINGLE_ANSWERED",
+        "inconsistency_code": "HOUSEHOLD_HEAD_SIGNAL_MISMATCH",
+        "attribute_facts_separados": true,
+        "table": [
+          {"when": "ambos UNKNOWN", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.guardian.household_head_signal"},
+          {"when": "solo pagina 1 respondida", "result": "valor=p1"},
+          {"when": "solo continuacion pagina 2 respondida", "result": "valor=p2"},
+          {"when": "ambas respondidas e iguales", "result": "valor=comun"},
+          {"when": "ambas respondidas y distintas (true/false)", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=adult.guardian.household_head_signal, inconsistencia=HOUSEHOLD_HEAD_SIGNAL_MISMATCH"}
+        ]
+      },
+      {
+        "target": "child.possible_disability",
+        "sources": ["p1.nee.possible_disability", "p3.nee.flag"],
+        "formula_id": "POSSIBLE-DISABILITY-COMBINE-V1",
+        "combination": "EQUAL_OR_SINGLE_ANSWERED",
+        "inconsistency_code": "POSSIBLE_DISABILITY_MISMATCH",
+        "attribute_facts_separados": true,
+        "note": "p1 pertenece a INSCRIPCION_INICIAL y p3 a MATRICULA; una llegada posterior en pagina 3 no sustituye la pagina 1 por orden, se combina por igualdad.",
+        "table": [
+          {"when": "ambos UNKNOWN", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=child.possible_disability"},
+          {"when": "solo pagina 1 respondida", "result": "valor=p1"},
+          {"when": "solo pagina 3 respondida", "result": "valor=p3"},
+          {"when": "ambas respondidas e iguales", "result": "valor=comun"},
+          {"when": "ambas respondidas y distintas (true/false)", "result": "valor=null, estado_dato=DESCONOCIDO, no_informado+=child.possible_disability, inconsistencia=POSSIBLE_DISABILITY_MISMATCH"}
+        ]
+      }
+    ]
+  },
+  "x-housing-type-derivation-v1": {
+    "description": "Fórmula determinista provisional. Conserva ambos hechos fuente y nunca infiere ADEQUATE u OTHER. Solo dos combinaciones inequívocas producen un tipo; conflicto, doble falso o cualquier UNKNOWN resultan en valor nulo y estado_dato DESCONOCIDO.",
+    "validation_status": "PENDIENTE_VALIDACION_INTEGRA",
+    "inputs": ["housing.camp_occupation", "housing.room_other_home"],
+    "output": "housing.type",
+    "formula_id": "HOUSING-TYPE-V1",
+    "table": [
+      {"camp_occupation": true, "room_other_home": false, "result": "CAMP_OR_OCCUPATION"},
+      {"camp_occupation": false, "room_other_home": true, "result": "ROOM_IN_OTHER_HOME"},
+      {"camp_occupation": false, "room_other_home": false, "result": null},
+      {"camp_occupation": true, "room_other_home": true, "result": null},
+      {"camp_occupation": true, "room_other_home": "UNKNOWN", "result": null},
+      {"camp_occupation": false, "room_other_home": "UNKNOWN", "result": null},
+      {"camp_occupation": "UNKNOWN", "room_other_home": true, "result": null},
+      {"camp_occupation": "UNKNOWN", "room_other_home": false, "result": null},
+      {"camp_occupation": "UNKNOWN", "room_other_home": "UNKNOWN", "result": null}
+    ]
+  },
   "type": "object",
   "additionalProperties": false,
-  "required": ["data_classification", "id_familia", "fuente", "hechos", "procedencia", "inconsistencias", "no_informado", "senales_urgencia", "senales_vulnerabilidad", "formato_preferido", "idioma_mensaje"],
+  "required": ["data_classification", "id_familia", "fuente", "form_record", "hechos", "procedencia", "inconsistencias", "no_informado", "senales_urgencia", "senales_vulnerabilidad", "formato_preferido", "idioma_mensaje"],
   "properties": {
     "data_classification": {"const": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON"},
     "id_familia": {"$ref": "#/$defs/id"},
     "fuente": {"enum": ["FICHA_SINTETICA", "FICHA_DIGITAL"]},
-    "hechos": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/hecho"}},
-    "procedencia": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/procedencia"}},
+    "form_record": {"$ref": "#/$defs/formRecord"},
+    "hechos": {"type": "array", "maxItems": 80, "items": {"$ref": "#/$defs/hecho"}},
+    "procedencia": {"type": "array", "maxItems": 80, "items": {"$ref": "#/$defs/procedencia"}},
     "inconsistencias": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/inconsistencia"}},
-    "no_informado": {"type": "array", "uniqueItems": true, "maxItems": 20, "items": {"$ref": "#/$defs/campo"}},
+    "no_informado": {"type": "array", "uniqueItems": true, "maxItems": 50, "items": {"$ref": "#/$defs/campo"}},
     "senales_urgencia": {"$ref": "#/$defs/senalesUrgencia"},
     "senales_vulnerabilidad": {"$ref": "#/$defs/senalesVulnerabilidad"},
     "formato_preferido": {"enum": ["TEXTO", "VISUAL", "AUDIO"]},
@@ -20,174 +166,107 @@
   },
   "$defs": {
     "id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Z0-9][A-Z0-9_-]*$"},
+    "formRecordId": {"type": "string", "pattern": "^FORM-SIM-[A-Z0-9_-]{1,60}$", "maxLength": 80},
+    "formRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["form_record_id", "form_id", "form_version", "validation_status", "record_version", "pages", "stages"],
+      "properties": {
+        "form_record_id": {"$ref": "#/$defs/formRecordId"},
+        "form_id": {"const": "INTEGRA_FICHA_INSCRIPCION_MATRICULA"},
+        "form_version": {"const": "2019"},
+        "validation_status": {"const": "PENDIENTE_VALIDACION_INTEGRA"},
+        "record_version": {"type": "integer", "minimum": 1},
+        "pages": {"const": [1, 2, 3]},
+        "stages": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["stage", "pages", "status"],
+              "properties": {
+                "stage": {"const": "INSCRIPCION_INICIAL"},
+                "pages": {"const": [1, 2]},
+                "status": {"enum": ["BORRADOR", "COMPLETA"]}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["stage", "pages", "status"],
+              "properties": {
+                "stage": {"const": "MATRICULA"},
+                "pages": {"const": [3]},
+                "status": {"enum": ["NO_DISPONIBLE_AUN", "PENDIENTE", "COMPLETA"]}
+              }
+            }
+          ]
+        }
+      }
+    },
     "campo": {
-      "enum": [
-        "composition",
-        "child.age",
-        "siblings.under_6",
-        "siblings.6_14",
-        "siblings.15_18",
-        "rsh.has_registry",
-        "rsh.band",
-        "income.per_capita_band",
-        "ssyo.participation",
-        "chile_crece_contigo.access",
-        "child.last_health_control_date",
-        "child.possible_disability",
-        "child.in_therapy",
-        "housing.type",
-        "household.pregnancy",
-        "household.has_adult_over_65",
-        "household.formal_employment_or_pension",
-        "household.water_payment_difficulty",
-        "household.food_purchase_difficulty"
-      ]
+      "enum": ["scope.garden_reference", "composition", "child.age", "siblings.under_6", "siblings.6_14", "siblings.15_18", "housing.bedroom_count", "housing.serviu_status", "housing.tenure", "housing.sanitation", "housing.electricity", "rsh.has_registry", "rsh.band", "income.household_band", "income.per_capita_band", "benefits.access_flags", "priority.cse_score", "ssyo.participation", "chile_crece_contigo.access", "child.last_health_control_date", "child.possible_disability", "child.health_coverage_band", "child.enrollment_health_coverage_band", "child.in_therapy", "housing.camp_occupation", "housing.room_other_home", "housing.type", "household.pregnancy", "household.has_adult_over_65", "household.formal_employment_or_pension", "household.water_payment_difficulty", "household.food_purchase_difficulty", "household.day_caregiver", "adult.mother.education_format_signal", "adult.mother.age", "adult.mother.sex_signal", "adult.mother.formal_employment", "adult.mother.household_head_signal", "adult.mother.disability_flag", "adult.father.education_format_signal", "adult.father.age", "adult.father.sex_signal", "adult.father.formal_employment", "adult.father.household_head_signal", "adult.father.disability_flag", "adult.guardian.education_format_signal", "adult.guardian.age", "adult.guardian.sex_signal", "adult.guardian.formal_employment", "adult.guardian.household_head_signal", "adult.guardian.disability_flag"]
     },
     "estadoDato": {"enum": ["OBSERVADO", "DECLARADO", "DESCONOCIDO", "NO_APLICA"]},
     "miembroComposicion": {
       "type": "object",
       "additionalProperties": false,
       "required": ["rol", "edad"],
+      "properties": {"rol": {"enum": ["ADULTA_REFERENCIA", "NINO_JARDIN", "OTRO_ADULTO"]}, "edad": {"type": "integer", "minimum": 0, "maximum": 120}}
+    },
+    "hechoBase": {
+      "type": "object",
+      "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"],
       "properties": {
-        "rol": {"enum": ["ADULTA_REFERENCIA", "NINO_JARDIN", "OTRO_ADULTO"]},
-        "edad": {"type": "integer", "minimum": 0, "maximum": 120}
+        "fact_id": {"$ref": "#/$defs/id"},
+        "campo": {"$ref": "#/$defs/campo"},
+        "estado_dato": {"$ref": "#/$defs/estadoDato"},
+        "acreditada": {"type": "boolean"}
       }
     },
     "hecho": {
       "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "composition"},
-            "valor": {"type": ["array", "null"], "maxItems": 20, "items": {"$ref": "#/$defs/miembroComposicion"}},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "child.age"},
-            "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 120},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"enum": ["siblings.under_6", "siblings.6_14", "siblings.15_18"]},
-            "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 30},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"enum": ["rsh.has_registry", "ssyo.participation", "chile_crece_contigo.access", "child.possible_disability", "child.in_therapy", "household.pregnancy", "household.has_adult_over_65", "household.formal_employment_or_pension", "household.water_payment_difficulty", "household.food_purchase_difficulty"]},
-            "valor": {"type": ["boolean", "null"]},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "rsh.band"},
-            "valor": {"type": ["integer", "null"], "enum": [40, 50, 60, 70, 80, 90, 100, null]},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "income.per_capita_band"},
-            "valor": {"type": ["string", "null"], "enum": ["UNDER_110K", "110K_250K", "250K_400K", "OVER_400K", null]},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "child.last_health_control_date"},
-            "valor": {"type": ["string", "null"], "format": "date", "maxLength": 10},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["campo", "valor", "estado_dato", "acreditada"],
-          "properties": {
-            "campo": {"const": "housing.type"},
-            "valor": {"type": ["string", "null"], "enum": ["ADEQUATE", "CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME", "OTHER", "UNKNOWN", null]},
-            "estado_dato": {"$ref": "#/$defs/estadoDato"},
-            "acreditada": {"type": "boolean"}
-          }
-        }
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "composition"}, "valor": {"type": ["array", "null"], "maxItems": 20, "items": {"$ref": "#/$defs/miembroComposicion"}}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "child.age"}, "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 120}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["siblings.under_6", "siblings.6_14", "siblings.15_18", "housing.bedroom_count"]}, "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 30}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["rsh.has_registry", "ssyo.participation", "chile_crece_contigo.access", "child.possible_disability", "child.in_therapy", "household.pregnancy", "household.has_adult_over_65", "household.formal_employment_or_pension", "household.water_payment_difficulty", "household.food_purchase_difficulty", "household.day_caregiver", "housing.camp_occupation", "housing.room_other_home"]}, "valor": {"type": ["boolean", "null"]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "rsh.band"}, "valor": {"type": ["integer", "null"], "enum": [40, 50, 60, 70, 80, 90, 100, null]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "scope.garden_reference"}, "valor": {"oneOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["income.household_band", "income.per_capita_band"]}, "valor": {"type": ["string", "null"], "enum": ["UNDER_110K", "110K_250K", "250K_400K", "OVER_400K", null]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "priority.cse_score"}, "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 34}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["child.health_coverage_band", "child.enrollment_health_coverage_band", "housing.serviu_status", "housing.tenure", "housing.sanitation", "housing.electricity", "benefits.access_flags"]}, "valor": {"const": null}, "estado_dato": {"const": "DESCONOCIDO"}, "acreditada": {"const": false}}},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "child.last_health_control_date"}, "valor": {"type": ["string", "null"], "format": "date", "maxLength": 10}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["adult.mother.age", "adult.father.age", "adult.guardian.age"]}, "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 120}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["adult.mother.education_format_signal", "adult.father.education_format_signal", "adult.guardian.education_format_signal"]}, "valor": {"type": ["string", "null"], "enum": ["TEXT", "VISUAL", "AUDIO", null]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["adult.mother.sex_signal", "adult.father.sex_signal", "adult.guardian.sex_signal"]}, "valor": {"const": null}, "estado_dato": {"const": "DESCONOCIDO"}, "acreditada": {"const": false}}},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"enum": ["adult.mother.formal_employment", "adult.mother.household_head_signal", "adult.mother.disability_flag", "adult.father.formal_employment", "adult.father.household_head_signal", "adult.father.disability_flag", "adult.guardian.formal_employment", "adult.guardian.household_head_signal", "adult.guardian.disability_flag"]}, "valor": {"type": ["boolean", "null"]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "valor", "estado_dato", "acreditada"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"const": "housing.type"}, "valor": {"type": ["string", "null"], "enum": ["ADEQUATE", "CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME", "OTHER", "UNKNOWN", null]}, "estado_dato": {"$ref": "#/$defs/estadoDato"}, "acreditada": {"type": "boolean"}}, "allOf": [{"$ref": "#/$defs/factStateRules"}]}
+      ]
+    },
+    "factStateRules": {
+      "allOf": [
+        {"if": {"properties": {"estado_dato": {"const": "DESCONOCIDO"}}, "required": ["estado_dato"]}, "then": {"properties": {"valor": {"const": null}, "acreditada": {"const": false}}}},
+        {"if": {"properties": {"estado_dato": {"const": "DECLARADO"}}, "required": ["estado_dato"]}, "then": {"properties": {"acreditada": {"const": false}}}}
       ]
     },
     "procedencia": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["campo", "fuente"],
-      "properties": {
-        "campo": {"$ref": "#/$defs/campo"},
-        "fuente": {"enum": ["DATASET_E3", "FICHA_SINTETICA", "FICHA_DIGITAL", "CALCULADO"]}
-      }
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "fuente", "form_record_id", "form_id", "form_version", "page", "section", "field_id"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"$ref": "#/$defs/campo"}, "fuente": {"const": "FICHA_DIGITAL"}, "form_record_id": {"$ref": "#/$defs/formRecordId"}, "form_id": {"const": "INTEGRA_FICHA_INSCRIPCION_MATRICULA"}, "form_version": {"const": "2019"}, "page": {"type": "integer", "enum": [1, 2, 3]}, "section": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_]{0,79}$"}, "field_id": {"enum": ["p1.admin.garden_reference", "p1.child.age", "p1.nee.possible_disability", "p1.siblings.under_6", "p1.siblings.6_14", "p1.siblings.15_18", "p1.household.roles_ages", "p1.household.day_caregiver", "p1.child.health_coverage_band", "p1.mother.education_format_signal", "p1.mother.formal_employment", "p1.mother.age", "p1.mother.household_head_signal", "p1.father.education_format_signal", "p1.father.formal_employment", "p1.father.age", "p1.father.household_head_signal", "p1.guardian.education_format_signal", "p1.guardian.formal_employment", "p1.guardian.age", "p1.guardian.household_head_signal", "p2.mother.household_head_continuation", "p2.father.household_head_continuation", "p2.guardian.household_head_continuation", "p2.rsh.has_registry", "p2.rsh.band", "p2.housing.camp_occupation", "p2.housing.room_other_home", "p2.housing.serviu_status", "p2.housing.tenure", "p2.housing.sanitation", "p2.housing.electricity", "p2.housing.water_difficulty", "p2.housing.bedroom_count", "p2.household.roles_ages", "p2.income.band", "p2.benefits.access_flags", "p2.priority.cse_score", "p3.nee.flag", "p3.health.pregnancy_flag", "p3.coverage.health_band"]}}},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "fuente", "source_record_id"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"$ref": "#/$defs/campo"}, "fuente": {"const": "DATASET_E3"}, "source_record_id": {"$ref": "#/$defs/id"}}},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "fuente", "synthetic_derivation_id"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"$ref": "#/$defs/campo"}, "fuente": {"const": "FICHA_SINTETICA"}, "synthetic_derivation_id": {"$ref": "#/$defs/id"}}},
+        {"type": "object", "additionalProperties": false, "required": ["fact_id", "campo", "fuente", "formula_id"], "properties": {"fact_id": {"$ref": "#/$defs/id"}, "campo": {"$ref": "#/$defs/campo"}, "fuente": {"const": "CALCULADO"}, "formula_id": {"$ref": "#/$defs/id"}}}
+      ]
     },
     "inconsistencia": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["codigo", "valor_dataset", "valor_ficha"],
-      "properties": {
-        "codigo": {"enum": ["SIBLINGS_UNDER_6_MISMATCH", "SIBLINGS_6_14_MISMATCH", "SIBLINGS_15_18_MISMATCH", "RSH_STATUS_MISMATCH", "HOUSEHOLD_SIZE_MISMATCH"]},
-        "valor_dataset": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120},
-        "valor_ficha": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120}
-      }
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["codigo", "valor_dataset", "valor_ficha"], "properties": {"codigo": {"enum": ["SIBLINGS_UNDER_6_MISMATCH", "SIBLINGS_6_14_MISMATCH", "SIBLINGS_15_18_MISMATCH", "RSH_STATUS_MISMATCH", "HOUSEHOLD_SIZE_MISMATCH"]}, "valor_dataset": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120}, "valor_ficha": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120}}},
+        {"type": "object", "additionalProperties": false, "required": ["codigo", "campo_destino", "formula_id", "fact_id_fuente_1", "fact_id_fuente_2"], "properties": {"codigo": {"enum": ["COMPOSITION_MISMATCH", "HOUSEHOLD_HEAD_SIGNAL_MISMATCH", "POSSIBLE_DISABILITY_MISMATCH"]}, "campo_destino": {"$ref": "#/$defs/campo"}, "formula_id": {"$ref": "#/$defs/id"}, "fact_id_fuente_1": {"$ref": "#/$defs/id"}, "fact_id_fuente_2": {"$ref": "#/$defs/id"}}}
+      ]
     },
-    "senalesUrgencia": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "emergencia_reciente": {"type": ["boolean", "null"]},
-        "cupo_limitado": {"type": ["boolean", "null"]},
-        "inseguridad_alimentaria_nivel": {"type": ["integer", "null"], "minimum": 0, "maximum": 4},
-        "vivienda_precaria": {"type": ["boolean", "null"]},
-        "dias_restantes_postulacion": {"type": ["integer", "null"], "minimum": 0, "maximum": 366},
-        "dias_restantes_recien_nacido": {"type": ["integer", "null"], "minimum": 0, "maximum": 90},
-        "dias_restantes_documento_terapia": {"type": ["integer", "null"], "minimum": 0, "maximum": 90}
-      }
-    },
-    "senalesVulnerabilidad": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "rsh_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-        "income_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-        "prevision_salud": {"type": ["string", "null"], "enum": ["FONASA_A", "SIN_PREVISION", "OTRA", "NO_INFORMADO", null]},
-        "puntaje_cse": {"type": ["integer", "null"], "minimum": 0, "maximum": 34},
-        "jefa_hogar_sernameg": {"type": ["boolean", "null"]},
-        "posible_discapacidad_nino": {"type": ["boolean", "null"]}
-      }
-    }
+    "senalesUrgencia": {"type": "object", "additionalProperties": false, "properties": {"emergencia_reciente": {"type": ["boolean", "null"]}, "cupo_limitado": {"type": ["boolean", "null"]}, "inseguridad_alimentaria_nivel": {"type": ["integer", "null"], "minimum": 0, "maximum": 4}, "vivienda_precaria": {"type": ["boolean", "null"]}, "dias_restantes_postulacion": {"type": ["integer", "null"], "minimum": 0, "maximum": 366}, "dias_restantes_recien_nacido": {"type": ["integer", "null"], "minimum": 0, "maximum": 90}, "dias_restantes_documento_terapia": {"type": ["integer", "null"], "minimum": 0, "maximum": 90}}},
+    "senalesVulnerabilidad": {"type": "object", "additionalProperties": false, "properties": {"rsh_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "income_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "prevision_salud": {"type": ["string", "null"], "enum": ["FONASA_A", "SIN_PREVISION", "OTRA", "NO_INFORMADO", null]}, "puntaje_cse": {"type": ["integer", "null"], "minimum": 0, "maximum": 34}, "jefa_hogar_sernameg": {"type": ["boolean", "null"]}, "posible_discapacidad_nino": {"type": ["boolean", "null"]}}}
   }
 }

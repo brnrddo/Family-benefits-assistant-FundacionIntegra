@@ -1,6 +1,6 @@
 # Guía Kiro para el equipo
 
-Empiece siempre en el [índice de Specs](../.kiro/specs/INDICE.md). Esta guía distingue el baseline documental actual de la implementación futura: hoy los contratos y tareas existen, pero aplicación, infraestructura y pruebas aún no.
+Empiece siempre en el [índice de Specs](../.kiro/specs/INDICE.md), lea la [fuente funcional](./especificacion/PROYECTO_3_ESPECIFICACION_v2.md) y luego la [adenda de ficha de ingreso](./especificacion/ADENDA_FICHA_INGRESO.md). Esta guía distingue el baseline documental actual de la implementación futura: hoy los contratos y tareas existen, pero aplicación, infraestructura y pruebas aún no.
 
 ## 1. Elija modo y autonomía
 
@@ -73,7 +73,9 @@ Conserve código conforme. Para divergencias, acuerde adaptar código o cambiar 
 
 ## 5. Integración y gates
 
-Orden: privacidad/fixtures → C0–C4 → motor/datos → API/auth/snapshot → frontend contra mocks → contenido validado → E2E/IaC. Antes de integrar:
+Orden para altas nuevas: privacidad/fixtures → adenda/DEC-023 → C0 v2 → C2 v2/C3 2.0.0 → `INSCRIPCION_INICIAL=COMPLETA` → motor/datos → ranking → `LlmContextV1` → frontend contra mocks → contenido validado → E2E/IaC. E-3 es un snapshot sintético separado. Antes de integrar:
+
+- **Ficha gate:** páginas 1–2 completas antes de evaluar; página 3 visible y diferida, obligatoria al matricular en el mismo `form_record_id`; RSH no sustituye la ficha.
 
 - **Privacidad:** solo sintéticos rotulados; allowlist antes de servicios downstream; logs sin cuerpos.
 - **Determinismo:** elegibilidad, acceso y U/B/V fuera del LLM; parámetros no hardcodeados.

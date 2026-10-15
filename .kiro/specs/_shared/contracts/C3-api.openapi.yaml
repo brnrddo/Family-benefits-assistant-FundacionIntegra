@@ -1,12 +1,13 @@
 openapi: 3.1.0
 info:
   title: Brújula Familiar API
-  version: 1.0.2
+  version: 2.0.0
   description: >-
-    Contrato documental C3. No prueba que exista una API desplegada. Los cuerpos
-    públicos nunca aceptan C1, C2, catálogo, prompts ni envelopes internos Bedrock.
+    Contrato documental C3 migrado in-place por DEC-023. No prueba que exista una API
+    desplegada. Las altas nuevas usan un expediente único de tres páginas; los cuerpos
+    públicos nunca aceptan C1, C2 crudo, catálogo, prompts, PDF, PII ni envelopes internos Bedrock.
 servers:
-  - url: /api/v1
+  - url: /api/v2
 security:
   - CognitoAccessToken: []
 tags:
@@ -14,6 +15,7 @@ tags:
   - name: familias
   - name: genai
   - name: tracking
+  - name: expediente
   - name: kpi
   - name: catalogo
 paths:
@@ -158,23 +160,180 @@ paths:
         '409': {$ref: '#/components/responses/Conflict'}
         '422': {$ref: '#/components/responses/Unprocessable'}
         '503': {$ref: '#/components/responses/Unavailable'}
-  /familias/nueva/preevaluacion:
+  /form-records:
     post:
-      tags: [familias]
-      operationId: createPreevaluacion
-      description: Campos cerrados de ficha sintética; sin mapa EAV, nombres, identificadores, contacto ni texto libre. Siempre PRELIMINAR.
+      tags: [expediente]
+      operationId: createFormRecord
+      description: Crea un expediente sintético vacío de tres páginas. No crea ni evalúa una familia.
       x-required-scope: familias:write
       parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
       requestBody:
         required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/PreevaluationRequest'}
+        content: {application/json: {schema: {$ref: '#/components/schemas/CreateFormRecordRequest'}}}
       responses:
-        '200': {$ref: '#/components/responses/PreevaluationResponse'}
+        '201': {$ref: '#/components/responses/FormRecordResponse'}
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}:
+    get:
+      tags: [expediente]
+      operationId: getFormRecord
+      x-required-scope: familias:read
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}]
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /form-records/{form_record_id}/stages/inscripcion-inicial:
+    put:
+      tags: [expediente]
+      operationId: saveInitialRegistrationDraft
+      description: Guarda solo respuestas C0 permitidas de páginas 1 y 2. UNKNOWN no lleva valor.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/SaveInitialRegistrationDraftRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/stages/inscripcion-inicial/completion:
+    post:
+      tags: [expediente]
+      operationId: completeInitialRegistration
+      description: Atestigua páginas 1 y 2. Falla cerrado hasta satisfacer reglas aprobadas; nunca acepta contenido documental.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CompleteInitialRegistrationRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/preevaluations:
+    post:
+      tags: [expediente]
+      operationId: createPreevaluation
+      description: Solo INSCRIPCION_INICIAL=COMPLETA habilita motor determinista; borrador o expediente funcionalmente vacío devuelve 409/422.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CreateEvaluationRequest'}}}
+      responses:
+        '201': {$ref: '#/components/responses/FormEvaluationResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/evaluations/{evaluation_id}:
+    get:
+      tags: [expediente]
+      operationId: getFormEvaluation
+      x-required-scope: familias:read
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/EvaluationId'}]
+      responses:
+        '200': {$ref: '#/components/responses/FormEvaluationResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /form-records/{form_record_id}/responses:
+    patch:
+      tags: [expediente]
+      operationId: updateAllowedResponses
+      description: Actualiza solo field_id permitidos; versiona el expediente y marca la evaluación previa STALE sin sobreescribir procedencia.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UpdateResponsesRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/stages/matricula/enablement:
+    post:
+      tags: [expediente]
+      operationId: enableEnrollmentStage
+      description: Cambia página 3 a PENDIENTE solo mediante evento autorizado provisional pendiente de validación Integra.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/EnableEnrollmentRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/stages/matricula:
+    put:
+      tags: [expediente]
+      operationId: saveEnrollmentDraft
+      description: Guarda respuestas permitidas de página 3 solo cuando MATRICULA=PENDIENTE.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/SaveEnrollmentDraftRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/stages/matricula/completion:
+    post:
+      tags: [expediente]
+      operationId: completeEnrollmentStage
+      description: Exige página 3 habilitada y completa en el mismo expediente; omitirla impide MATRICULA=COMPLETA.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CompleteEnrollmentRequest'}}}
+      responses:
+        '200': {$ref: '#/components/responses/FormRecordResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /form-records/{form_record_id}/reevaluations:
+    post:
+      tags: [expediente]
+      operationId: createReevaluation
+      description: Crea una evaluación versionada nueva tras cambios permitidos; conserva form_record_id y procedencia.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/FormRecordId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/CreateReevaluationRequest'}}}
+      responses:
+        '201': {$ref: '#/components/responses/FormEvaluationResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
         '422': {$ref: '#/components/responses/Unprocessable'}
   /kpi:
@@ -255,7 +414,7 @@ components:
           scopes:
             jardines:read: Listar jardines autorizados
             familias:read: Leer familias del scope
-            familias:write: Crear preevaluación sintética
+            familias:write: Gestionar expediente sintético y evaluaciones
             genai:write: Generar guion o mensaje
             conversaciones:write: Registrar conversación
             kpi:read: Leer agregados autorizados
@@ -280,6 +439,16 @@ components:
       in: header
       required: true
       schema: {type: string, format: uuid}
+    FormRecordId:
+      name: form_record_id
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/FormRecordId'}
+    EvaluationId:
+      name: evaluation_id
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/Id'}
   schemas:
     Id:
       type: string
@@ -289,6 +458,10 @@ components:
     Hash:
       type: string
       pattern: '^[a-f0-9]{64}$'
+    FormRecordId:
+      type: string
+      maxLength: 80
+      pattern: '^FORM-SIM-[A-Z0-9_-]{1,60}$'
     EnvelopeMetadata:
       type: object
       additionalProperties: false
@@ -449,7 +622,7 @@ components:
     FamilyContextView:
       type: object
       additionalProperties: false
-      required: [family_id, composition, rsh_band, income_band, preferred_format, language, urgency_signals, vulnerability_signals, inconsistency_codes, missing_codes]
+      required: [family_id, composition, rsh_band, income_per_capita_band, preferred_format, language, urgency_signals, vulnerability_signals, inconsistency_codes, missing_codes]
       properties:
         family_id: {$ref: '#/components/schemas/Id'}
         composition:
@@ -457,7 +630,7 @@ components:
           maxItems: 20
           items: {$ref: '#/components/schemas/CompositionMember'}
         rsh_band: {type: [integer, 'null'], enum: [40, 50, 60, 70, 80, 90, 100, null]}
-        income_band: {type: [string, 'null'], enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K, null]}
+        income_per_capita_band: {type: [string, 'null'], enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K, null], description: Banda per cápita; nunca se copia desde la banda total del hogar.}
         preferred_format: {type: string, enum: [TEXT, VISUAL, AUDIO]}
         language: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$', maxLength: 5}
         urgency_signals:
@@ -477,15 +650,17 @@ components:
             income_score: {type: [number, 'null'], minimum: 0, maximum: 1}
             possible_child_disability: {type: [boolean, 'null']}
         inconsistency_codes:
+          description: Proyección de C2.inconsistencias al borde de lectura. Incluye los códigos muchos-a-uno (COMPOSITION_MISMATCH, HOUSEHOLD_HEAD_SIGNAL_MISMATCH, POSSIBLE_DISABILITY_MISMATCH) para que el cierre por conflicto que C2 traza (x-c0-many-to-one-policy-v1) sea visible al consumidor.
           type: array
           maxItems: 20
           uniqueItems: true
-          items: {type: string, enum: [SIBLINGS_UNDER_6_MISMATCH, SIBLINGS_6_14_MISMATCH, SIBLINGS_15_18_MISMATCH, RSH_STATUS_MISMATCH, HOUSEHOLD_SIZE_MISMATCH]}
+          items: {type: string, enum: [SIBLINGS_UNDER_6_MISMATCH, SIBLINGS_6_14_MISMATCH, SIBLINGS_15_18_MISMATCH, RSH_STATUS_MISMATCH, HOUSEHOLD_SIZE_MISMATCH, COMPOSITION_MISMATCH, HOUSEHOLD_HEAD_SIGNAL_MISMATCH, POSSIBLE_DISABILITY_MISMATCH]}
         missing_codes:
+          description: Proyección de C2.no_informado. household_head_signal representa el cierre a DESCONOCIDO de adult.{mother,father,guardian}.household_head_signal; combinado con HOUSEHOLD_HEAD_SIGNAL_MISMATCH distingue "no respondido" de "cerrado por conflicto".
           type: array
           maxItems: 20
           uniqueItems: true
-          items: {type: string, enum: [composition, child_age, siblings_under_6, siblings_6_14, siblings_15_18, rsh_status, rsh_band, income_band, ssyo_participation, chile_crece_contigo_access, last_health_control_date, possible_disability, therapy, housing_type, pregnancy, adult_over_65, employment_or_pension, water_difficulty, food_difficulty]}
+          items: {type: string, enum: [composition, child_age, siblings_under_6, siblings_6_14, siblings_15_18, rsh_status, rsh_band, income_household_band, income_per_capita_band, ssyo_participation, chile_crece_contigo_access, last_health_control_date, possible_disability, household_head_signal, child_health_coverage_band, enrollment_health_coverage_band, therapy, housing_type, housing_serviu_status, housing_tenure, housing_sanitation, housing_electricity, benefit_access_flags, cse_score, pregnancy, adult_over_65, employment_or_pension, water_difficulty, food_difficulty]}
     FamilyGenerationPublicRequest:
       type: object
       additionalProperties: false
@@ -519,33 +694,301 @@ components:
         occurred_at: {type: string, format: date-time}
         snapshot_id: {$ref: '#/components/schemas/Id'}
         origin: {type: string, enum: [REAL_DEMO, SIMULADO_DEMO]}
-    PreevaluationRequest:
+    CreateFormRecordRequest:
+      description: garden_id es un ID exclusivamente sintético y se conserva en C2 como scope.garden_reference con procedencia p1.admin.garden_reference; nunca identifica personas.
       type: object
       additionalProperties: false
-      required: [data_classification, garden_id, commune_id, demo_notice_accepted]
+      required: [data_classification, form_id, form_version, garden_id, demo_notice_accepted]
       properties:
         data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        form_id: {const: INTEGRA_FICHA_INSCRIPCION_MATRICULA}
+        form_version: {const: '2019'}
         garden_id: {$ref: '#/components/schemas/Id'}
-        commune_id: {$ref: '#/components/schemas/Id'}
         demo_notice_accepted: {const: true}
-        child_age: {type: [integer, 'null'], minimum: 0, maximum: 120}
-        siblings_under_6: {type: [integer, 'null'], minimum: 0, maximum: 30}
-        siblings_6_14: {type: [integer, 'null'], minimum: 0, maximum: 30}
-        siblings_15_18: {type: [integer, 'null'], minimum: 0, maximum: 30}
-        has_rsh: {type: [boolean, 'null']}
-        rsh_band: {type: [integer, 'null'], enum: [40, 50, 60, 70, 80, 90, 100, null]}
-        household_income_band: {type: [string, 'null'], enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K, null]}
-        ssyo_participation: {type: [boolean, 'null']}
-        chile_crece_contigo_access: {type: [boolean, 'null']}
-        last_child_health_control_date: {type: [string, 'null'], format: date, maxLength: 10}
-        child_possible_disability: {type: [boolean, 'null']}
-        child_in_therapy: {type: [boolean, 'null']}
-        housing_type: {type: [string, 'null'], enum: [ADEQUATE, CAMP_OR_OCCUPATION, ROOM_IN_OTHER_HOME, OTHER, UNKNOWN, null]}
-        household_pregnancy: {type: [boolean, 'null']}
-        household_has_adult_over_65: {type: [boolean, 'null']}
-        household_formal_employment_or_pension: {type: [boolean, 'null']}
-        household_water_payment_difficulty: {type: [boolean, 'null']}
-        household_food_purchase_difficulty: {type: [boolean, 'null']}
+    StageState:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [stage, pages, status]
+          properties:
+            stage: {const: INSCRIPCION_INICIAL}
+            pages: {type: array, const: [1, 2]}
+            status: {type: string, enum: [BORRADOR, COMPLETA]}
+        - type: object
+          additionalProperties: false
+          required: [stage, pages, status]
+          properties:
+            stage: {const: MATRICULA}
+            pages: {type: array, const: [3]}
+            status: {type: string, enum: [NO_DISPONIBLE_AUN, PENDIENTE, COMPLETA]}
+    FormRecordView:
+      type: object
+      additionalProperties: false
+      required: [data_classification, form_record_id, form_id, form_version, validation_status, record_version, pages, stages, latest_evaluation_id]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        form_record_id: {$ref: '#/components/schemas/FormRecordId'}
+        form_id: {const: INTEGRA_FICHA_INSCRIPCION_MATRICULA}
+        form_version: {const: '2019'}
+        validation_status: {const: PENDIENTE_VALIDACION_INTEGRA}
+        record_version: {type: integer, minimum: 1}
+        pages: {type: array, const: [1, 2, 3]}
+        stages:
+          type: array
+          minItems: 2
+          maxItems: 2
+          prefixItems:
+            - type: object
+              additionalProperties: false
+              required: [stage, pages, status]
+              properties:
+                stage: {const: INSCRIPCION_INICIAL}
+                pages: {type: array, const: [1, 2]}
+                status: {type: string, enum: [BORRADOR, COMPLETA]}
+            - type: object
+              additionalProperties: false
+              required: [stage, pages, status]
+              properties:
+                stage: {const: MATRICULA}
+                pages: {type: array, const: [3]}
+                status: {type: string, enum: [NO_DISPONIBLE_AUN, PENDIENTE, COMPLETA]}
+        latest_evaluation_id:
+          oneOf: [{$ref: '#/components/schemas/Id'}, {type: 'null'}]
+    UnknownAnswer:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {const: UNKNOWN}
+    BooleanAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: boolean}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    AgeAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: integer, minimum: 0, maximum: 120}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    CountAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: integer, minimum: 0, maximum: 30}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    CseScoreAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: integer, minimum: 0, maximum: 34}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    RshBandAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: integer, enum: [40, 50, 60, 70, 80, 90, 100]}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    PreferredFormatAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: string, enum: [TEXT, VISUAL, AUDIO]}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    HouseholdIncomeBandAnswer:
+      description: Banda de ingreso total del hogar. Se conserva como income.household_band y nunca se copia a income.per_capita_band.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: string, enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K]}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    DateAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties: {status: {const: ANSWERED}, value: {type: string, format: date, maxLength: 10}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    CompositionAnswer:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [status, value]
+          properties:
+            status: {const: ANSWERED}
+            value: {type: array, maxItems: 20, items: {$ref: '#/components/schemas/CompositionMember'}}
+        - {$ref: '#/components/schemas/UnknownAnswer'}
+    AllowedResponse:
+      description: >-
+        Unión cerrada derivada de C0. Cada field_id queda ligado a su tipo y allowlist exactos,
+        y todo destino C2_CONTEXT se normaliza mediante x-c0-field-crosswalk de C2.
+        Un campo con vocabulario PENDIENTE_VALIDACION_INTEGRA solo admite UNKNOWN hasta aprobación.
+        p2.income.band representa ingreso total del hogar; no habilita ni deriva ingreso per cápita.
+        Las respuestas p2.housing.camp_occupation y p2.housing.room_other_home se conservan como hechos separados; HOUSING-TYPE-V1 deriva housing.type con la tabla cerrada de C2 y produce valor nulo/estado DESCONOCIDO ante conflicto, doble falso o ausencia.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id:
+              type: string
+              enum: [p1.nee.possible_disability, p1.nee.certificate_present, p1.household.day_caregiver, p1.mother.formal_employment, p1.mother.household_head_signal, p1.mother.disability_flag, p1.father.formal_employment, p1.father.household_head_signal, p1.father.disability_flag, p1.guardian.formal_employment, p1.guardian.household_head_signal, p1.guardian.disability_flag, p2.mother.household_head_continuation, p2.father.household_head_continuation, p2.guardian.household_head_continuation, p2.rsh.has_registry, p2.housing.camp_occupation, p2.housing.room_other_home, p2.housing.water_difficulty, p3.nee.flag, p3.nee.certificate_present, p3.health.pregnancy_flag]
+            response: {$ref: '#/components/schemas/BooleanAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {type: string, enum: [p1.child.age, p1.mother.age, p1.father.age, p1.guardian.age]}
+            response: {$ref: '#/components/schemas/AgeAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {type: string, enum: [p1.siblings.under_6, p1.siblings.6_14, p1.siblings.15_18, p2.housing.bedroom_count]}
+            response: {$ref: '#/components/schemas/CountAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {const: p2.priority.cse_score}
+            response: {$ref: '#/components/schemas/CseScoreAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {type: string, enum: [p1.mother.education_format_signal, p1.father.education_format_signal, p1.guardian.education_format_signal]}
+            response: {$ref: '#/components/schemas/PreferredFormatAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {const: p2.rsh.band}
+            response: {$ref: '#/components/schemas/RshBandAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {const: p2.income.band}
+            response: {$ref: '#/components/schemas/HouseholdIncomeBandAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id:
+              type: string
+              enum: [p1.child.health_coverage_band, p1.priority.institutional_signal, p1.mother.sex_signal, p1.father.sex_signal, p1.guardian.sex_signal, p2.housing.serviu_status, p2.housing.tenure, p2.housing.sanitation, p2.housing.electricity, p2.benefits.access_flags, p3.coverage.health_band]
+            response: {$ref: '#/components/schemas/UnknownAnswer'}
+        - type: object
+          additionalProperties: false
+          required: [field_id, response]
+          properties:
+            field_id: {type: string, enum: [p1.household.roles_ages, p2.household.roles_ages]}
+            response: {$ref: '#/components/schemas/CompositionAnswer'}
+    SaveInitialRegistrationDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, stage, expected_record_version, responses]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        stage: {const: INSCRIPCION_INICIAL}
+        expected_record_version: {type: integer, minimum: 1}
+        responses:
+          type: array
+          maxItems: 80
+          description: Cada field_id puede aparecer como máximo una vez; un duplicado se rechaza con 422 antes de persistir o evaluar.
+          x-unique-by: field_id
+          items:
+            allOf:
+              - {$ref: '#/components/schemas/AllowedResponse'}
+              - type: object
+                properties: {field_id: {type: string, pattern: '^p[12]\.'}}
+    SaveEnrollmentDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, stage, expected_record_version, responses]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        stage: {const: MATRICULA}
+        expected_record_version: {type: integer, minimum: 1}
+        responses:
+          type: array
+          maxItems: 80
+          description: Cada field_id puede aparecer como máximo una vez; un duplicado se rechaza con 422 antes de persistir o evaluar.
+          x-unique-by: field_id
+          items:
+            allOf:
+              - {$ref: '#/components/schemas/AllowedResponse'}
+              - type: object
+                properties: {field_id: {type: string, pattern: '^p3\.'}}
+    StageAttestation:
+      type: object
+      additionalProperties: false
+      required: [attestation_type, validation_status]
+      properties:
+        attestation_type: {const: SYNTHETIC_STAGE_COMPLETION}
+        validation_status: {const: PENDIENTE_VALIDACION_INTEGRA}
+    CompleteInitialRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version, attestation]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+        attestation: {$ref: '#/components/schemas/StageAttestation'}
+    CreateEvaluationRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+    UpdateResponsesRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version, responses]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+        responses:
+          type: array
+          minItems: 1
+          maxItems: 80
+          description: Cada field_id puede aparecer como máximo una vez; un duplicado se rechaza con 422 antes de persistir o evaluar.
+          x-unique-by: field_id
+          items: {$ref: '#/components/schemas/AllowedResponse'}
+    EnableEnrollmentRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version, event_type, validation_status]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+        event_type: {const: AUTHORIZED_ENROLLMENT_EVENT}
+        validation_status: {const: PENDIENTE_VALIDACION_INTEGRA}
+    CompleteEnrollmentRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version, attestation]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+        attestation: {$ref: '#/components/schemas/StageAttestation'}
+    CreateReevaluationRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, expected_record_version, previous_evaluation_id]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        expected_record_version: {type: integer, minimum: 1}
+        previous_evaluation_id: {$ref: '#/components/schemas/Id'}
     ConversationRecord:
       type: object
       additionalProperties: false
@@ -566,11 +1009,16 @@ components:
         snapshot_id: {$ref: '#/components/schemas/Id'}
         origin: {type: string, enum: [REAL_DEMO, SIMULADO_DEMO]}
         status: {type: string, enum: [CONFIRMED]}
-    PreevaluationResult:
+    FormEvaluation:
       type: object
       additionalProperties: false
-      required: [family_id, level, created_at, opportunities, questions, disclaimer]
+      required: [evaluation_id, evaluation_version, evaluation_status, form_record_id, record_version, family_id, level, created_at, opportunities, questions, inconsistency_codes, disclaimer]
       properties:
+        evaluation_id: {$ref: '#/components/schemas/Id'}
+        evaluation_version: {type: integer, minimum: 1}
+        evaluation_status: {type: string, enum: [CURRENT, STALE]}
+        form_record_id: {$ref: '#/components/schemas/FormRecordId'}
+        record_version: {type: integer, minimum: 1}
         family_id: {$ref: '#/components/schemas/Id'}
         level: {const: PRELIMINAR}
         created_at: {type: string, format: date-time}
@@ -582,6 +1030,12 @@ components:
           type: array
           maxItems: 20
           items: {type: string, minLength: 1, maxLength: 200}
+        inconsistency_codes:
+          description: Proyección de C2.inconsistencias al borde de lectura. Incluye los códigos muchos-a-uno (COMPOSITION_MISMATCH, HOUSEHOLD_HEAD_SIGNAL_MISMATCH, POSSIBLE_DISABILITY_MISMATCH) para que el cierre por conflicto que C2 traza (x-c0-many-to-one-policy-v1) sea visible al consumidor.
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: {type: string, enum: [RSH_STATUS_MISMATCH, SIBLINGS_UNDER_6_MISMATCH, SIBLINGS_6_14_MISMATCH, SIBLINGS_15_18_MISMATCH, HOUSEHOLD_SIZE_MISMATCH, COMPOSITION_MISMATCH, HOUSEHOLD_HEAD_SIGNAL_MISMATCH, POSSIBLE_DISABILITY_MISMATCH]}
         disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
     GapSummary:
       type: object
@@ -791,13 +1245,20 @@ components:
       properties:
         meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
         data: {$ref: '#/components/schemas/ConversationRecord'}
-    PreevaluationEnvelope:
+    FormRecordEnvelope:
       type: object
       additionalProperties: false
       required: [meta, data]
       properties:
         meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
-        data: {$ref: '#/components/schemas/PreevaluationResult'}
+        data: {$ref: '#/components/schemas/FormRecordView'}
+    FormEvaluationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/FormEvaluation'}
     KpiEnvelope:
       type: object
       additionalProperties: false
@@ -843,9 +1304,12 @@ components:
     ConversationResponse:
       description: Conversación confirmada idempotentemente
       content: {application/json: {schema: {$ref: '#/components/schemas/ConversationEnvelope'}}}
-    PreevaluationResponse:
-      description: Resultado preliminar de ficha sintética
-      content: {application/json: {schema: {$ref: '#/components/schemas/PreevaluationEnvelope'}}}
+    FormRecordResponse:
+      description: Estado cerrado del expediente único de tres páginas
+      content: {application/json: {schema: {$ref: '#/components/schemas/FormRecordEnvelope'}}}
+    FormEvaluationResponse:
+      description: Evaluación determinista preliminar y versionada posterior al gate
+      content: {application/json: {schema: {$ref: '#/components/schemas/FormEvaluationEnvelope'}}}
     KpiResponse:
       description: KPI agregado con nulos y supresión explícitos
       content: {application/json: {schema: {$ref: '#/components/schemas/KpiEnvelope'}}}

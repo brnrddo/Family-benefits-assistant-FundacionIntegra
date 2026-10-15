@@ -2,6 +2,8 @@
 
 El repositorio se organiza por componentes, no por personas. Cada componente tiene una persona dueña que aprueba cambios y coordina los handoffs; cualquier integrante puede colaborar.
 
+Para el expediente de ingreso: Recursos Naturales revisa C0 v2 y copy por etapa; Mecánica normaliza respuestas, procedencia y discrepancias; Computación implementa gate, motor, API C3 `/api/v2` y reevaluación; Eléctrica implementa la UI de páginas 1–2 y página 3 diferida; coordinación aprueba DEC-023 y versiones contractuales. Ningún rol intercambia formularios reales, RSH personal ni PII.
+
 ## Ownership por componente
 
 | Componente | Dueño principal | Colaboradores | Entregable |
@@ -31,8 +33,8 @@ El repositorio se organiza por componentes, no por personas. Cada componente tie
 
 **Entrega:** loader, base ordenada, características calculadas, estado de acceso, prioridad y evidencia de QA.
 
-- Mantiene los 23 CSV de `data/publico/` como fuente canónica.
-- Relaciona tablas para construir la ficha; distingue ausencia, `false` y cero.
+- Mantiene los 23 CSV de `data/publico/` como fuente canónica del snapshot E-3 sintético; no sustituyen la ficha para altas nuevas.
+- Normaliza respuestas C0 permitidas con procedencia por expediente/página/sección y registra discrepancias RSH sin sobreescritura.
 - Calcula características, estados de acceso y ranking documentado.
 - Diseña casos de prueba y reporta discrepancias con trazas.
 
@@ -66,10 +68,10 @@ Las disciplinas son dueñas de componentes; los rótulos Rol 1–4 de las Specs 
 
 | Contrato único | Producción por componente → consumo | Contenido | Momento objetivo |
 |---|---|---|---|
-| C0 · Mapeo de ficha | Recursos Naturales → Mecánica y Computación | Campos útiles, excluidos y preguntas | Día 1, 14:00 |
+| C0 v2 · Mapeo de ficha | Recursos Naturales → Mecánica y Computación | Plantilla vacía por tres páginas/dos etapas/cuatro clases; sin respuestas | Día 1, 14:00 |
 | C1 · Salida de motor y acceso | Computación y Mecánica → Computación/API | Resultado, nivel, acceso, traza y datos faltantes | Stub Día 1, 14:00; completo Día 1 noche |
-| C2 · Contexto familiar | Mecánica → Computación/API | Composición y señales autorizadas, con nulos explícitos | Día 2, 12:00 |
-| C3 · API | Computación → Eléctrica | Endpoints y ejemplos JSON, primero con mocks | Día 1, 11:00 |
+| C2 v2 · Contexto y expediente | Mecánica → Computación/API | `form_record_id`, etapas, hechos y procedencia cerrada | Día 2, 12:00 |
+| C3 2.0.0 · API | Computación → Eléctrica | `/api/v2`, gate, reevaluación y endpoints, primero con mocks | Día 1, 11:00 |
 | C4 · Contenido y configuración | Recursos Naturales → Computación y Eléctrica | Pesos U/B/V, preguntas, textos, privacidad y fuentes | V1 Día 1 noche; final Día 2, 18:00 |
 
 La base tipada alimenta C1/C2 sin crear otro contrato; la prioridad consume C1/C2/C4 y se publica por C3; la PWA desplegada es un entregable. Los contratos se cambian por acuerdo entre quien entrega y quien consume. Si falta una implementación, se conserva el contrato con un mock completamente sintético y rotulado.

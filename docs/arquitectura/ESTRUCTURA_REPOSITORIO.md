@@ -51,9 +51,12 @@ La organización es por componentes con ownership funcional. No se crean carpeta
 │       ├── relaciones_integrantes.csv
 │       ├── rsh_historial.csv
 │       └── versiones_fuentes.csv
+├── content/
+│   └── mapeo_ficha.csv
 └── docs/
     ├── especificacion/
-    │   └── PROYECTO_3_ESPECIFICACION_v2.md
+    │   ├── PROYECTO_3_ESPECIFICACION_v2.md
+    │   └── ADENDA_FICHA_INGRESO.md
     ├── equipo/
     │   └── ROLES_Y_RESPONSABILIDADES.md
     ├── arquitectura/
@@ -87,10 +90,11 @@ El detalle de entregables está en [Roles y responsabilidades](../equipo/ROLES_Y
 - Esquemas, migraciones y vistas: `database/`; no guardar bases locales ni dumps.
 - Adaptadores de Bedrock, prompts técnicos y el único filtro de contexto previo al envío: `ia/`; los textos de producto se acuerdan con Recursos Naturales.
 - Decisiones de producto y guiones de prueba: `docs/producto/`.
+- Mapeo C0 de la plantilla vacía: `content/mapeo_ficha.csv`; una fila por campo/grupo, sin respuestas personales.
 - Contratos técnicos y diagramas: `docs/arquitectura/`.
-- Datos entregados: `data/publico/`; los 23 CSV son la fuente canónica.
+- Datos entregados: `data/publico/`; los 23 CSV son la fuente canónica del snapshot E-3 sintético, no de altas nuevas.
 
-`data/publico/dataset_e3.json` es útil para inspección o mocks, pero no sustituye los CSV: omite `data/publico/condiciones_integrante.csv`. Una base derivada debe poder reconstruirse relacionando los CSV.
+`data/publico/dataset_e3.json` es útil para inspección o mocks, pero no sustituye los CSV del snapshot: omite `data/publico/condiciones_integrante.csv`. Una base derivada E-3 debe poder reconstruirse relacionando los CSV. La ficha inicial completa sigue siendo el gate de toda alta nueva.
 
 ## Límites obligatorios
 

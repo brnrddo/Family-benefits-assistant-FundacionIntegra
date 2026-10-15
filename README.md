@@ -7,6 +7,7 @@ La elegibilidad, el estado de acceso y la prioridad son deterministas y trazable
 ## Documentación principal
 
 - [Especificación del proyecto](./docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
+- [Adenda: ficha de ingreso obligatoria](./docs/especificacion/ADENDA_FICHA_INGRESO.md)
 - [Roles y responsabilidades](./docs/equipo/ROLES_Y_RESPONSABILIDADES.md)
 - [Estructura del repositorio](./docs/arquitectura/ESTRUCTURA_REPOSITORIO.md)
 - [Flujo de la ficha familiar](./docs/producto/FLUJO_DE_FICHA.md)
@@ -28,12 +29,15 @@ No se usan carpetas personales. Cada tarea se realiza en el componente al que pe
 ## Flujo del producto
 
 ```text
-CSV canónicos → base tipada → características → reglas → estado de acceso
-→ datos faltantes/preguntas → prioridad → ficha/recomendaciones
+Alta nueva: páginas 1–2 de la ficha → INSCRIPCION_INICIAL COMPLETA (gate)
+→ hechos tipados DECLARADO → motor → PRELIMINAR → prioridad/preguntas
+→ página 3 pendiente del mismo expediente al concretar matrícula → reevaluación
 → conversación → KPI
+
+Snapshot Demo: E-3 sintético → base tipada → motor → prioridad → ficha
 ```
 
-Los beneficios personalizados provienen del motor. Los beneficios generales se muestran en una sección independiente y nunca aparentan ser una evaluación familiar. Todo resultado incluye el aviso de orientación referencial.
+La Ficha de Inscripción y Matrícula formato declarado 2019 es un solo expediente de tres páginas. Páginas 1–2 son obligatorias antes de crear o evaluar una familia nueva. Página 3 no se exige para la primera preevaluación, pero permanece dentro del mismo `form_record_id` y debe completarse al concretar matrícula. RSH complementa o corrobora; nunca sustituye la ficha. Los beneficios personalizados provienen del motor. Los beneficios generales se muestran en una sección independiente y nunca aparentan ser una evaluación familiar. Todo resultado incluye el aviso de orientación referencial.
 
 ## Empezar en Kiro
 
@@ -48,7 +52,7 @@ Los detalles están en [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Datos
 
-Los 23 CSV de `data/publico/` son la fuente canónica. `data/publico/dataset_e3.json` no debe usarse como única fuente porque omite `condiciones_integrante.csv`. Todo el dataset es sintético.
+Los 23 CSV de `data/publico/` son canónicos únicamente para el snapshot E-3 completamente sintético. `data/publico/dataset_e3.json` no debe usarse como única fuente porque omite `condiciones_integrante.csv`. E-3 no representa una nueva postulación, no sustituye la ficha y no satisface el gate de alta. El mapeo versionado de la plantilla vacía está en `content/mapeo_ficha.csv`; no contiene respuestas ni autoriza redistribuir el PDF.
 
 ## Seguridad y privacidad
 

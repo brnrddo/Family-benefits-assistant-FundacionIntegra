@@ -4,6 +4,8 @@ DATOS SINTETICOS - NO CORRESPONDEN A UNA PERSONA REAL
 
 Un manifiesto válido declara versión/hash y contiene al menos una referencia de cada clase obligatoria: `WEIGHTS`, `QUESTIONS`, `BENEFITS`, `PROMPT`, `ACCESSIBILITY` e `I18N`. `SYNTHETIC_ASSET_MANIFEST` es adicional cuando existe demo territorial. Las rutas son únicas, permanecen bajo `content/` y su SHA-256 coincide con el archivo.
 
+`QUESTIONS` e `I18N` pueden incluir la etapa cerrada `INSCRIPCION_INICIAL|MATRICULA` y copy revisado para `BORRADOR`, `COMPLETA`, `NO_DISPONIBLE_AUN` y `PENDIENTE`. C4 no define reglas de completitud, evento de habilitación, hechos, elegibilidad, acceso ni ranking del expediente; solo preguntas y copy por etapa.
+
 ## Ranking cerrado
 
 `ranking` contiene seis bloques sin propiedades extra:

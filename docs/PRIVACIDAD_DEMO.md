@@ -13,11 +13,17 @@
 
 También se excluyen secretos, credenciales, tokens, claves, account IDs y endpoints privados. Nacionalidad no entra al motor ni al LLM; solo se transmite un idioma elegido como enum.
 
+## Expediente de ingreso
+
+La Demo recibe únicamente una atestación sintética de etapa y respuestas tipadas permitidas por C0/C2/C3. Nunca recibe el formulario real completado ni RSH personal. Páginas 1–2 y página 3 conservan las mismas fronteras: la habilitación temporal de una página no autoriza nuevos datos.
+
+Los campos `TOTALMENTE_EXCLUIDO` pueden aparecer en C0 solo como metadatos de la plantilla vacía para demostrar revisión; no se capturan, persisten, muestran ni procesan. Datos `LOCAL_TIA` permanecen en el sistema/dispositivo autorizado y no cruzan contratos cloud. Formularios reales, aun parcialmente ocultos, permanecen fuera del repositorio y de la cuenta AWS del evento. La plantilla PDF no se incorpora mientras su redistribución no esté autorizada.
+
 ## Barrera previa y GenAI
 
 1. Construir un DTO por allowlist positiva; nunca “limpiar” C1/C2 por exclusión.
 2. Validar schema cerrado y serializar canónicamente uno de los dos envelopes de texto.
-3. Inspeccionar **todo** el payload boto3 renderizado: claves, tipos, longitudes, URLs y patrones prohibidos. Los envelopes son internos: C3 público solo acepta IDs de beneficios autorizados o una pregunta; contexto, catálogo y prompt se cargan en servidor desde C1/C2/C4.
+3. Inspeccionar **todo** el payload boto3 renderizado: claves, tipos, longitudes, URLs y patrones prohibidos. Los envelopes son internos: las rutas C3 de GenAI solo aceptan IDs de beneficios autorizados o una pregunta; las rutas de expediente aceptan únicamente uniones tipadas derivadas de C0. Contexto, catálogo y prompt se cargan en servidor desde C1/C2/C4.
 4. Solo después aplicar Guardrails INPUT, Converse, schema/grounding, Guardrails OUTPUT y postvalidación.
 5. Ante duda o fallo, cerrar la entrada o usar `TemplateProvider`; nunca relajar campos.
 
