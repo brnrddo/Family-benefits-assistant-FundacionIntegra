@@ -1,0 +1,225 @@
+# Catálogo de servidor de los 20 beneficios E-3 (clase C4 BENEFITS; SUP-044).
+# Texto visible en español simple y trato de usted. Sin cifras, requisitos, umbrales ni promesas:
+# la elegibilidad la decide solo el motor determinista.
+# Fuentes: data/publico/beneficios.csv, data/publico/beneficios_fuentes.csv y data/publico/fuentes.csv.
+# official_source_id es la fuente DESCRIPCION con URL HTTPS; BEN-018, BEN-019 y BEN-020 solo tienen F900 (PREG-045).
+content_version: "0.2.0"
+estado: PENDIENTE_REVISION_HUMANA
+beneficios:
+  - benefit_id: BEN-001
+    simple_title: "Subsidio Familiar"
+    description: "Es un aporte mensual en dinero para familias con niños, niñas o adolescentes a su cargo. Ayuda con los gastos de crianza."
+    actions:
+      - "Consulte en su municipalidad o en la Ventanilla Única Social."
+      - "Mantenga su Registro Social de Hogares al día."
+      - "Pregunte qué documentos necesita llevar."
+    institution: "Instituto de Previsión Social (IPS) y municipalidades"
+    where_to_go: "Municipalidad, Ventanilla Única Social o ChileAtiende."
+    official_source_id: F004
+    official_url: https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf
+    source_ids: [F004, F900]
+  - benefit_id: BEN-002
+    simple_title: "Subsidio Familiar automático"
+    description: "Es el mismo aporte del Subsidio Familiar, pero se asigna sin hacer trámites. El Estado lo revisa con los datos del Registro Social de Hogares."
+    actions:
+      - "Mantenga su Registro Social de Hogares al día."
+      - "Si tiene dudas, consulte en el Instituto de Previsión Social."
+    institution: "Instituto de Previsión Social (IPS)"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F004
+    official_url: https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf
+    source_ids: [F004, F900]
+  - benefit_id: BEN-003
+    simple_title: "Subsidio Maternal"
+    description: "Es un aporte mensual en dinero durante el embarazo. Ayuda a la familia a prepararse para la llegada del bebé."
+    actions:
+      - "Consulte en su municipalidad o en la Ventanilla Única Social."
+      - "Mantenga su Registro Social de Hogares al día."
+      - "Pregunte qué documentos necesita llevar."
+    institution: "Instituto de Previsión Social (IPS) y municipalidades"
+    where_to_go: "Municipalidad o Ventanilla Única Social."
+    official_source_id: F006
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/509/subsidio-maternal
+    source_ids: [F006, F900]
+  - benefit_id: BEN-004
+    simple_title: "Aporte Familiar Permanente"
+    description: "Es un pago en dinero que llega una vez al año. Se asocia a otros apoyos del Estado que la familia ya tiene."
+    actions:
+      - "No necesita postular: se asigna de forma automática."
+      - "Si tiene dudas, consulte en el Instituto de Previsión Social."
+    institution: "Instituto de Previsión Social (IPS)"
+    where_to_go: "Se asigna de forma automática. También puede consultar en el Instituto de Previsión Social."
+    official_source_id: F007
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/80/aporte-familiar-permanente
+    source_ids: [F007, F900]
+  - benefit_id: BEN-005
+    simple_title: "Subsidio al pago del agua"
+    description: "Es un descuento en la cuenta del agua potable y del alcantarillado. Ayuda a familias a las que les cuesta pagar esa cuenta."
+    actions:
+      - "Consulte en su municipalidad."
+      - "Tenga a mano una cuenta reciente del agua."
+      - "Pregunte qué documentos necesita llevar."
+    institution: "Municipalidades y Ministerio de Desarrollo Social y Familia"
+    where_to_go: "Municipalidad de su comuna."
+    official_source_id: F008
+    official_url: https://www.chileatiende.gob.cl/fichas/51314-subsidio-al-pago-del-consumo-de-agua-potable-y-servicio-de-alcantarillado
+    source_ids: [F008, F900]
+  - benefit_id: BEN-006
+    simple_title: "Subsidio de discapacidad para niños, niñas y adolescentes"
+    description: "Es un aporte mensual en dinero para niños, niñas o adolescentes con discapacidad. Ayuda a la familia con los gastos de cuidado."
+    actions:
+      - "Consulte en la Ventanilla Única Social o en ChileAtiende."
+      - "Pregunte si necesita la credencial de discapacidad."
+      - "Mantenga su Registro Social de Hogares al día."
+    institution: "Instituto de Previsión Social (IPS)"
+    where_to_go: "Ventanilla Única Social, ChileAtiende o Instituto de Previsión Social."
+    official_source_id: F009
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/96/subsidio-discapacidad-menores
+    source_ids: [F009, F900]
+  - benefit_id: BEN-007
+    simple_title: "Alimentación escolar"
+    description: "Entrega comidas a niños, niñas y estudiantes durante la jornada en el jardín o la escuela. Ayuda a que coman bien cada día."
+    actions:
+      - "Pregunte en el jardín o la escuela cómo funciona la alimentación."
+    institution: "Junta Nacional de Auxilio Escolar y Becas (JUNAEB)"
+    where_to_go: "Lo gestiona el establecimiento educacional."
+    official_source_id: F010
+    official_url: https://www.junaeb.cl/programa-de-alimentacion-escolar/
+    source_ids: [F010, F900]
+  - benefit_id: BEN-008
+    simple_title: "Apoyo al recién nacido"
+    description: "Entrega un set de artículos para el cuidado del bebé recién nacido. Se entrega en la red pública de salud."
+    actions:
+      - "Consulte en el hospital o centro de salud donde se atendió el parto."
+    institution: "Chile Crece Contigo, del Ministerio de Desarrollo Social y Familia"
+    where_to_go: "Red pública de salud."
+    official_source_id: F012
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/289/programa-apoyo-recien-nacido
+    source_ids: [F012, F900]
+  - benefit_id: BEN-009
+    simple_title: "Apoyo al desarrollo infantil"
+    description: "Acompaña el embarazo y el desarrollo de niños y niñas pequeños. Se entrega en los controles de la red pública de salud."
+    actions:
+      - "Asista a los controles de salud del embarazo o del niño o niña."
+      - "Pregunte en su centro de salud por las actividades de Chile Crece Contigo."
+    institution: "Chile Crece Contigo, con el Ministerio de Desarrollo Social y Familia y la red de salud"
+    where_to_go: "Red pública de salud."
+    official_source_id: F013
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/288/programa-apoyo-desarrollo-biopsicosocial
+    source_ids: [F013, F900]
+  - benefit_id: BEN-010
+    simple_title: "Bono de Protección"
+    description: "Es un aporte mensual en dinero para familias del Subsistema Seguridades y Oportunidades. Acompaña el apoyo que la familia recibe del programa."
+    actions:
+      - "Si tiene dudas, consulte en el Instituto de Previsión Social."
+    institution: "Subsistema Seguridades y Oportunidades e Instituto de Previsión Social (IPS)"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F014
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/327/bono-proteccion-egreso
+    source_ids: [F014, F900]
+  - benefit_id: BEN-011
+    simple_title: "Bono Base Familiar"
+    description: "Es un aporte mensual en dinero para familias del Subsistema Seguridades y Oportunidades. Ayuda a cubrir gastos básicos del hogar."
+    actions:
+      - "Si tiene dudas, consulte en el Instituto de Previsión Social."
+    institution: "Subsistema Seguridades y Oportunidades e Instituto de Previsión Social (IPS)"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F015
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/321/bono-base-familiar
+    source_ids: [F015, F900]
+  - benefit_id: BEN-012
+    simple_title: "Bono Control Niño Sano"
+    description: "Es un aporte en dinero para familias del Subsistema Seguridades y Oportunidades. Reconoce que niños y niñas pequeños tengan sus controles de salud al día."
+    actions:
+      - "Mantenga al día los controles de salud del niño o niña."
+      - "Lleve el cuaderno de salud a cada control."
+    institution: "Subsistema Seguridades y Oportunidades"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F016
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/325/bono-control-nino-sano
+    source_ids: [F016, F900]
+  - benefit_id: BEN-013
+    simple_title: "Bono Asistencia Escolar"
+    description: "Es un aporte en dinero para familias del Subsistema Seguridades y Oportunidades. Reconoce que los estudiantes vayan a clases con regularidad."
+    actions:
+      - "Procure que su hijo o hija asista a clases."
+      - "Mantenga la matrícula al día."
+    institution: "Subsistema Seguridades y Oportunidades"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F017
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/320/bono-asistencia-escolar
+    source_ids: [F017, F900]
+  - benefit_id: BEN-014
+    simple_title: "Bono por Logro Escolar"
+    description: "Es un aporte en dinero que llega una vez al año. Reconoce el buen rendimiento escolar de estudiantes de familias con más necesidades."
+    actions:
+      - "No necesita postular: se asigna de forma automática."
+      - "Si tiene dudas, consulte en el Ministerio de Desarrollo Social y Familia."
+    institution: "Ministerio de Desarrollo Social y Familia"
+    where_to_go: "Se asigna de forma automática."
+    official_source_id: F018
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/324/bono-logro-escolar
+    source_ids: [F018, F900]
+  - benefit_id: BEN-015
+    simple_title: "Útiles escolares"
+    description: "Entrega un set de útiles escolares a estudiantes. Ayuda a la familia con los gastos del año escolar."
+    actions:
+      - "Pregunte en el jardín o la escuela cuándo se entregan los útiles."
+    institution: "Junta Nacional de Auxilio Escolar y Becas (JUNAEB)"
+    where_to_go: "Lo entrega el establecimiento educacional."
+    official_source_id: F019
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/126/programa-utiles-escolares
+    source_ids: [F019, F900]
+  - benefit_id: BEN-016
+    simple_title: "Asignación Familiar"
+    description: "Es un aporte en dinero por cada carga familiar reconocida. Se asocia al trabajo con contrato o a una pensión."
+    actions:
+      - "Consulte en la entidad que le paga el sueldo o la pensión."
+      - "Pregunte cómo reconocer a sus cargas familiares."
+    institution: "Instituto de Previsión Social (IPS) y entidades administradoras"
+    where_to_go: "Entidad administradora de su asignación."
+    official_source_id: F020
+    official_url: https://www.ventanillaunicasocial.gob.cl/ficha/83/asignacion-familiar
+    source_ids: [F020, F900]
+  - benefit_id: BEN-017
+    simple_title: "Bono por Hijo"
+    description: "Es un aporte para mujeres que aumenta su pensión por cada hijo o hija. Ayuda a reconocer el tiempo dedicado a la crianza."
+    actions:
+      - "Consulte en el Instituto de Previsión Social."
+      - "Pregunte qué documentos necesita llevar."
+    institution: "Instituto de Previsión Social (IPS)"
+    where_to_go: "Instituto de Previsión Social."
+    official_source_id: F021
+    official_url: https://www.ips.gob.cl/fichas/bono-por-hijo
+    source_ids: [F021, F900]
+  - benefit_id: BEN-018
+    simple_title: "Canasta familiar (programa de demostración)"
+    description: "Es un programa de demostración y no existe en la realidad. Entrega una canasta de alimentos a familias con dificultad para comprar comida."
+    actions:
+      - "Converse con el jardín sobre una posible derivación."
+    institution: "Organización Social Sintética A"
+    where_to_go: "Derivación desde el jardín infantil."
+    official_source_id: null  # PREG-045
+    official_url: null  # PREG-045
+    source_ids: [F900]
+  - benefit_id: BEN-019
+    simple_title: "Traslado a terapias (programa de demostración)"
+    description: "Es un programa de demostración y no existe en la realidad. Ayuda a pagar el traslado de niños y niñas a sus terapias."
+    actions:
+      - "Converse con el jardín sobre el formulario o la derivación."
+    institution: "Fundación Sintética B"
+    where_to_go: "Formulario o derivación."
+    official_source_id: null  # PREG-045
+    official_url: null  # PREG-045
+    source_ids: [F900]
+  - benefit_id: BEN-020
+    simple_title: "Apoyo ante emergencias familiares (programa de demostración)"
+    description: "Es un programa de demostración y no existe en la realidad. Entrega un apoyo en dinero a familias que vivieron una emergencia reciente."
+    actions:
+      - "Converse con el jardín sobre una posible derivación."
+      - "El equipo social evalúa cada situación."
+    institution: "Red Comunitaria Sintética C"
+    where_to_go: "Derivación y evaluación social."
+    official_source_id: null  # PREG-045
+    official_url: null  # PREG-045
+    source_ids: [F900]
