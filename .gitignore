@@ -64,6 +64,13 @@ datasets/
 models/
 
 # ============================================================
+#  Empaquetado AWS Lambda (artefactos de build)
+# ============================================================
+# Los genera backend/deploy/build_lambda.sh y se regeneran en un comando.
+# El directorio de staging build/ ya queda ignorado en la sección Node/Frontend.
+brujula-api.zip
+
+# ============================================================
 #  Base de datos (archivos locales, nunca el dump productivo)
 # ============================================================
 *.sqlite
