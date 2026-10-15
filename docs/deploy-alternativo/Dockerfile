@@ -8,7 +8,7 @@
 # IMPORTANTE: el contexto de build es la RAÍZ DEL REPO, no backend/, porque el
 # loader lee los CSV desde ../data/publico (ver app/config.py). Construir así:
 #
-#   docker build -f backend/Dockerfile -t e3-backend .
+#   docker build -f docs/deploy-alternativo/Dockerfile -t e3-backend .
 #   docker run --rm e3-backend \
 #       python -c "import sqlite3; print(sqlite3.connect('e3.db').execute('SELECT count(*) FROM evaluaciones').fetchone())"
 #   # -> (10000,)

@@ -364,11 +364,20 @@ funciona en SQLite y migrar a mitad de hackatón es riesgo sin ganancia para la
 demo; SQLite soporta las vistas de cruce que pide la spec. Desviación respecto
 de la spec (que sugiere DuckDB), documentada aquí a propósito.
 
-El artefacto `e3.db` **no se versiona**: se genera en el build. El empaquetado
-está en `backend/`: `Makefile` (target `data`), `make.ps1` (equivalente para
-Windows) y `Dockerfile` + `.dockerignore` (en la raíz del repo).
+**Vía oficial: zip + Mangum en AWS Lambda** (dueño: Rol 2). El Rol 1 aporta dos
+cosas al despliegue: (a) el pipeline reproducible `make data` que genera la
+`e3.db` precalculada, y (b) las variables de entorno que la Lambda puede
+sobrescribir. El artefacto `e3.db` **no se versiona**: se genera en el build.
 
-### 1) Regenerar la base localmente (`make data`)
+> La vía basada en Docker (imagen con la base embebida) existe solo como
+> **alternativa / plan B** en `docs/deploy-alternativo/` — p. ej. si el zip
+> supera el límite de Lambda (250 MB descomprimido). **No es el camino oficial**
+> y no debe desplegarse en paralelo a la vía zip.
+
+### 1) Generar la base (`make data`)
+
+Tanto la vía oficial (zip) como la alternativa (Docker) parten de la misma
+`e3.db` generada por este pipeline:
 
 ```bash
 # Linux/mac (desde backend/):
@@ -384,77 +393,30 @@ python -m app.loader.load --force   # CSV públicos -> e3.db
 python -m app.db.build_views        # 10.000 evaluaciones + vistas de cruce
 ```
 
-### 2) Construir la imagen con `e3.db` embebida
+### 2) Empaquetar (zip + Mangum) y desplegar
 
-El contexto de build es la **raíz del repo** (el loader lee `../data/publico`),
-así que se usa `-f backend/Dockerfile`:
+El empaquetado del artefacto Lambda y la definición de infraestructura son
+responsabilidad del Rol 2 (ver su guía). El Rol 1 solo garantiza que:
 
-```bash
-# desde la raíz del repo:
-docker build -f backend/Dockerfile -t e3-backend .
-
-# smoke test: la base embebida debe tener 10.000 evaluaciones
-docker run --rm e3-backend
-# -> evaluaciones: 10000 / accesos: 10000 / vistas listas: ...
-
-# verificación equivalente (una sola consulta):
-docker run --rm e3-backend \
-    python -c "import sqlite3; print(sqlite3.connect('e3.db').execute('SELECT count(*) FROM evaluaciones').fetchone())"
-# -> (10000,)
-```
-
-El `Dockerfile` corre el pipeline en build-time y verifica el conteo (falla el
-build si `evaluaciones != 10000`), de modo que la imagen nunca sale con una base
-incompleta.
-
-> **Verificado** (Docker 29.8.2, base `python:3.11-slim`): el build completa los
-> 9 pasos, el precálculo embebido corre en ~8 s dentro de la imagen, la aserción
-> `evaluaciones == 10000` pasa en build-time y `docker run` imprime
-> `evaluaciones: 10000 / accesos: 10000`. Imagen resultante ≈ **293 MB**.
-
-- El backend (FastAPI, Rol 2) lee `e3.db` de **solo lectura** desde la imagen.
-  El `CMD` por defecto es un placeholder (imprime el resumen de la base); Rol 2
-  lo reemplaza por el server, p. ej.
-  `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
+- `make data` produce una `e3.db` con **10.000 evaluaciones** + las vistas de
+  cruce, lista para servir de **solo lectura** desde la Lambda.
+- La app lee su configuración por entorno, así que el despliegue puede
+  sobrescribir sin tocar código:
+  - `E3_DB_PATH` — ruta de la base dentro del paquete Lambda.
+  - `E3_FECHA_EVALUACION` — fecha de corte de la evaluación.
+  - `E3_LLM_PROVIDER=bedrock` + rol de IAM con `bedrock:InvokeModel` /
+    `bedrock:Converse` para la capa GenAI (el stub local no necesita AWS).
 - Nada de datos personales en logs ni en lo que viaje al LLM (lo garantiza
-  `context_filter.py`, §2.7.3). El `.dockerignore` excluye `.env`, credenciales,
-  `.venv`, cachés y las bases locales.
-- Rutas y fecha configurables por entorno: `E3_DB_PATH`, `E3_FECHA_EVALUACION`
-  (declaradas con default en el `Dockerfile`; Rol 2 las puede sobrescribir).
+  `context_filter.py`, §2.7.3).
 
-### 3) Publicar en ECR y desplegar (handoff a Rol 2)
+El adaptador ASGI (Mangum) y el handler de Lambda los define el Rol 2 al montar
+el server FastAPI (`app/api/`).
 
-La base viaja **dentro de la imagen**: no hace falta un servicio de datos
-aparte. Rol 2 solo publica la imagen en ECR y apunta App Runner / Lambda a ella.
+### Alternativa Docker (plan B)
 
-```bash
-# variables (ajustar región y cuenta):
-AWS_REGION=us-east-1
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-ECR_REPO=e3-backend
-IMAGE_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
-
-# 1) crear el repositorio (una vez)
-aws ecr create-repository --repository-name $ECR_REPO --region $AWS_REGION
-
-# 2) login de Docker contra ECR
-aws ecr get-login-password --region $AWS_REGION \
-  | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-# 3) etiquetar y subir
-docker tag e3-backend:latest $IMAGE_URI:latest
-docker push $IMAGE_URI:latest
-```
-
-Luego, en App Runner (recomendado para la demo: HTTP directo, sin API Gateway):
-- Origen = la imagen `$IMAGE_URI:latest` en ECR.
-- Puerto = el que exponga el server de Rol 2 (p. ej. `8000` con uvicorn).
-- Variables de entorno opcionales: `E3_DB_PATH`, `E3_FECHA_EVALUACION`,
-  `E3_LLM_PROVIDER=bedrock` y las credenciales/rol de IAM para Bedrock.
-- Rol de IAM mínimo para la IA: `bedrock:InvokeModel`, `bedrock:Converse`.
-
-En Lambda (contenedor) el esquema es el mismo (imagen desde ECR); requiere un
-adaptador ASGI (p. ej. Mangum) que Rol 2 añadiría al definir el server.
+Documentada en `docs/deploy-alternativo/` (Dockerfile + README). Verificada de
+punta a punta (Python 3.14.5-slim + uv, pipeline embebido, aserción de 10.000
+evaluaciones en build-time, imagen ≈ 492 MB). Usar solo si la vía zip se bloquea.
 
 ---
 

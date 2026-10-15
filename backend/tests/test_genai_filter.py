@@ -12,7 +12,6 @@ No requieren red ni boto3.
 """
 from __future__ import annotations
 
-import copy
 import json
 import logging
 import sys

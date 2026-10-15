@@ -13,7 +13,7 @@ Reglas de oro:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app.access.model import EstadoAcceso
 from app.engine.model import Nivel, Tri
