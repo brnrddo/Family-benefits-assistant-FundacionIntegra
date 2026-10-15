@@ -3,6 +3,8 @@
 // API, nunca se envía a ella (ningún request, URL ni header), nunca va a logs, telemetría, prompts ni
 // a la tarjeta/mensaje generado por la API. Solo existe con persistencia Demo (local/demo sintético):
 // en `escala` la función está oculta y no se abre IndexedDB. El logout lo borra junto con la BD.
+// DEC-047: se guarda SOLO "PrimerNombre I." (corte automático, `cutLocalName`); el texto completo que
+// escribe la tía no se persiste. En Demo puede venir precargado desde `localNamesSeed.ts` (inventado).
 import { useSyncExternalStore } from 'react';
 import { runtimeConfig, SYNTHETIC_CLASSIFICATION } from '../config/profile';
 import { isSyntheticId } from '../domain/ids';
@@ -30,6 +32,25 @@ export function validateLocalName(raw: string): LocalNameCheck {
   return { ok: true, value };
 }
 
+/**
+ * DEC-047: corte a "PrimerNombre I." ("sofía martínez rojas" → "Sofía M."). Valida el texto crudo,
+ * capitaliza la primera palabra (también tras guion o apóstrofo internos) y agrega la inicial de lo
+ * que sigue; el resto se descarta. Una sola palabra queda solo como nombre. Limitación conocida:
+ * los nombres compuestos se cortan ("María José Pérez" → "María J.").
+ */
+export function cutLocalName(raw: string): LocalNameCheck {
+  const check = validateLocalName(raw);
+  if (!check.ok) return check;
+  const [firstWord = '', ...rest] = check.value.split(' ');
+  const first = firstWord
+    .replace(/\./g, '')
+    .replace(/^['’-]+|['’-]+$/g, '')
+    .toLocaleLowerCase('es-CL')
+    .replace(/(^|['’-])(\p{L})/gu, (_match, sep: string, ch: string) => sep + ch.toLocaleUpperCase('es-CL'));
+  const initial = rest.join(' ').match(/\p{L}/u)?.[0]?.toLocaleUpperCase('es-CL');
+  return validateLocalName(initial === undefined ? first : `${first} ${initial}.`);
+}
+
 export function localNamesEnabled(): boolean {
   try {
     return runtimeConfig().capabilities.localNames && persistenceEnabled();
@@ -51,7 +72,8 @@ function emit(next: ReadonlyMap<string, string>): void {
 
 function isValidRecord(record: NameRecord): boolean {
   if (record.data_classification !== SYNTHETIC_CLASSIFICATION || !isSyntheticId(record.family_id)) return false;
-  const check = validateLocalName(record.name);
+  // DEC-047: solo se aceptan nombres ya cortados; uno antiguo guardado completo se descarta.
+  const check = cutLocalName(record.name);
   return check.ok && check.value === record.name;
 }
 
@@ -77,7 +99,8 @@ export async function refreshLocalNames(): Promise<void> {
 export type SaveNameResult = { readonly ok: true } | { readonly ok: false; readonly issue: LocalNameIssue | 'unavailable' };
 
 export async function saveLocalName(familyId: string, raw: string): Promise<SaveNameResult> {
-  const check = validateLocalName(raw);
+  // Solo se persiste el corte "Nombre I." (DEC-047), nunca `raw`.
+  const check = cutLocalName(raw);
   if (!check.ok) return check;
   if (!localNamesEnabled() || !isSyntheticId(familyId)) return { ok: false, issue: 'unavailable' };
   try {

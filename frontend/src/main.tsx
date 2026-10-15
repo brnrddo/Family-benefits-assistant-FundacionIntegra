@@ -65,6 +65,17 @@ async function bootstrap(): Promise<void> {
   );
   if (returnTo !== null) window.history.replaceState(null, '', returnTo);
 
+  // DEC-047: nombres de trato INVENTADOS precargados solo en Demo, directo a IndexedDB (sin red).
+  // La condición estática sobre VITE_PROFILE deja el módulo y su JSON fuera del build `escala`.
+  if (import.meta.env.VITE_PROFILE !== 'escala' && config.capabilities.localNames) {
+    try {
+      const { seedLocalNames } = await import('./offline/localNamesSeed');
+      await seedLocalNames();
+    } catch {
+      log.warn({ kind: 'local_names_seed_failed' });
+    }
+  }
+
   const queryClient = createAppQueryClient();
   await startDataSync(queryClient);
   registerServiceWorker();

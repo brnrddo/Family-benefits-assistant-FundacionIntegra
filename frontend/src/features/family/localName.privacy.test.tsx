@@ -2,7 +2,8 @@
 // app completa (router real + AppShell) con el mock-servidor y CAPTURA cada request en el `fetch` del
 // transporte: el nombre nunca aparece en URL, headers ni body (conversación, guion, mensaje,
 // asistente, la operación propuesta ni ninguna lectura) ni en logs. También: logout borra los
-// nombres. Datos 100 % sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON); el nombre es inventado.
+// nombres. DEC-047: lo escrito se guarda como "Nombre I." y los nombres sembrados en Demo cumplen lo
+// mismo. Datos 100 % sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON); los nombres son inventados.
 import { QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,6 +15,7 @@ import { t } from '../../i18n/copy';
 import { log } from '../../lib/log';
 import { clearDemoData, openDemoDb } from '../../offline/db';
 import { clearLocalNamesMemory, currentLocalNames, refreshLocalNames, saveLocalName } from '../../offline/localNames';
+import { seedLocalNames } from '../../offline/localNamesSeed';
 import { createTestQueryClient } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import { routes } from '../../router';
@@ -22,9 +24,17 @@ import { routes } from '../../router';
 configure({ asyncUtilTimeout: 8000 });
 
 const NAME = 'Sofía Ficticia';
+/** DEC-047: lo que queda guardado es solo el primer nombre + inicial. */
+const SAVED = 'Sofía F.';
 const FAMILY = 'FAM-SIM-E3-00002';
-/** Variantes que no deben salir del equipo: con y sin tilde, cada palabra, cualquier caso. */
+/**
+ * Variantes que no deben salir del equipo: con y sin tilde, cada palabra, cualquier caso. Incluye el
+ * apellido completo ('ficticia'): no se guarda ni sale (DEC-047).
+ */
 const NEEDLES = ['sofía', 'sofia', 'ficticia', 'sof%c3%ada', 'sof\\u00eda'];
+/** Nombre sembrado (inventado) de FAMILY en `localNamesSeed.json` (DEC-047). */
+const SEEDED = 'Benjamín T.';
+const SEEDED_NEEDLES = ['benjamín', 'benjamin', 'benjam%c3%adn', 'benjam\\u00edn'];
 
 interface Captured {
   readonly method: string;
@@ -33,9 +43,21 @@ interface Captured {
   readonly body: string;
 }
 
-function leaks(text: string): boolean {
+function leaks(text: string, needles: readonly string[] = NEEDLES): boolean {
   const lower = text.toLowerCase();
-  return NEEDLES.some((needle) => lower.includes(needle));
+  return needles.some((needle) => lower.includes(needle));
+}
+
+/** Espía `log` y `console`: devuelve todo lo que se intentó registrar. */
+function spyLogs(): { readonly logged: unknown[]; readonly consoleCalls: unknown[] } {
+  const logged: unknown[] = [];
+  vi.spyOn(log, 'warn').mockImplementation((fields) => void logged.push(fields));
+  vi.spyOn(log, 'error').mockImplementation((fields) => void logged.push(fields));
+  const consoleCalls: unknown[] = [];
+  for (const method of ['log', 'info', 'warn', 'error', 'debug'] as const) {
+    vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void consoleCalls.push(args));
+  }
+  return { logged, consoleCalls };
 }
 
 describe('nombre de trato: nunca sale del equipo', () => {
@@ -67,13 +89,7 @@ describe('nombre de trato: nunca sale del equipo', () => {
 
   it('flujo completo: Inicio → nombre → Agregar información → guion → mensaje → conversado → asistente', { timeout: 30_000 }, async () => {
     const user = userEvent.setup();
-    const logged: unknown[] = [];
-    vi.spyOn(log, 'warn').mockImplementation((fields) => void logged.push(fields));
-    vi.spyOn(log, 'error').mockImplementation((fields) => void logged.push(fields));
-    const consoleCalls: unknown[] = [];
-    for (const method of ['log', 'info', 'warn', 'error', 'debug'] as const) {
-      vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void consoleCalls.push(args));
-    }
+    const { logged, consoleCalls } = spyLogs();
 
     const router = createMemoryRouter(routes, { initialEntries: ['/'] });
     render(
@@ -90,7 +106,7 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await user.click(await screen.findByRole('button', { name: t('family.name.open') }));
     await user.type(screen.getByLabelText(t('family.name.title')), NAME);
     await user.click(screen.getByRole('button', { name: t('family.name.save') }));
-    await screen.findByRole('heading', { level: 1, name: NAME });
+    await screen.findByRole('heading', { level: 1, name: SAVED });
     // Ni la pestaña ni el historial del navegador (que el logout no borra) llevan el nombre.
     expect(leaks(document.title)).toBe(false);
     expect(leaks(router.state.location.pathname + router.state.location.search)).toBe(false);
@@ -102,7 +118,7 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await user.click(within(screen.getByRole('group', { name: t('new_family.q.household_income_band') })).getByRole('radio', { name: t('income_band.under_110k') }));
     await user.click(screen.getByRole('button', { name: t('add_info.submit') }));
     await screen.findByText(t('family.add_info_done'));
-    expect(screen.getByRole('heading', { level: 1, name: NAME })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: SAVED })).toBeInTheDocument();
 
     // Guion y mensaje (POST de generación)
     await user.click(screen.getByRole('link', { name: t('family.actions.script') }));
@@ -117,7 +133,7 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await user.click(await screen.findByRole('radio', { name: t('next_step.go_to_institution') }));
     await user.click(screen.getByRole('button', { name: t('conversation.confirm') }));
     await screen.findByText(t('conversation.success'));
-    expect(screen.getByText(NAME)).toBeInTheDocument();
+    expect(screen.getByText(SAVED)).toBeInTheDocument();
 
     // Asistente: una pregunta con el nombre se bloquea SIN enviar; una general sí se envía.
     await user.click(screen.getByRole('link', { name: t('nav.assistant') }));
@@ -156,14 +172,72 @@ describe('nombre de trato: nunca sale del equipo', () => {
     // --- Ni en logs ni en consola ---
     expect(leaks(JSON.stringify(logged))).toBe(false);
     expect(leaks(JSON.stringify(consoleCalls))).toBe(false);
-    // Sí quedó guardado, pero solo en este equipo.
-    expect(currentLocalNames().get(FAMILY)).toBe(NAME);
+    // Sí quedó guardado (solo nombre + inicial), pero solo en este equipo.
+    expect(currentLocalNames().get(FAMILY)).toBe(SAVED);
+  });
+
+  it('nombre sembrado (DEC-047): ficha, guion, mensaje, asistente y logout sin que salga del equipo', { timeout: 30_000 }, async () => {
+    expect(await seedLocalNames()).toBe(9);
+    await refreshLocalNames();
+    const user = userEvent.setup();
+    const { logged, consoleCalls } = spyLogs();
+    const seededLeaks = (text: string) => leaks(text, SEEDED_NEEDLES);
+
+    const router = createMemoryRouter(routes, { initialEntries: [`/familias/${FAMILY}`] });
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByRole('heading', { level: 1, name: SEEDED });
+    expect(seededLeaks(document.title)).toBe(false);
+    expect(seededLeaks(router.state.location.pathname + router.state.location.search)).toBe(false);
+
+    // Guion y mensaje (POST de generación); la tarjeta imprimible no lleva el nombre.
+    await user.click(await screen.findByRole('link', { name: t('family.actions.script') }));
+    await screen.findByText(t('script.read_hint'));
+    await user.click(screen.getByRole('link', { name: t('nav.back') }));
+    await user.click(await screen.findByRole('link', { name: t('family.actions.message') }));
+    await waitFor(() => expect(document.querySelector('[data-print-root]')).not.toBeNull());
+    expect(seededLeaks(document.querySelector('[data-print-root]')?.textContent ?? '')).toBe(false);
+    await user.click(screen.getByRole('link', { name: t('nav.back') }));
+    await screen.findByRole('heading', { level: 1, name: SEEDED });
+
+    // Asistente: el primer nombre solo (sin tilde) basta para bloquear SIN enviar.
+    await user.click(screen.getByRole('link', { name: t('nav.assistant') }));
+    const field = await screen.findByLabelText(new RegExp(t('assistant.question_label')));
+    await user.type(field, '¿Qué apoyos hay para benjamin?');
+    const before = captured.length;
+    await user.click(screen.getByRole('button', { name: t('assistant.submit') }));
+    expect(await screen.findByText(t('assistant.name_blocked'))).toBeInTheDocument();
+    expect(captured.length).toBe(before);
+
+    // El aviso de logout cuenta también los sembrados (sin confirmar aquí).
+    await user.click(screen.getByRole('button', { name: t('auth.logout') }));
+    expect(screen.getByText(t('auth.logout_confirm.body_names', { count: '9' }))).toBeInTheDocument();
+
+    const routesSeen = captured.map((c) => `${c.method} ${new URL(c.url).pathname}`);
+    for (const expected of [`GET /api/v1/familias/${FAMILY}`, `POST /api/v1/familias/${FAMILY}/guion`, `POST /api/v1/familias/${FAMILY}/mensaje`]) {
+      expect(routesSeen).toContain(expected);
+    }
+    for (const request of captured) {
+      expect(seededLeaks(request.url), request.url).toBe(false);
+      expect(seededLeaks(request.headers), `${request.method} ${request.url} headers`).toBe(false);
+      expect(seededLeaks(request.body), `${request.method} ${request.url} body`).toBe(false);
+    }
+    expect(seededLeaks(JSON.stringify(logged))).toBe(false);
+    expect(seededLeaks(JSON.stringify(consoleCalls))).toBe(false);
+
+    // Logout borra también los sembrados.
+    await performLogout(createTestQueryClient(), vi.fn());
+    expect(currentLocalNames().size).toBe(0);
   });
 
   it('logout borra los nombres del equipo (IndexedDB y memoria)', async () => {
     expect((await saveLocalName(FAMILY, NAME)).ok).toBe(true);
     const db = await openDemoDb();
-    expect(await db.get('names', FAMILY)).toMatchObject({ family_id: FAMILY, name: NAME });
+    expect(await db.get('names', FAMILY)).toMatchObject({ family_id: FAMILY, name: SAVED });
 
     const navigate = vi.fn();
     await performLogout(createTestQueryClient(), navigate);
