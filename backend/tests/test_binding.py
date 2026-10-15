@@ -127,3 +127,32 @@ def test_ref_eq_sin_relacion_no_da_si(conn, fecha):
     # sin commit: la conexión del test ve el borrado; se revierte al cerrar.
     r = Evaluator(conn, fecha).evaluar(fid, "BEN-016")
     assert r.resultado != Tri.SI
+
+
+# --- regresión: traza conservada cuando un binding EXISTS no tiene ganador ---
+
+def test_binding_exists_sin_ganador_conserva_traza(conn, fecha):
+    """Si ningún candidato cumple un binding EXISTS, el resultado es NO/IND pero
+    la traza NO debe quedar vacía: debe mostrar las reglas del candidato
+    evaluado (explicabilidad). Bug detectado al pasar el dataset completo.
+
+    Caso: familia cuyo único estudiante candidato es un niño de jardín menor
+    que la edad mínima de BEN-013 → NO, pero con traza de las reglas ESTUDIANTE.
+    """
+    # Familia con un hijo pequeño matriculado y SSyO activo (grupo con binding
+    # HOGAR + ESTUDIANTE_1). Buscamos una donde BEN-013 dé NO por edad.
+    r = None
+    for n in range(1, 60):
+        fam = f"FAM-SIM-E3-{n:05d}"
+        res = Evaluator(conn, fecha).evaluar(fam, "BEN-013")
+        if res.resultado == Tri.NO and any(
+                t.binding_grupo.startswith("ESTUDIANTE") for t in res.traza):
+            r = res
+            break
+    assert r is not None, "no se halló una familia BEN-013=NO con binding estudiante"
+    # La traza debe incluir reglas del binding ESTUDIANTE (no solo el HOGAR).
+    bindings_en_traza = {t.binding_grupo for t in r.traza}
+    assert any(b.startswith("ESTUDIANTE") for b in bindings_en_traza), (
+        f"traza sin binding estudiante: {bindings_en_traza}")
+    # Y debe haber más de una regla (no quedó truncada en vacío).
+    assert len(r.traza) >= 2
