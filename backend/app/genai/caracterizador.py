@@ -14,10 +14,22 @@ Rol 2 lo tome como base:
 Caso de uso típico (ficha digital S2): la tía escribe en lenguaje natural
 ("vive con la abuela postrada y dos niños chicos") y el LLM extrae una
 caracterización estructurada que el motor puede usar como pistas DECLARADO.
+
+**Límite de egreso (falla cerrado).** Este patrón SOLO corre contra el
+proveedor local (`StubProvider`): el prompt mezcla texto libre sin tipar con un
+contexto que viene de `context_filter.filtrar_para_llm` y NO de
+`llm_context.construir_llm_context`, así que no está validado contra el schema
+cerrado `LlmContextV1`. Mandarlo a un proveedor cloud dejaría a Guardrails como
+única barrera y Guardrails no anonimiza (PRIVACIDAD_DEMO §"Barrera previa y
+GenAI"). Habilitar un proveedor remoto aquí exige antes: (a) construir el
+contexto con la allowlist positiva y (b) decidir la política de entrada del
+texto libre (rechazar, tipar o sanear). Ambas son decisiones de producto, no se
+resuelven cambiando `E3_LLM_PROVIDER`.
 """
 from __future__ import annotations
 
-from .provider import LLMProvider, get_provider
+from .llm_context import PiiLeakError
+from .provider import LLMProvider, StubProvider, get_provider
 
 # Schema de ejemplo de la caracterización que se le pide al modelo. El Rol 4
 # afina el prompt; el Rol 2 puede ampliar el schema. Campos deliberadamente
@@ -49,6 +61,26 @@ SYSTEM = (
 )
 
 
+def _exigir_proveedor_local(provider: LLMProvider) -> None:
+    """Falla cerrado si el proveedor no es local: este prompt no puede salir.
+
+    Guarda de egreso del patrón (ver el límite documentado en el módulo). No
+    inspecciona ni "limpia" el contenido: cierra la vía completa, que es lo que
+    exige la política ante duda ("cerrar la entrada o usar `TemplateProvider`").
+    El mensaje lleva solo el nombre del proveedor, nunca el prompt ni el
+    contexto.
+    """
+    if not isinstance(provider, StubProvider):
+        raise PiiLeakError(
+            "caracterizar_texto_libre solo admite el proveedor local "
+            f"'{StubProvider.nombre}' (recibido: "
+            f"{getattr(provider, 'nombre', type(provider).__name__)!r}): el "
+            "prompt lleva texto libre sin tipar y un contexto que no pasó por "
+            "construir_llm_context; enviarlo a un proveedor remoto saltaría la "
+            "allowlist de LlmContextV1"
+        )
+
+
 def caracterizar_texto_libre(
     texto_tia: str,
     contexto_filtrado: dict,
@@ -59,11 +91,16 @@ def caracterizar_texto_libre(
     `contexto_filtrado` DEBE venir de `context_filter.filtrar_para_llm`. Esta
     función no vuelve a filtrar, pero tampoco añade datos sensibles al prompt.
 
+    Solo corre con el proveedor local: cualquier otro (p. ej. `BedrockProvider`
+    vía `E3_LLM_PROVIDER=bedrock`, o uno inyectado) lanza `PiiLeakError` antes
+    de armar el prompt y nada sale del proceso.
+
     El resultado se marca como propuesta del LLM: quien lo consuma debe
     registrarlo como hecho DECLARADO/no acreditado (PRELIMINAR), nunca como
     verdad confirmada.
     """
     provider = provider or get_provider()
+    _exigir_proveedor_local(provider)  # antes de construir el prompt
     prompt = (
         "Contexto no sensible de la familia (JSON):\n"
         f"{contexto_filtrado}\n\n"
