@@ -58,6 +58,8 @@ export function NameEditor({ familyId }: { readonly familyId: string }) {
       setIssue(result.issue);
       return;
     }
+    // DEC-047: el texto crudo (con apellido) no queda en memoria tras guardar.
+    setDraft('');
     setIssue(null);
     setStatus('saved');
     setOpen(false);

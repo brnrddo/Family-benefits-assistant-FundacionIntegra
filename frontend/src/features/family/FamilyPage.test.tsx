@@ -88,8 +88,9 @@ describe('FamilyPage', () => {
     await user.click(await screen.findByRole('button', { name: t('family.name.open') }));
     await user.type(screen.getByLabelText(t('family.name.title')), '  Sofía   Ficticia ');
     await user.click(screen.getByRole('button', { name: t('family.name.save') }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Sofía Ficticia' })).toBeInTheDocument();
-    expect(currentLocalNames().get('FAM-SIM-E3-00002')).toBe('Sofía Ficticia');
+    // DEC-047: se guarda solo el primer nombre + inicial.
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sofía F.' })).toBeInTheDocument();
+    expect(currentLocalNames().get('FAM-SIM-E3-00002')).toBe('Sofía F.');
     expect(screen.getByRole('link', { name: t('family.actions.add_info') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00002/agregar-informacion');
   });
 

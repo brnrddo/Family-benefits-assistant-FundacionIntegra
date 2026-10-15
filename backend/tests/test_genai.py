@@ -6,8 +6,13 @@ No requieren red ni boto3.
 """
 from __future__ import annotations
 
-from app.genai import StubProvider, get_provider
+import pytest
+
+from app.genai import LLMProvider, LLMResponse, PiiLeakError, StubProvider, get_provider
 from app.genai.caracterizador import SCHEMA_CARACTERIZACION, caracterizar_texto_libre
+
+# Valor sintético: ningún id real de Guardrail, cuenta ni endpoint.
+GUARDRAIL_SINTETICO = "GUARDRAIL-SINTETICO-TEST"
 
 
 def test_get_provider_default_es_stub():
@@ -42,13 +47,70 @@ def test_caracterizar_marca_declarado_no_acreditado():
     assert out["proveedor"] == "stub"
 
 
-def test_bedrock_no_implementado_pero_seleccionable():
-    """El BedrockProvider existe como esqueleto; aún no funcional (Rol 2)."""
+def test_bedrock_sin_guardrail_falla_cerrado(monkeypatch):
+    """Seleccionar Bedrock sin Guardrail configurado no llega a AWS.
+
+    El comportamiento completo del proveedor se prueba en
+    ``test_genai_bedrock.py`` (con un cliente falso, sin red ni boto3).
+    """
+    from app.genai.provider import BedrockProvider, GuardrailNoConfigurado
+
+    monkeypatch.delenv("E3_GUARDRAIL_ID", raising=False)
+    assert BedrockProvider.nombre == "bedrock"
+    with pytest.raises(GuardrailNoConfigurado):
+        BedrockProvider()
+
+
+class _ProveedorRemotoFalso(LLMProvider):
+    """Proveedor no local: si se lo llama, el texto libre habría salido."""
+
+    nombre = "bedrock"
+
+    def __init__(self):
+        self.llamadas = 0
+
+    def generar(self, prompt, *, system=None, json_schema=None,
+                temperatura: float = 0.2, max_tokens: int = 1024,
+                request_id=None) -> LLMResponse:
+        self.llamadas += 1
+        raise AssertionError("el texto libre no debe viajar a un proveedor remoto")
+
+
+def test_caracterizar_rechaza_proveedor_no_local():
+    """El patrón de texto libre no puede egresar: falla cerrado antes del prompt."""
+    remoto = _ProveedorRemotoFalso()
+
+    with pytest.raises(PiiLeakError) as exc:
+        caracterizar_texto_libre(
+            "vive con la abuela postrada", contexto_filtrado={}, provider=remoto)
+
+    assert remoto.llamadas == 0
+    # El mensaje nombra el proveedor, nunca el texto de la tía.
+    assert "abuela" not in str(exc.value)
+
+
+def test_caracterizar_con_bedrock_por_entorno_no_llama_a_bedrock(monkeypatch):
+    """Cambiar ``E3_LLM_PROVIDER`` no habilita esa vía de egreso."""
     from app.genai.provider import BedrockProvider
-    p = BedrockProvider()
-    assert p.nombre == "bedrock"
-    try:
-        p.generar("x")
-        assert False, "debería lanzar NotImplementedError"
-    except NotImplementedError:
-        pass
+
+    llamadas: list[str] = []
+
+    class _ClienteQueNoDebeUsarse:
+        def apply_guardrail(self, **kwargs):
+            llamadas.append("apply_guardrail")
+            raise AssertionError("no debe llamarse")
+
+        def converse(self, **kwargs):
+            llamadas.append("converse")
+            raise AssertionError("no debe llamarse")
+
+    monkeypatch.setenv("E3_LLM_PROVIDER", "bedrock")
+    monkeypatch.setenv("E3_GUARDRAIL_ID", GUARDRAIL_SINTETICO)
+    monkeypatch.setattr(BedrockProvider, "_crear_cliente",
+                        lambda self: _ClienteQueNoDebeUsarse())
+
+    with pytest.raises(PiiLeakError):
+        caracterizar_texto_libre(
+            "vive con la abuela postrada", contexto_filtrado={"composicion": []})
+
+    assert llamadas == []

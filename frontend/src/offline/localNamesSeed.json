@@ -1,0 +1,15 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "uso": "Nombres de trato INVENTADOS para la demo (DEC-047). Solo se siembran en IndexedDB local; nunca se envian a la API ni a logs.",
+  "names": [
+    { "family_id": "FAM-SIM-E3-00001", "name": "Martina R." },
+    { "family_id": "FAM-SIM-E3-00002", "name": "Benjamín T." },
+    { "family_id": "FAM-SIM-E3-00003", "name": "Isidora C." },
+    { "family_id": "FAM-SIM-E3-00004", "name": "Diego S." },
+    { "family_id": "FAM-SIM-E3-00005", "name": "Emilia P." },
+    { "family_id": "FAM-SIM-E3-00006", "name": "Vicente L." },
+    { "family_id": "FAM-SIM-E3-00007", "name": "Catalina V." },
+    { "family_id": "FAM-SIM-E3-00008", "name": "Gaspar M." },
+    { "family_id": "FAM-SIM-E3-00009", "name": "Josefa N." }
+  ]
+}

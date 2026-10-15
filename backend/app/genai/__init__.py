@@ -15,5 +15,12 @@ Privacidad: lo único que puede viajar al modelo es lo que deja pasar
 `app/context/context_filter.filtrar_para_llm` (§2.7.3).
 """
 
-from .provider import (LLMProvider, LLMResponse, StubProvider,  # noqa: F401
-                       get_provider)
+from .llm_context import (PiiLeakError,  # noqa: F401
+                          construir_llm_context)
+from .provider import (BedrockError, BedrockProvider,  # noqa: F401
+                       GuardrailIntervino, GuardrailNoConfigurado,
+                       LLMProvider, LLMResponse, StubProvider, get_provider)
+from .template_provider import (DISCLAIMER,  # noqa: F401
+                                CatalogEntry, SourceCitation, TemplateError,
+                                TemplateProvider, catalogo_desde_benefits,
+                                es_pregunta_individual)
