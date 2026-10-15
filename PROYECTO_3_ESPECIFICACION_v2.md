@@ -7,11 +7,20 @@
 >
 > Este documento es la fuente de verdad del proyecto. Léelo completo antes de escribir código. Los datos vienen en `participantes_e3.zip` (descomprimir en `data/`).
 
+> **Versión 2 · reorganizada por roles (14-10-2026).** Cambios respecto de la v1:
+> 1. Nueva **idea final del equipo** (§2.6): base de datos con el zip → cruce con beneficios → **ficha de matrícula de Integra como ventana de contexto** → la tía ve los beneficios ordenados por **prioridad, urgencia y beneficio para la familia**.
+> 2. Nueva sección **§2.7 Ficha de matrícula como ventana de contexto** (mapeo campo por campo y qué puede ver la IA).
+> 3. **§8 Priorización reescrita** con tres ejes visibles para la tía: Urgencia · Beneficio para la familia · Vulnerabilidad del hogar.
+> 4. Nueva sección **§18 Roles del equipo** (4 integrantes, uno sin código), con contratos entre roles para trabajar en paralelo.
+> 5. **§15 Plan de trabajo** y **§17 Definición de terminado** ahora tienen dueño por tarea.
+
 ---
 
 ## 0. Resumen en una frase
 
 Una herramienta **para la educadora / directora del jardín ("la tía")** que, a partir de los datos de cada familia, le dice **qué beneficios del Estado (y de organizaciones locales) podría obtener esa familia, por qué, qué le falta y dónde ir**, y le entrega un **guion simple para contárselo cara a cara** (boca a boca), más un mensaje que la familia se puede llevar. La tía registra que conversó con la familia y eso alimenta el KPI: **100 % de las familias informadas**.
+
+**En concreto (v2):** cargamos el dataset E-3 en una base de datos, lo **cruzamos con el catálogo de beneficios** mediante un motor de reglas, y sumamos la **ficha de inscripción y matrícula de Integra** como ventana de contexto de cada familia. Con eso, la tía ve para cada familia los beneficios ordenados por **prioridad**, con tres señales simples: **qué tan urgente es**, **cuánto le ayudaría a la familia** y **qué tan vulnerable es el hogar**.
 
 La IA no reemplaza a la tía: la convierte en una "orientadora experta" en 2 minutos, que es exactamente lo que hizo la tía Ana con Don Julio.
 
@@ -84,22 +93,103 @@ Tía abre la app → ve su jardín → lista de familias ordenada por prioridad
    → KPI sube
 ```
 
+### 2.6 Idea final del equipo: el flujo de datos de punta a punta
+```
+participantes_e3.zip ──► [1] Base de datos (DuckDB)
+                              │  tablas normalizadas + vistas
+                              ▼
+catálogo 20 beneficios ──► [2] Cruce familia × beneficio (motor de reglas, §6)
+                              │  10.000 evaluaciones con traza
+                              ▼
+gestiones/pagos ─────────► [3] Estado de acceso (§7): ¿ya lo tiene, en trámite, brecha?
+                              │
+ficha de matrícula ──────► [4] Ventana de contexto de la familia (§2.7)
+                              │  completa datos faltantes y da contexto humano
+                              ▼
+                          [5] Priorización (§8): Urgencia · Beneficio · Vulnerabilidad
+                              │
+                              ▼
+                          [6] Vista de la tía: "3 cosas para conversar" + guion IA
+                              │
+                              ▼
+                          [7] Registro de conversación → KPIs (§11)
+```
+Las capas 1–3 y 5 son **deterministas** (SQL + Python). La IA (capa 6) solo redacta a partir de lo que entregan las capas anteriores. La ficha (capa 4) entra al motor solo como hechos `DECLARADO` y al LLM solo en su versión filtrada (§2.7.3).
+
+### 2.7 La ficha de matrícula como ventana de contexto
+
+La **Ficha de Inscripción y Matrícula** de Integra (formato 2019, `Ficha_Inscripcionmatricula_2019_V_B_.pdf`) es lo que el jardín **ya sabe** de cada familia al matricular. La usamos de tres formas:
+
+1. **Fuente de hechos** para el motor: campos que corresponden a un `campo_dato` de las reglas entran como hechos `estado_dato=DECLARADO, acreditada=false` (dan resultados `PRELIMINAR`).
+2. **Contexto para la tía y para la IA:** ayuda a decidir el tono, el formato del mensaje y la urgencia, sin decidir elegibilidad.
+3. **Plantilla del cuestionario de familia nueva** (S2): en vez de inventar preguntas, digitalizamos los campos útiles de la ficha (§10).
+
+> La ficha es un **formato vacío**: el dataset E-3 no trae fichas llenas. Para la demo se genera una **ficha sintética por familia** derivada del dataset (`backend/app/context/ficha_sintetica.py`); los campos que no se pueden derivar quedan como `NO_INFORMADO` y nunca se inventan.
+
+#### 2.7.1 Mapeo ficha → datos → beneficios
+| Campo de la ficha | Dato / `campo_dato` en E-3 | Beneficios que toca | Uso |
+|---|---|---|---|
+| Edad del niño/a al 31 de marzo | `integrantes.fecha_nacimiento_sintetica` → `edad`, `edad_meses` | BEN-007, 009, 012, 015 | Motor |
+| N.º de hermanos < 6, 6–14, 15–18 | conteo de `integrantes` HIJO_HIJA por edad | BEN-001, 002, 007, 013, 014, 015 | Motor (candidatos) + control de consistencia: si la ficha y el dataset no coinciden → pregunta |
+| Hermanos con discapacidad · NEE (tipo, permanente/transitoria, certificado médico) | `DISCAPACIDAD.SEVERIDAD` (la ficha **no** trae severidad) | BEN-006, BEN-019 | Pregunta: "¿Tiene credencial de discapacidad?" · **diagnóstico nunca va al LLM** |
+| ¿Tiene Registro Social de Hogares? | `familias.estado_rsh_corte` | BEN-001, 002, 003, 006 | Motor; si "no" → acción concreta: actualizar RSH |
+| Ingreso per cápita (tabla del manual) | `INGRESO_HOGAR.MONTO / numero_integrantes_corte` | BEN-005, 011, 019 | Motor (DECLARADO) |
+| Beneficiario Subsistema Seguridades y Oportunidades / Chile Solidario | `SUBSISTEMA_SSYO.PARTICIPACION` | BEN-004, 010, 011, 012, 013 | Motor (DECLARADO) |
+| Beneficiario Chile Crece Contigo | `ACCESO` (programa ChCC) | BEN-008, BEN-009 | Estado de acceso ("ya lo tiene") |
+| Última evaluación del cuaderno de salud | `CONTROL_SALUD.INFANTIL_RED_PUBLICA` + **fecha** | BEN-009, BEN-012 | Motor: **resuelve `dias_desde_control`**, que en E-3 solo existe como proxy (§6.5) |
+| Previsión de salud del niño/a (sin previsión, FONASA A/B/C/D, ISAPRE…) | no existe en E-3 | — | Eje Vulnerabilidad (§8); no decide elegibilidad |
+| Puntaje final ficha / CSE (0–34) | no existe en E-3 | — | Eje Vulnerabilidad (§8), si el jardín lo tiene |
+| Vivienda (campamento o toma, pieza en otra casa) | no existe en E-3 | BEN-020 (contexto) | Eje Urgencia (§8) |
+| Madre en programa SernamEG Jefas de Hogar | no existe en E-3 | — | Eje Vulnerabilidad |
+| Escolaridad del apoderado (incluye "no sabe leer ni escribir") | no existe en E-3 | — | **Formato del mensaje**: se traduce a `formato_preferido = VISUAL/AUDIO` (tarjeta con íconos, la tía lo lee en voz alta). La etiqueta original no se guarda en el contexto de IA |
+| Nacionalidad | no existe en E-3 | — | Solo la tía elige idioma del mensaje (p. ej. creole). **No va al motor ni al LLM.** No se confunde con años de residencia (BEN-017 sigue como pregunta) |
+| ¿Tiene una persona que lo cuide durante el día? | no existe en E-3 | — | Contexto para la tía |
+| Correo, teléfono, quién retira, nombres, RUT | — | — | **Nunca** al LLM; contacto solo en el dispositivo de la tía para enviar WhatsApp |
+| Enfermedades crónicas, alergias, NAE, lactancia, vacunas, esfínter | — | — | **Excluido.** No hay beneficio en el catálogo; datos de salud no salen del jardín |
+| Derivación por Tribunal de Familia / Sename | — | — | **Excluido** totalmente de la herramienta |
+| Jornada, extensión horaria, alimentación | — | — | Fuera de alcance |
+
+#### 2.7.2 Objeto `contexto_familia` (lo que produce la capa 4)
+```json
+{
+  "id_familia": "FAM-SIM-E3-00123",
+  "fuente": "FICHA_SINTETICA | FICHA_DIGITAL",
+  "composicion": [{"rol": "ADULTA_REFERENCIA", "edad": 31}, {"rol": "NINA_JARDIN", "edad": 4}, {"rol": "ABUELA", "edad": 72}],
+  "rsh": {"tiene": true, "tramo": 40},
+  "ingreso_per_capita_rango": "MENOS_110K",
+  "senales_vulnerabilidad": {"fonasa_tramo": "A", "puntaje_cse": 22, "jefa_hogar_sernameg": true},
+  "senales_urgencia": {"vivienda_precaria": false},
+  "posible_discapacidad_nino": false,
+  "formato_preferido": "TEXTO | VISUAL | AUDIO",
+  "idioma_mensaje": "es",
+  "inconsistencias": ["hermanos_6_14: ficha=2, dataset=1"],
+  "no_informado": ["previsión", "embarazo"]
+}
+```
+
+#### 2.7.3 Qué recibe el LLM
+Solo: `composicion` (roles y edades), `rsh.tramo`, `ingreso_per_capita_rango`, `formato_preferido`, `idioma_mensaje` y la salida del motor. **Nunca**: nombres, RUT, folio RSH, teléfono, nacionalidad, diagnósticos, salud, derivaciones judiciales. El filtro vive en un único lugar (`genai/context_filter.py`) con test que falla si aparece un campo prohibido.
+
+> **Consentimiento:** la autorización de la ficha (Ley N.º 19.628) cubre estudios y transferencia a organismos públicos. Para el piloto real habría que agregar un consentimiento explícito para este uso; en la demo se muestra un aviso.
+
 ---
 
 ## 3. Alcance del MVP (3 días)
 
 ### MUST (sin esto no hay demo)
-- **M1. Carga de datos** del dataset E-3 a una base local (DuckDB o SQLite).
-- **M2. Motor de elegibilidad** que evalúe las 20 prestaciones para las 500 familias en la fecha de corte, con resultado `SI | NO | INDETERMINADO`, nivel `CONFIRMADO | PRELIMINAR` y traza por regla.
-- **M3. Estado de acceso** combinando elegibilidad + gestiones existentes (¿ya lo recibe?, ¿está postulando?, ¿le rechazaron?, ¿califica pero nunca lo pidió? ← la brecha).
-- **M4. Panel del jardín:** lista de familias con semáforo y prioridad, % de familias informadas.
-- **M5. Ficha de familia:** beneficios priorizados, explicación simple generada por IA, "qué falta" y "dónde ir", **guion de conversación** para la tía.
-- **M6. Registro de conversación** ("Conversado" + beneficios mencionados + siguiente paso + fecha) → alimenta KPI.
-- **M7. Panel KPI** (jardín / comuna / región): % informadas, % nuevas informadas, top brechas.
+- **M1. Base de datos:** carga del dataset E-3 a DuckDB con vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`). *(Rol 1)*
+- **M2. Motor de elegibilidad** que evalúe las 20 prestaciones para las 500 familias en la fecha de corte, con resultado `SI | NO | INDETERMINADO`, nivel `CONFIRMADO | PRELIMINAR` y traza por regla. *(Rol 1)*
+- **M3. Estado de acceso** combinando elegibilidad + gestiones existentes (¿ya lo recibe?, ¿está postulando?, ¿le rechazaron?, ¿califica pero nunca lo pidió? ← la brecha). *(Rol 1)*
+- **M3b. Ventana de contexto:** ficha sintética por familia + objeto `contexto_familia` + filtro hacia el LLM (§2.7). *(Rol 1 construye · Rol 4 define el mapeo)*
+- **M3c. Priorización de tres ejes** (Urgencia · Beneficio · Vulnerabilidad), con el "por qué está primero" visible (§8). *(Rol 2 · pesos definidos por Rol 4)*
+- **M4. Panel del jardín:** lista de familias con semáforo y prioridad, % de familias informadas. *(Rol 3)*
+- **M5. Ficha de familia:** beneficios priorizados, explicación simple generada por IA, "qué falta" y "dónde ir", **guion de conversación** para la tía. *(Rol 3 vista · Rol 2 IA)*
+- **M6. Registro de conversación** ("Conversado" + beneficios mencionados + siguiente paso + fecha) → alimenta KPI. *(Rol 2 API · Rol 3 vista)*
+- **M7. Panel KPI** (jardín / comuna / región): % informadas, % nuevas informadas, top brechas. *(Rol 3)*
 
 ### SHOULD
 - **S1. Mensaje para la familia:** tarjeta imprimible (PDF/HTML) y texto para WhatsApp, generado por IA, en lenguaje simple.
-- **S2. Familia nueva (ingreso):** cuestionario corto (≤10 preguntas) que la tía llena con la familia en la matrícula → pre-evaluación `PRELIMINAR` inmediata. Cubre el KPI #2.
+- **S2. Familia nueva = ficha digital:** la tía llena en la matrícula los campos útiles de la ficha de Integra (§10) → pre-evaluación `PRELIMINAR` inmediata. Cubre el KPI #2.
 - **S3. Asistente conversacional para la tía** ("¿Qué hay para una abuela de 70 años que vive con la familia?"), anclado al catálogo (RAG sobre catálogo + fuentes oficiales), que nunca inventa beneficios.
 - **S4. Preguntas sugeridas** para resolver los `INDETERMINADO` (ver §2.4 punto 4).
 
@@ -146,15 +236,24 @@ persistencia de conversaciones en DynamoDB (o SQLite local para la demo).
     main.py
     config.py                      # FECHA_EVALUACION, rutas, proveedor LLM
     /loader      load.py
-    /engine      model.py  facts.py  operators.py  evaluator.py  roles.py
-    /access      access_state.py
-    /priority    ranking.py
-    /genai       provider.py  prompts.py  explain.py  script.py  message.py  assistant.py  ingest_flyer.py
+    /db          schema.sql  views.sql                     # Rol 1
+    /engine      model.py  facts.py  operators.py  evaluator.py  roles.py   # Rol 1
+    /access      access_state.py                           # Rol 1
+    /context     ficha_sintetica.py  contexto_familia.py   # Rol 1
+    /priority    ranking.py                                # Rol 2
+    /genai       provider.py  context_filter.py  prompts.py  explain.py  script.py  message.py  assistant.py  ingest_flyer.py   # Rol 2
     /tracking    conversations.py
     /api         routes_jardin.py routes_familia.py routes_kpi.py routes_genai.py
   /tests         test_operators.py test_evaluator.py test_access.py test_fixtures.py
-/frontend
-  /src  pages/ components/ api/ i18n/es.ts
+/frontend                          # Rol 3
+  /src  pages/ components/ api/ mocks/ i18n/es.ts
+/content                           # Rol 4 (sin código: texto, tablas y YAML simples)
+  mapeo_ficha.csv                  # §2.7.1, lo leen Rol 1 y Rol 2
+  pesos_priorizacion.yaml          # §8, lo lee priority/ranking.py
+  preguntas.yaml                   # §9.3, dato_faltante → pregunta humana
+  beneficios_simple.yaml           # nombre simple, dónde ir, qué llevar, URL oficial
+  prompts/*.md                     # texto de los prompts; Rol 2 los conecta
+  demo/familias_demo.md  pitch.md
 README.md
 ```
 
@@ -164,7 +263,8 @@ README.md
 | GET | `/jardines` | lista de jardines (id, comuna, zona) |
 | GET | `/jardines/{id}/familias` | familias del jardín con: prioridad, nº de oportunidades, estado "conversado", semáforo |
 | GET | `/familias/{id}` | ficha: integrantes (sin RUT), RSH, resultados por beneficio, estado de acceso, traza |
-| GET | `/familias/{id}/oportunidades` | top N beneficios priorizados + qué falta + dónde ir + preguntas sugeridas |
+| GET | `/familias/{id}/contexto` | `contexto_familia` (§2.7.2), sin campos prohibidos |
+| GET | `/familias/{id}/oportunidades?orden=prioridad|urgencia|beneficio` | beneficios priorizados con los 3 ejes y el "por qué está primero" + qué falta + dónde ir + preguntas sugeridas |
 | POST | `/familias/{id}/guion` | guion de conversación generado (IA) para la tía |
 | POST | `/familias/{id}/mensaje` | texto WhatsApp + HTML imprimible para la familia (IA) |
 | POST | `/familias/{id}/conversaciones` | registra conversación (beneficios mencionados, siguiente paso, fecha) |
@@ -387,28 +487,79 @@ Combina el resultado del motor con las gestiones (`postulaciones` + último esta
 
 ## 8. Priorización: "3 cosas para conversar con esta familia"
 
-Puntaje sugerido por (familia, beneficio), configurable:
+La tía tiene que ver **por qué** un beneficio aparece primero. Por eso el puntaje se arma con tres ejes que también se muestran en pantalla como chips simples.
+
+### 8.1 Los tres ejes (cada uno de 0 a 1)
+
+**⏰ Urgencia (U)**: ¿se pierde algo si no se conversa esta semana? Se toma el **máximo** de estas señales:
+| Señal | Valor |
+|---|---|
+| Emergencia familiar reciente (BEN-020, evento ≤ 60 días) | 1.0 |
+| Recién nacido: quedan pocos días de los 90 de BEN-008 | 1 − días_restantes/90 |
+| Documento de terapia por vencer (BEN-019, ≤ 90 días) | 1 − días_restantes/90 |
+| Cupo limitado (BEN-018, cupo 75) y la familia está dentro del cupo | 0.8 |
+| Inseguridad alimentaria ≥ 3 | 0.8 |
+| Vivienda precaria según la ficha (campamento o toma) | 0.7 |
+| Ventana de postulación cierra en ≤ 7 días / ≤ 30 días | 1.0 / 0.6 |
+| Nada de lo anterior | 0.2 |
+
+> ⚠️ **Ojo con el dataset:** casi todas las versiones vigentes tienen `ventana_acceso_hasta = 2026-10-14`, o sea, a la fecha de evaluación **todas** cerrarían mañana. Si la urgencia dependiera solo de la ventana, todo saldría "urgente" y el eje no serviría. Por eso la señal de ventana es configurable (`usar_ventana: false` por defecto en la demo) y la urgencia se basa sobre todo en la situación de la familia. Documentarlo en el README.
+
+**💰 Beneficio para la familia (B)**: ¿cuánto le cambia la vida?
 ```
-puntaje = peso_estado × (1 + bonus_accion) × factor_monto × factor_urgencia
+monto_anual = monto_referencial × periodicidad (MENSUAL ×12, ANUAL ×1, UNICA ×1)
+             (o el monto del tramo devuelto por RANGE_LOOKUP en BEN-016)
+B = min(1, (monto_anual / ingreso_anual_hogar) / 0.20)     # 20 % del ingreso = máximo
+```
+Beneficios en especie o servicio (PAE, Apoyo Biopsicosocial, Útiles, Recién Nacido) usan un **valor equivalente** de `content/pesos_priorizacion.yaml`. Si falta el ingreso, se usa la mediana del jardín y se marca `B_estimado=true`. En pantalla se muestra en pesos y en proporción: *"≈ $264.000 al año (casi 2 meses de su ingreso)"*.
+
+**🏠 Vulnerabilidad del hogar (V)**: igual para todos los beneficios de una familia; sirve para ordenar la lista del jardín.
+```
+V = promedio ponderado de:
+  tramo RSH (40 → 1.0, 50 → 0.85, 60 → 0.7, 70 → 0.4, 80 → 0.2, 90–100 → 0; sin RSH → 0.8)
+  ingreso per cápita (< 110.000 → 1.0 … > 400.000 → 0)
+  señales de la ficha: FONASA A o sin previsión, puntaje CSE alto, jefa de hogar SernamEG, niño/a con posible discapacidad
+```
+Las señales que no se conocen no suman ni restan (no se castiga a quien tiene menos datos).
+
+### 8.2 Puntaje por (familia, beneficio)
+```
+puntaje = peso_estado × (1 + bonus_accion) × (w_U·U + w_B·B + w_V·V)
 peso_estado: ELEGIBLE_SIN_ASIGNACION 10 · GESTION_RECHAZADA 7 · PENDIENTE_ANTECEDENTES 6
              · INDETERMINADO (resoluble con 1 pregunta) 5 · GESTION_EN_CURSO 2 · SIN_CUPO 1 · ASIGNADO 0
 bonus_accion: +1 si requiere_accion_familia = true (si es automático, la familia no tiene que hacer nada)
-factor_monto: log del monto anual estimado (o 1.0 para especie/servicio)
-factor_urgencia: +50 % si la ventana de acceso cierra en < 30 días
+pesos por defecto: w_U = 0.4 · w_B = 0.4 · w_V = 0.2
 ```
-**Prioridad de la familia en la lista del jardín:** suma de los 3 mejores puntajes + bonus si **no ha sido conversada** + bonus si es **familia nueva**.
+Todos los números viven en `content/pesos_priorizacion.yaml` (dueño: Rol 4). `ranking.py` no tiene ningún número escrito a mano.
 
-Agrupar en lenguaje de la tía:
-- 🟢 **"Puede pedirlo ya"** (ELEGIBLE_SIN_ASIGNACION con acción)
-- 🟡 **"Preguntar primero"** (INDETERMINADO / PENDIENTE)
-- 🔵 **"Ya lo tiene / está en trámite"**
+### 8.3 Prioridad de la familia en la lista del jardín
+```
+prioridad_familia = suma de los 3 mejores puntajes
+                  + 3 × V
+                  + bonus si NO ha sido conversada
+                  + bonus si es familia nueva (≤ 30 días)
+```
+
+### 8.4 Cómo lo ve la tía
+Cada tarjeta de beneficio muestra:
+- Título simple + grupo de color:
+  - 🟢 **"Puede pedirlo ya"** (ELEGIBLE_SIN_ASIGNACION con acción)
+  - 🟡 **"Preguntar primero"** (INDETERMINADO / PENDIENTE)
+  - 🔵 **"Ya lo tiene / está en trámite"**
+- Chips: `⏰ Urgente` / `⏰ Esta semana` / (nada) · `💰 ≈ $264.000 al año` · `✋ Tiene que ir a pedirlo` o `📬 Le llega solo`.
+- Una línea **"¿Por qué está primero?"** generada por plantilla (no por IA), p. ej. *"Califica, nunca lo ha pedido y equivale a casi 2 meses de ingreso."*
+- Selector de orden: **Prioridad** (por defecto) · **Lo más urgente** · **Lo que más ayuda**.
+
+En el detalle técnico se muestran U, B, V, peso_estado y el puntaje final, para que cualquiera pueda auditar el orden.
 
 ---
 
 ## 9. Capa de IA generativa (Bedrock · Claude)
 
 ### 9.1 Reglas para todos los prompts
-- Entrada = **solo** el JSON de salida del motor + catálogo + fuentes. Nada de RUT ni nombres.
+- Entrada = **solo** el JSON de salida del motor + puntajes de §8 + `contexto_familia` filtrado (§2.7.3) + catálogo + fuentes. Nada de RUT ni nombres.
+- Si `formato_preferido = VISUAL/AUDIO`, el mensaje usa frases aún más cortas, íconos y una versión para que la tía lo lea en voz alta.
+- El texto de cada prompt vive en `content/prompts/*.md` (lo escribe y revisa Rol 4); el código solo lo carga y le inyecta los datos.
 - Prohibido inventar beneficios, montos, requisitos o lugares que no estén en la entrada.
 - Prohibido afirmar que la familia "tiene derecho" o "recibirá". Usar "podría", "vale la pena consultar".
 - Español de Chile, trato de usted, frases ≤ 20 palabras, sin siglas sin explicar (RSH → "Registro Social de Hogares").
@@ -433,12 +584,15 @@ Cuando la tía responde, se guarda como hecho `estado_dato=DECLARADO, acreditada
 
 ---
 
-## 10. Familia nueva (KPI #2)
+## 10. Familia nueva (KPI #2): ficha digital
 
-Cuestionario de ingreso (≤ 10 preguntas, todas opcionales, con "no sé"):
-comuna · nº de personas en el hogar · ¿tiene RSH? / tramo si lo sabe · edades de integrantes · ¿alguien embarazada? · ¿algún niño/a con discapacidad o en terapia? · ¿alguien mayor de 65? · ¿trabaja con contrato / tiene previsión? · ingreso aproximado del hogar (rangos) · ¿dificultad para comprar alimentos o pagar el agua?
+En vez de un cuestionario inventado, la tía llena una **versión digital y corta de la ficha de matrícula de Integra** (los mismos campos que ya conoce, §2.7.1). Todas las preguntas son opcionales y tienen "No sé".
 
-→ crea familia con hechos `DECLARADO` → motor → resultados `PRELIMINAR` → guion inmediato. Marcar `es_nueva=true` y fecha de ingreso para el KPI.
+Campos de la ficha que se piden: comuna · edad del niño/a · hermanos por tramo de edad (< 6, 6–14, 15–18) · ¿tiene Registro Social de Hogares? / tramo si lo sabe · ingreso aproximado del hogar (rangos) · ¿Subsistema Seguridades y Oportunidades? · ¿Chile Crece Contigo? · fecha del último control del cuaderno de salud · ¿algún niño/a con discapacidad o en terapia? · tipo de vivienda.
+
+Preguntas que **no están en la ficha** pero el motor necesita (se agregan al final): ¿alguien embarazada? · ¿alguien mayor de 65? · ¿trabaja con contrato / tiene previsión? · ¿dificultad para pagar el agua o comprar alimentos?
+
+→ crea familia con hechos `DECLARADO` → motor → resultados `PRELIMINAR` → priorización → guion inmediato. Marcar `es_nueva=true` y fecha de ingreso para el KPI.
 
 ---
 
@@ -489,7 +643,7 @@ Para la demo: sembrar conversaciones simuladas en algunos jardines para que el p
 ## 14. UX / pantallas
 
 1. **Inicio (Mi jardín):** barra de progreso "32 de 48 familias conversadas (67 %)", botón "Siguiente familia para conversar", lista con semáforo y chips (🟢 2 · 🟡 1).
-2. **Ficha familia:** encabezado con composición del hogar en iconos (👩 adulta · 👧 niña 4 años · 👵 abuela 72), tramo RSH. Tres tarjetas "Para conversar hoy" (beneficio en lenguaje simple, por qué, qué hacer, dónde, botón "Ver detalle técnico" que muestra la traza). Sección "Preguntar a la familia". Sección "Ya lo tiene / en trámite". Botones: **Ver guion** · **Enviar WhatsApp** · **Imprimir tarjeta** · **Marcar conversado**.
+2. **Ficha familia:** encabezado con composición del hogar en iconos (👩 adulta · 👧 niña 4 años · 👵 abuela 72), tramo RSH. Tres tarjetas "Para conversar hoy" (beneficio en lenguaje simple, chips ⏰ urgencia · 💰 beneficio · ✋/📬 acción, línea "¿Por qué está primero?", qué hacer, dónde, botón "Ver detalle técnico" que muestra la traza y los puntajes U/B/V). Selector de orden: Prioridad · Lo más urgente · Lo que más ayuda. Sección "Preguntar a la familia". Sección "Ya lo tiene / en trámite". Botones: **Ver guion** · **Enviar WhatsApp** · **Imprimir tarjeta** · **Marcar conversado**.
 3. **Marcar conversado:** checklist de beneficios mencionados + siguiente paso + canal (3 toques).
 4. **Familia nueva:** cuestionario paso a paso con "No sé".
 5. **KPIs:** mapa o tabla por comuna, barras por jardín, top brechas, monto potencial.
@@ -499,24 +653,21 @@ Copy siempre en español simple. Nada de jerga técnica en la vista principal (l
 
 ---
 
-## 15. Plan de trabajo (14 → 16 de octubre)
+## 15. Plan de trabajo por rol (14 → 16 de octubre)
 
-**Día 1 (hoy)**
-- Repo + loader a DuckDB + modelos.
-- Motor: operadores, bindings, OR/AND, tres valores, versiones. Tests con arquetipos.
-- Estado de acceso + priorización. Endpoint `/familias/{id}/oportunidades`.
-- Front: esqueleto PWA + lista del jardín.
+Roles detallados en §18. Hay **tres puntos de integración diarios**: 🔗 10:00 (acuerdos del día) · 🔗 14:00 (integrar lo que hay) · 🔗 19:00 (demo interna de 5 minutos, aunque sea fea).
 
-**Día 2**
-- Bedrock: explicación, guion, mensaje (con caché). Preguntas sugeridas.
-- Ficha de familia completa + marcar conversado + KPIs.
-- Familia nueva (cuestionario → PRELIMINAR).
-- Deploy en AWS.
+| | **Rol 1 · Datos y motor** | **Rol 2 · API, priorización e IA** | **Rol 3 · Frontend** | **Rol 4 · Producto, contenido y pitch (sin código)** |
+|---|---|---|---|---|
+| **Día 1 mañana** | Repo, loader DuckDB, `schema.sql`, vistas básicas | Esqueleto FastAPI con **endpoints mock** (JSON fijos) y `/docs` | Esqueleto PWA, rutas, consume los mocks | `mapeo_ficha.csv` (§2.7.1) y primera versión de `pesos_priorizacion.yaml` |
+| **Día 1 tarde** | Operadores + evaluador (AND/OR/bindings/3 valores/versiones); **stub de 5 familias** de evaluación a las 14:00 | `ranking.py` con los 3 ejes leyendo el YAML; conexión a Bedrock probada | Lista del jardín con semáforo + barra de avance | `preguntas.yaml` + `beneficios_simple.yaml` (nombre simple, dónde ir, qué llevar, URL oficial) |
+| **Día 1 noche** | 10.000 evaluaciones + tests obligatorios (§6.7) | `/oportunidades` real (motor + estado + ranking) | Ficha de familia con tarjetas y chips U/B/V | Elegir 3 familias demo (brecha, discapacidad, sin RSH) revisando la salida |
+| **Día 2 mañana** | Estado de acceso (§7) + cupo BEN-018 + ficha sintética y `contexto_familia` | `context_filter.py` + test; prompts de explicación y guion con caché | "Marcar conversado" (3 toques) + guion | Textos de los prompts en `content/prompts/`; revisar 10 salidas reales y corregir lenguaje |
+| **Día 2 tarde** | Ficha digital → hechos DECLARADO → reevaluación | Mensaje WhatsApp/tarjeta; conversaciones + KPIs; **deploy AWS** | Panel KPI + ficha digital (familia nueva) | Prueba de usabilidad haciendo de "tía" en un celular real; lista de arreglos para Rol 3 |
+| **Día 2 noche** | Sembrar conversaciones simuladas; README de supuestos de datos | Asistente RAG (S3) | Pulido móvil 360 px, modo poca conexión | Primer borrador de slides y guion de pitch; cronometrar |
+| **Día 3** | Soporte + arreglos; congelar datos a las 12:00 | (COULD) ingesta de afiche; congelar a las 12:00 | Pulido final, datos sembrados visibles | **Ensayo del pitch ×3**, video de respaldo de la demo, respuestas a preguntas del jurado |
 
-**Día 3 (mañana) → demo**
-- Asistente RAG (y si alcanza, ingesta de afiche).
-- Pulido UX móvil, datos sembrados para el panel, README con supuestos.
-- Ensayo del pitch.
+**Regla de oro:** nadie espera a nadie. Rol 3 trabaja contra mocks hasta que Rol 2 publica lo real; Rol 2 trabaja contra el stub de 5 familias hasta que Rol 1 tiene las 10.000.
 
 ---
 
@@ -524,7 +675,7 @@ Copy siempre en español simple. Nada de jerga técnica en la vista principal (l
 
 1. **Problema** (30 s): Don Julio y la tía Ana; el boca a boca funciona, pero depende de que la tía sepa. Asimetría de información y costos de transacción.
 2. **La tía abre la app** en el celular → su jardín → "Siguiente familia para conversar" (una familia del arquetipo brecha).
-3. **Ficha:** "Puede pedirlo ya: Subsidio Familiar, ~$22.000 al mes por su hija" + por qué + dónde ir. "Preguntar: ¿alguien embarazada?". Mostrar "Ver detalle técnico" (traza regla por regla) → confianza y transparencia.
+3. **Ficha:** "Puede pedirlo ya: Subsidio Familiar, ~$22.000 al mes por su hija" + por qué + dónde ir + chips "💰 casi 2 meses de ingreso al año" y "¿Por qué está primero?". "Preguntar: ¿alguien embarazada?". Mencionar que la herramienta usa la **ficha de matrícula que Integra ya tiene**: no le pide nada nuevo a la tía. Mostrar "Ver detalle técnico" (traza regla por regla) → confianza y transparencia.
 4. **Guion en 2 minutos** generado por IA → la tía lo lee y conversa.
 5. **Enviar WhatsApp / tarjeta** a la familia.
 6. **Marcar conversado** → la barra del jardín sube → **panel nacional**: % informadas, brechas por comuna, monto potencial no cobrado.
@@ -533,13 +684,82 @@ Copy siempre en español simple. Nada de jerga técnica en la vista principal (l
 
 ---
 
-## 17. Definición de terminado (checklist para el agente)
-- [ ] `make setup && make run` (o equivalente) levanta backend + front con los datos cargados.
-- [ ] 10.000 evaluaciones precalculadas en < 30 s, con traza por regla.
-- [ ] Tests de operadores, bindings, OR, versiones, nulos e INDETERMINADO pasando.
-- [ ] Ninguna decisión de elegibilidad pasa por el LLM.
-- [ ] Ficha de familia con top 3 + preguntas + guion + mensaje + marcar conversado.
-- [ ] Panel KPI con % informadas y % nuevas informadas.
-- [ ] Aviso "orientación referencial; no determina derechos" visible en ficha, guion y mensaje.
-- [ ] README con arquitectura, supuestos sobre datos faltantes, y cómo correr.
-- [ ] Funciona bien en un celular (viewport 360 px).
+## 17. Definición de terminado (checklist con dueño)
+- [ ] `make setup && make run` (o equivalente) levanta backend + front con los datos cargados. *(Rol 2)*
+- [ ] Base DuckDB con vistas de cruce; 10.000 evaluaciones precalculadas en < 30 s, con traza por regla. *(Rol 1)*
+- [ ] Tests de operadores, bindings, OR, versiones, nulos e INDETERMINADO pasando. *(Rol 1)*
+- [ ] `contexto_familia` generado para las 500 familias; test del filtro de campos prohibidos pasando. *(Rol 1 + Rol 2)*
+- [ ] Priorización con U/B/V leyendo `pesos_priorizacion.yaml`, sin números en el código. *(Rol 2)*
+- [ ] Ninguna decisión de elegibilidad pasa por el LLM. *(Rol 2)*
+- [ ] Ficha de familia con top 3 + chips U/B/V + "¿por qué está primero?" + preguntas + guion + mensaje + marcar conversado. *(Rol 3)*
+- [ ] Panel KPI con % informadas y % nuevas informadas. *(Rol 3)*
+- [ ] Aviso "orientación referencial; no determina derechos" visible en ficha, guion y mensaje. *(Rol 3 + Rol 4 revisa)*
+- [ ] Todos los textos visibles revisados en lenguaje simple. *(Rol 4)*
+- [ ] README con arquitectura, supuestos sobre datos faltantes (incluida la ventana de acceso, §8.1) y cómo correr. *(Rol 1 + Rol 2; Rol 4 revisa que se entienda)*
+- [ ] Funciona bien en un celular (viewport 360 px). *(Rol 3; Rol 4 lo prueba)*
+- [ ] Pitch ensayado en ≤ 4 minutos + video de respaldo. *(Rol 4)*
+
+---
+
+## 18. Roles del equipo (4 integrantes)
+
+Cada rol es **dueño** de una parte del repo y de un entregable. Ser dueño significa decidir y responder por eso, no trabajar solo: cualquiera puede ayudar, pero el dueño aprueba los cambios en su carpeta.
+
+### 🗄️ Rol 1 · Datos y motor de elegibilidad
+**Perfil:** el más fuerte en Python/SQL y lógica.
+**Dueño de:** `backend/app/{loader,db,engine,access,context}`, `backend/tests`.
+**Responsable de:**
+- Cargar el zip a DuckDB y crear las vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`).
+- Motor de reglas completo (§6): versiones, operadores, bindings, OR/AND, tres valores, CONFIRMADO/PRELIMINAR, traza.
+- Estado de acceso (§7), incluido el cupo de BEN-018.
+- Ficha sintética y objeto `contexto_familia` (§2.7), según el mapeo de Rol 4.
+- Tests obligatorios (§6.7) y la parte de datos del README.
+**Entrega a otros:** el contrato C1 (salida del motor, §6.6) y C2 (`contexto_familia`).
+
+### ⚙️ Rol 2 · API, priorización e IA generativa
+**Perfil:** backend + nube; cómodo integrando servicios.
+**Dueño de:** `backend/app/{api,priority,genai,tracking}`, despliegue en AWS, `Makefile`.
+**Responsable de:**
+- FastAPI con endpoints mock desde la primera hora (para destrabar a Rol 3).
+- Priorización de tres ejes (§8), leyendo los pesos de `content/`.
+- Bedrock: explicación, guion, mensaje, asistente; filtro de contexto (§2.7.3); caché; temperatura baja.
+- Registro de conversaciones y cálculo de KPIs (§11).
+- Deploy (App Runner/Lambda + Amplify) y plan B local si Bedrock falla.
+**Entrega a otros:** el contrato C3 (API documentada en `/docs`).
+
+### 📱 Rol 3 · Frontend (PWA mobile-first)
+**Perfil:** React/TypeScript, ojo para la usabilidad.
+**Dueño de:** `frontend/`.
+**Responsable de:**
+- Las 6 pantallas de §14, pensadas para celular de gama baja y poca conexión.
+- Tarjetas de beneficio con chips U/B/V, selector de orden y "¿por qué está primero?".
+- Flujo "Marcar conversado" en 3 toques; ficha digital de familia nueva; panel KPI.
+- Mostrar el aviso de orientación referencial en todas las vistas que corresponde.
+- Todo el texto visible sale de `i18n/es.ts`, para que Rol 4 lo pueda corregir sin tocar componentes.
+
+### 🎯 Rol 4 · Producto, contenido y pitch (**sin código**)
+**Perfil:** buena comunicación, criterio, orden. No necesita programar: trabaja en planillas, YAML simples (listas de "clave: valor"), Markdown y en el celular probando la app.
+**Dueño de:** `content/`, `i18n/es.ts` (solo textos), slides y pitch.
+**Responsable de:**
+- **Mapeo de la ficha** (`content/mapeo_ficha.csv`): revisar campo por campo la ficha de Integra y decidir qué entra al motor, qué es solo contexto y qué se excluye (§2.7.1). Es la base de la "ventana de contexto".
+- **Pesos de priorización** (`pesos_priorizacion.yaml`): definir qué cuenta como urgente y los valores equivalentes de beneficios en especie, con argumentos que se puedan defender ante el jurado.
+- **Contenido de beneficios** (`beneficios_simple.yaml`): nombre en lenguaje simple, dónde ir, qué llevar y URL oficial (VUS, ChileAtiende, JUNAEB, Chile Crece Contigo, IPS) para los 20 beneficios.
+- **Banco de preguntas** (`preguntas.yaml`): cada dato faltante → una pregunta amable que la tía pueda hacer en la puerta.
+- **Texto de los prompts** (`content/prompts/*.md`) y revisión de salidas de la IA: que nunca prometan, que usen "usted", frases cortas, sin siglas.
+- **Usuario de prueba:** hace de "tía" con el celular, cronometra el flujo y entrega una lista priorizada de arreglos a Rol 3.
+- **Ética y privacidad:** revisa que ningún dato prohibido aparezca en pantallas, mensajes o prompts (checklist de §13 y §2.7.3).
+- **Demo y pitch:** elige las familias de demo, escribe el guion (§16), arma las slides, graba el video de respaldo y lidera el ensayo.
+
+### Contratos entre roles (para trabajar en paralelo)
+| Contrato | De → Para | Qué es | Plazo |
+|---|---|---|---|
+| C0 · Mapeo ficha | Rol 4 → Rol 1, Rol 2 | `content/mapeo_ficha.csv` | Día 1, 14:00 |
+| C1 · Salida del motor | Rol 1 → Rol 2 | JSON de §6.6 (stub de 5 familias primero) | stub Día 1 14:00 · completo Día 1 noche |
+| C2 · `contexto_familia` | Rol 1 → Rol 2 | JSON de §2.7.2 | Día 2, 12:00 |
+| C3 · API | Rol 2 → Rol 3 | endpoints de §4.2, primero con mocks | mocks Día 1, 11:00 |
+| C4 · Contenido | Rol 4 → Rol 2, Rol 3 | pesos, preguntas, beneficios simples, prompts, textos | v1 Día 1 noche · final Día 2, 18:00 |
+
+### Forma de trabajo
+- Una rama por rol (`datos`, `api`, `front`, `contenido`); se integra a `main` en cada 🔗 punto de integración.
+- Si algo bloquea a otro rol por más de 30 minutos, se avisa en el chat del equipo y se acuerda un mock.
+- Rol 4 corre la demo interna de las 19:00: si no se puede mostrar, no está terminado.
