@@ -288,6 +288,18 @@ def garden_de(snap: MotorSnapshot | None, family_id: str) -> str | None:
     return None if fam is None else fam["garden_id"]
 
 
+def estados_oportunidades(snap: MotorSnapshot | None, family_id: str) -> dict[str, str] | None:
+    """``{benefit_id: access_state}`` de las oportunidades de la familia (DEC-060).
+
+    Del snapshot real o de ``mock_data``; ``None`` si la familia no existe. Guion
+    y mensaje solo aceptan estos IDs: lo demás responde 422.
+    """
+    fam = snap.familias.get(family_id) if snap is not None else mock_data.FAMILIAS.get(family_id)
+    if fam is None:
+        return None
+    return {o["benefit_id"]: o["access_state"] for o in fam["opportunities"]}
+
+
 def familia_existe(snap: MotorSnapshot | None, family_id: str) -> bool:
     return garden_de(snap, family_id) is not None
 

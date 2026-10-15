@@ -296,7 +296,13 @@ Por defecto **`E3_MOCK=1`**: todas las rutas responden mocks sintéticos
 deterministas, **sin necesidad de DB (`e3.db`) ni de AWS/Bedrock**. El texto de
 guion/mensaje/asistente lo genera el `TemplateProvider` (provider `PLANTILLA`),
 nunca un LLM; una pregunta de elegibilidad individual al asistente devuelve
-`REQUIRES_DETERMINISTIC_EVALUATION` sin invocar Bedrock.
+`REQUIRES_DETERMINISTIC_EVALUATION` sin invocar Bedrock. Guion y mensaje
+validan los `benefit_ids` contra las oportunidades de la familia (propuesta
+DEC-060): un ID ajeno responde 422 sin eco; un ASIGNADO se omite con el warning
+`BENEFICIO_ASIGNADO_OMITIDO` (422 si todos lo son); GESTION_EN_CURSO,
+GESTION_RECHAZADA y SIN_CUPO se nombran con la frase por estado del Rol 4
+(instrucción 5 de `content/prompts`). El guion usa solo la primera frase de
+cada descripción: 120 palabras como máximo (propuesta DEC-061).
 
 ### Integración del motor (`E3_MOCK=0`)
 
@@ -320,7 +326,10 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   `GET /familias/{id}` (los 20 `benefit_results` con traza),
   `GET /familias/{id}/contexto` y `GET /familias/{id}/oportunidades`.
   `POST /conversaciones`, `/guion` y `/mensaje` validan contra los IDs reales
-  (`FAM-SIM-E3-00001`…; los IDs mock como `FAM-SIM-0001` dan 404). Siguen
+  (`FAM-SIM-E3-00001`…; los IDs mock como `FAM-SIM-0001` dan 404); `/guion` y
+  `/mensaje`, además, contra las oportunidades reales de esa familia (DEC-060:
+  ajeno → 422, ASIGNADO omitido con warning; guion de 120 palabras como
+  máximo, DEC-061). Siguen
   sintéticos el KPI, la preevaluación, el asistente, la ingesta de afiche y el
   texto de guion/mensaje (`TemplateProvider`). `POST /antecedentes` con un ID
   real responde 503 retryable: reevaluar con hechos declarados exige cambiar el

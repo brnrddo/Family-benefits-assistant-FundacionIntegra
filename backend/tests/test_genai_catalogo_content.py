@@ -253,9 +253,18 @@ def _script_sin_aviso(root: Path) -> None:
     _resellar(root)
 
 
+def _sin_frase_en_curso(root: Path) -> None:
+    """Quita la frase por estado GESTION_EN_CURSO de la instrucción 5 (DEC-060)."""
+    _reemplazar(root / "content" / "prompts" / "guion.md",
+                "   - `access_state` GESTION_EN_CURSO: el trámite ya está en curso; "
+                "vale la pena esperar la respuesta.\n", "")
+    _resellar(root)
+
+
 @pytest.mark.parametrize(
     ("manipular", "codigo"),
     [
+        (_sin_frase_en_curso, "C4_PROMPT_INVALIDO"),
         (_byte_de_mas, "C4_SHA256_DISTINTO"),
         (_bundle_hash_falso, "C4_BUNDLE_HASH_DISTINTO"),
         (_clave_extra_manifest, "C4_SCHEMA_INVALIDO"),

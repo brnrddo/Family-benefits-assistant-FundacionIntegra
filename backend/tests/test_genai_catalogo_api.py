@@ -28,7 +28,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.api import runtime  # noqa: E402
+from app.api import motor_real, runtime  # noqa: E402
 from app.api.app import app  # noqa: E402
 from app.genai import content_catalog  # noqa: E402
 from app.genai.template_provider import (  # noqa: E402
@@ -94,13 +94,30 @@ def _provider_limpio(monkeypatch):
     monkeypatch.setattr(runtime, "_provider", None)
 
 
+def _estados(monkeypatch, estados: dict[str, str]) -> None:
+    """Fija las oportunidades de la familia (DEC-060) sin tocar ``mock_data``."""
+    monkeypatch.setattr(motor_real, "estados_oportunidades", lambda snap, fid: dict(estados))
+
+
+@pytest.fixture()
+def _todas_ofrecibles(monkeypatch):
+    """Los 20 IDs como oportunidades ELEGIBLE_SIN_ASIGNACION de la familia."""
+    _estados(monkeypatch, {bid: "ELEGIBLE_SIN_ASIGNACION" for bid in IDS})
+
+
 def _post(ruta: str, ids: list[str]):
     return client.post(f"{FAM}/{ruta}", json={"benefit_ids": ids})
+
+
+def _frases(texto: str) -> list[str]:
+    """Oraciones de una descripción de ``content/`` (separadas tras '.', '!' o '?')."""
+    return re.split(r"(?<=[.!?])\s+", texto.strip())
 
 
 # --- guion -----------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("_todas_ofrecibles")
 @pytest.mark.parametrize("bid", IDS)
 def test_guion_por_beneficio(bid):
     r = _post("guion", [bid])
@@ -113,12 +130,17 @@ def test_guion_por_beneficio(bid):
     assert body["provider"] == "PLANTILLA"
     assert body["disclaimer"] == DISCLAIMER
     assert script.startswith(GUION.replace(PH_TITULOS, TITULOS[bid]))
-    assert f"{TITULOS[bid]}: {BEN[bid]['description']}" in script
+    # DEC-061: el guion lleva solo la primera frase de la descripción.
+    frases = _frases(BEN[bid]["description"])
+    assert f"{TITULOS[bid]}: {frases[0]}" in script
+    for resto in frases[1:]:
+        assert resto not in script
     assert script.endswith(DISCLAIMER)
     for otro in _otros_titulos([bid]):
         assert otro not in script
 
 
+@pytest.mark.usefixtures("_todas_ofrecibles")
 def test_guion_respeta_orden_pedido():
     ids = ["BEN-005", "BEN-001", "BEN-013"]
     body = _post("guion", ids).json()
@@ -136,6 +158,7 @@ def test_guion_respeta_orden_pedido():
 # --- mensaje ---------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("_todas_ofrecibles")
 @pytest.mark.parametrize("bid", CITABLES)
 def test_mensaje_por_beneficio(bid):
     r = _post("mensaje", [bid])
@@ -174,6 +197,7 @@ def test_mensaje_omite_seccion_sin_fuente():
     assert content["whatsapp_preview"].startswith(WHATSAPP.replace(PH_TITULOS, titulos))
 
 
+@pytest.mark.usefixtures("_todas_ofrecibles")
 @pytest.mark.parametrize("ids", [["BEN-019"], ["BEN-018", "BEN-020"]])
 def test_mensaje_sin_ninguna_fuente_422(ids):
     r = _post("mensaje", ids)
@@ -201,6 +225,45 @@ def test_mensaje_id_desconocido_422_sin_sustituir():
     assert [d["field"] for d in payload["error"]["details"]] == ["body.benefit_ids.1"]
     assert "BEN-999" not in r.text
     assert TITULOS["BEN-001"] not in r.text
+
+
+# --- validación por familia (DEC-060) --------------------------------------------
+
+
+def test_id_fuera_de_la_familia_422_sin_eco():
+    # BEN-005 está en el catálogo, pero no es oportunidad de FAM-SIM-0001 (mock).
+    r = _post("guion", ["BEN-001", "BEN-005"])
+    assert r.status_code == 422
+    validar_error(r.json())
+    assert r.json()["error"]["details"] == [{
+        "field": "body.benefit_ids.1",
+        "reason": "Beneficio fuera de las oportunidades de la familia.",
+    }]
+    assert "BEN-005" not in r.text
+    assert TITULOS["BEN-001"] not in r.text and TITULOS["BEN-005"] not in r.text
+
+
+def test_asignado_se_omite_con_warning(monkeypatch):
+    _estados(monkeypatch, {"BEN-001": "ELEGIBLE_SIN_ASIGNACION", "BEN-005": "ASIGNADO"})
+    r = _post("guion", ["BEN-001", "BEN-005"])
+    assert r.status_code == 200
+    body = r.json()
+    validar("ScriptGenerationEnvelope", body)
+    assert body["content"]["benefit_ids"] == ["BEN-001"]
+    assert body["warnings"] == ["BENEFICIO_ASIGNADO_OMITIDO"]
+    assert TITULOS["BEN-001"] in body["content"]["script"]
+    assert TITULOS["BEN-005"] not in r.text
+
+
+def test_todos_asignado_422(monkeypatch):
+    _estados(monkeypatch, {"BEN-005": "ASIGNADO"})
+    r = _post("mensaje", ["BEN-005"])
+    assert r.status_code == 422
+    validar_error(r.json())
+    assert r.json()["error"]["details"] == [{
+        "field": "body.benefit_ids.0", "reason": "Beneficio que la familia ya tiene.",
+    }]
+    assert "BEN-005" not in r.text
 
 
 # --- asistente -------------------------------------------------------------------
@@ -266,6 +329,7 @@ def test_asistente_individual_sin_cambios():
 # --- falla cerrada del catálogo (DEC-058) ----------------------------------------
 
 
+@pytest.mark.usefixtures("_todas_ofrecibles")
 def test_catalogo_invalido_fallback_sin_500(tmp_path, monkeypatch, caplog):
     shutil.copytree(CONTENT_DIR, tmp_path / "content")
     beneficios = tmp_path / "content" / "beneficios.yaml"

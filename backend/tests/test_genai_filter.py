@@ -109,6 +109,10 @@ def _catalogo() -> dict:
     }
 
 
+# Estados de acceso de las oportunidades del catálogo sintético (DEC-060).
+_ESTADOS = {"BEN-001": "ELEGIBLE_SIN_ASIGNACION", "BEN-012": "ELEGIBLE_SIN_ASIGNACION"}
+
+
 # --- (a) rechazo de PII adversarial -----------------------------------------
 
 @pytest.mark.parametrize(
@@ -184,7 +188,7 @@ def test_construir_llm_context_valido_contra_schema():
 
 def test_guion_valido_contra_c3():
     tp = TemplateProvider(_catalogo())
-    content = tp.generar_guion(["BEN-001", "BEN-012"])
+    content = tp.generar_guion(["BEN-001", "BEN-012"], estados=_ESTADOS)
     _validar_c3(content, "ScriptContent")
     assert DISCLAIMER in content["script"]
     assert len(content["script"]) <= 1200
@@ -192,7 +196,7 @@ def test_guion_valido_contra_c3():
 
 def test_mensaje_valido_contra_c3_y_disclaimer():
     tp = TemplateProvider(_catalogo())
-    content = tp.generar_mensaje(["BEN-001"])
+    content = tp.generar_mensaje(["BEN-001"], estados=_ESTADOS)
     _validar_c3(content, "MessageContent")
     assert content["printable_card"]["format_version"] == "CARD_V1"
     assert DISCLAIMER in content["whatsapp_preview"]
@@ -225,7 +229,7 @@ def test_printable_card_neutraliza_markup():
         source_url="https://www.chileatiende.gob.cl/",
     )
     tp = TemplateProvider(cat)
-    content = tp.generar_mensaje(["BEN-001"])
+    content = tp.generar_mensaje(["BEN-001"], estados=_ESTADOS)
     _validar_c3(content, "MessageContent")
 
     blob = json.dumps(content, ensure_ascii=False)
@@ -254,7 +258,7 @@ def test_sin_logs_con_contenido_sensible(caplog):
         c2 = _c2_limpio()
         construir_llm_context([], c2, _benefits_limpios())
         tp = TemplateProvider(_catalogo())
-        tp.generar_mensaje(["BEN-001"])
+        tp.generar_mensaje(["BEN-001"], estados=_ESTADOS)
         tp.responder_asistente("req-3", "¿Yo califico para el subsidio?")
 
     texto_logs = "\n".join(r.getMessage() for r in caplog.records)
