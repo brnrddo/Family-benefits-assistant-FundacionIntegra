@@ -37,9 +37,14 @@ Antes de tomar una tarea, verifique que no esté aquí.
 | Motor de elegibilidad, acceso y contexto | Listo (Rol 1) | `backend/app/{engine,access,context}/` |
 | **`POST /api/v1/familias/{id}/antecedentes`** | **Listo**, commit `29b58b7` | `backend/app/api/` |
 | Frontend completo (PWA, mocks, e2e, i18n, offline) | Listo (ex Rol 3) | `frontend/` |
+| C0 definitivo desde el mapeo de ficha | Listo (Rol 4, PR #9) | `content/` |
 
 El endpoint de antecedentes quedó terminado con su idempotencia corregida y
 **204 pruebas en verde**. No se reimplementa.
+
+Base ya integrada en `main`: el PR #8 llevó la API, la priorización y el filtro
+de privacidad; el PR #9 llevó el C0 definitivo del Rol 4. Para empezar cualquier
+tarea, parta desde `main` actualizado.
 
 ---
 
@@ -152,10 +157,11 @@ indicador de familias informadas sube.
    documenta, igual que se hizo con el endpoint de antecedentes.
 2. **`backend/app/{engine,access,context,loader,db}`** (Rol 1): solo importar.
 3. **`content/`** (Rol 4): es el productor único del contenido C4.
-4. Mientras el **PR #8** siga abierto, tampoco toque `backend/app/api/runtime.py`,
-   `backend/requirements*.txt`, `backend/tests/test_priority.py` ni
-   `backend/fixtures/`. Al fusionarse, `runtime.py` queda disponible para el
-   apoyo (tarea B1).
+4. ~~Archivos bloqueados por la integración en curso.~~ **Ya se desbloquearon:**
+   el PR #8 se fusionó a `main` el 2026-10-15. `backend/app/api/runtime.py`,
+   `backend/requirements*.txt`, `backend/tests/test_priority.py` y
+   `backend/fixtures/` quedan disponibles para el apoyo (son el punto de partida
+   de la tarea B1).
 
 **Convenciones:**
 
