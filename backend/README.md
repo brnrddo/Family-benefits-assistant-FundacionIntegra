@@ -298,11 +298,11 @@ guion/mensaje/asistente lo genera el `TemplateProvider` (provider `PLANTILLA`),
 nunca un LLM; una pregunta de elegibilidad individual al asistente devuelve
 `REQUIRES_DETERMINISTIC_EVALUATION` sin invocar Bedrock. Guion y mensaje
 validan los `benefit_ids` contra las oportunidades de la familia (propuesta
-DEC-060): un ID ajeno responde 422 sin eco; un ASIGNADO se omite con el warning
+DEC-078): un ID ajeno responde 422 sin eco; un ASIGNADO se omite con el warning
 `BENEFICIO_ASIGNADO_OMITIDO` (422 si todos lo son); GESTION_EN_CURSO,
 GESTION_RECHAZADA y SIN_CUPO se nombran con la frase por estado del Rol 4
 (instrucción 5 de `content/prompts`). El guion usa solo la primera frase de
-cada descripción: 120 palabras como máximo (propuesta DEC-061).
+cada descripción: 120 palabras como máximo (propuesta DEC-076).
 
 ### Integración del motor (`E3_MOCK=0`)
 
@@ -327,14 +327,14 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   `GET /familias/{id}/contexto` y `GET /familias/{id}/oportunidades`.
   `POST /conversaciones`, `/guion` y `/mensaje` validan contra los IDs reales
   (`FAM-SIM-E3-00001`…; los IDs mock como `FAM-SIM-0001` dan 404); `/guion` y
-  `/mensaje`, además, contra las oportunidades reales de esa familia (DEC-060:
+  `/mensaje`, además, contra las oportunidades reales de esa familia (DEC-078:
   ajeno → 422, ASIGNADO omitido con warning; guion de 120 palabras como
-  máximo, DEC-061). Siguen
+  máximo, DEC-076). Siguen
   sintéticos el KPI, la preevaluación, el asistente, la ingesta de afiche y el
   texto de guion/mensaje (`TemplateProvider`). `POST /antecedentes` con un ID
   real responde 503 retryable: reevaluar con hechos declarados exige cambiar el
-  motor (propuesta DEC-052).
-- **C4 = `content/` del Rol 4 (propuesta DEC-048):** en modo real, U/B/V, las
+  motor (propuesta DEC-074; pendiente del Rol 1, PREG-069).
+- **C4 = `content/` del Rol 4 (DEC-067, aprobada por el usuario):** en modo real, U/B/V, las
   medianas por jardín, el título, dónde ir, la cita oficial y las preguntas
   sugeridas salen de `content/manifest.yaml` 0.2.1 (adaptador
   `app/priority/content_c4.py`). Se valida fallando cerrado: schema C4, sha256
@@ -342,11 +342,11 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   `content/` sigue declarado no publicable (DEC-040) hasta API-T14 y la revisión
   humana. El mock `backend/fixtures/c4_mock/` queda para `E3_MOCK=1` y sus tests
   (`E3_CONTENT_MANIFEST` lo reapunta).
-- **Orden (propuesta DEC-053):** primero lo que la familia puede pedir o le
+- **Orden (DEC-075, aprobada por el usuario):** primero lo que la familia puede pedir o le
   falta (`ELEGIBLE_SIN_ASIGNACION`, `PENDIENTE_ANTECEDENTES`, `INDETERMINADO`),
   luego `SIN_CUPO` y al final lo que ya tiene o ya postuló. Define `position`,
   `top_benefit_ids` y `top_opportunities`. La prioridad familiar no cambia.
-- **Citas y montos (PREG-045/048, propuesta DEC-050 pendiente de confirmar con
+- **Citas y montos (PREG-045/048, propuesta DEC-069 pendiente de confirmar con
   Rol 3 y Rol 4):** BEN-018/019/020 no tienen cita HTTPS en C4: aparecen en
   `benefit_results`, nunca como oportunidad. Sin monto anual (p. ej. BEN-010),
   B queda en 0 con `benefit_estimated=true`; hoy ese flag no distingue
@@ -357,14 +357,14 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   `PRECALCULO_AUSENTE`, `DB_ILEGIBLE`, `C4_INVALIDO`, `INVARIANTE_MOTOR`).
   El fallo se registra una vez y no se reintenta hasta que cambie la DB, el
   manifest C4 o cualquier archivo de su `files[]` (mtime o tamaño; propuesta
-  DEC-063): corregir un archivo de `content/` recupera el motor real sin
+  DEC-079): corregir un archivo de `content/` recupera el motor real sin
   reiniciar, y editarlo reconstruye el snapshot (los cursores previos dan 422).
 - **`why_first`:** frase fija por estado de acceso, con la forma "podría
   calificar… / vale la pena consultar…" (fuente funcional §2.4.2) y sin cifras.
 - **Front:** con la API en `:8000`, desde `frontend/` usa `npm run dev:api` y
   `npm run check:api -- http://127.0.0.1:8000/api/v1`. En otro puerto, exporta
   `$env:BRUJULA_DEV_API_PROXY='http://127.0.0.1:<puerto>'`.
-- `meta` (propuesta DEC-062): `content_version` y `content_bundle_hash` son los
+- `meta` (propuesta DEC-079): `content_version` y `content_bundle_hash` son los
   del bundle `content/` que produjo la respuesta: el del snapshot en las rutas
   del motor real (jardines, familias, contexto, oportunidades y conversaciones)
   y el del catálogo en `/guion` y `/mensaje` (en ambos modos). Mocks, KPI,
@@ -373,7 +373,7 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   front lo compara) y `eligibility_bundle_hash` sigue como placeholder
   (PREG-066).
 - Guion y mensaje validan los `benefit_ids` contra las oportunidades de esa
-  familia en ambos modos (DEC-060): ajeno → 422 sin eco, ASIGNADO omitido con
+  familia en ambos modos (DEC-078): ajeno → 422 sin eco, ASIGNADO omitido con
   `BENEFICIO_ASIGNADO_OMITIDO` y frase por estado del Rol 4 para GESTION_* y
   SIN_CUPO.
 
@@ -412,7 +412,7 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   5 de sus familias viven en COM-001.
 - **Volver al dataset original:** `py -3.11 -m app.loader.load --force` y
   `py -3.11 -m app.db.build_views`.
-- **Ficha solo relevante (propuesta DEC-070):** en ambos modos
+- **Ficha solo relevante (DEC-070, aprobada por el usuario):** en ambos modos
   `GET /familias/{id}` y `POST /antecedentes` ya no listan `NO`/`NO_APLICA`; el
   snapshot y el motor conservan todo.
 - **Alcance (propuesta DEC-072):** `GET /api/v1/catalogo/alcance` marca cada
