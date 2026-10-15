@@ -1,0 +1,9 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. Los numeros autoritativos del ranking viven en manifest.json -> ranking. Este archivo es la clase WEIGHTS obligatoria y documenta la intencion de los ejes.",
+  "axis_intent": {
+    "u": "Urgencia: que tan apremiante es actuar ahora.",
+    "b": "Beneficio: impacto economico anualizado proporcional al ingreso del hogar.",
+    "v": "Vulnerabilidad: condicion estructural del hogar."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "Aws-breaking-barriers---10--api-nocturno-2026-10-15",
+  "task_description": "Rol 2 nocturno (rama api, checkout actual, NO worktree): mocks C3 de los 12 flujos como app FastAPI real bajo /api/v1, priorizacion U/B/V determinista desde C4, filtro de privacidad GenAI (allowlist + TemplateProvider, sin Bedrock) y esqueleto backend ejecutable con bandera de motor real opcional. Reutiliza el motor Rol 1; no toca engine/access/context/loader/db salvo para importar. No implementa AWS real, Cognito real, Bedrock real, ni logica de ingreso minimo/ficha (depende de la reunion). Base verde: py -3.11 -m pytest = 90 tests.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

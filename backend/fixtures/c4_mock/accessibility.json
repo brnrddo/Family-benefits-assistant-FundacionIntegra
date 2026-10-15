@@ -1,0 +1,7 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. Polly y Translate deshabilitados; estado NO_VERIFICADO.",
+  "canonical_spanish_label_key": "a11y.canonical_es",
+  "polly_fallback_label_key": "a11y.polly_fallback",
+  "translate_fallback_label_key": "a11y.translate_fallback"
+}
