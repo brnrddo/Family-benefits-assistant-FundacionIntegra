@@ -13,7 +13,7 @@ from .facts import Repo
 from .model import (Hecho, Nivel, ResultadoBeneficio, TrazaRegla, Tri,
                     MOTIVO_CRITERIO_NO_CUMPLE, MOTIVO_CRITERIOS_CUMPLEN,
                     MOTIVO_DATO_FALTANTE, MOTIVO_DATO_RSH_FALTANTE,
-                    MOTIVO_FUERA_DE_VIGENCIA)
+                    MOTIVO_EVIDENCIA_DECLARADA, MOTIVO_FUERA_DE_VIGENCIA)
 from .resolver import FamiliaCtx, resolver_hogar, resolver_integrante
 
 
@@ -177,8 +177,9 @@ class Evaluator:
                 return Tri.SI
         return Tri.NO
 
-    def evaluar(self, id_familia: str, id_beneficio: str) -> ResultadoBeneficio:
-        ctx = FamiliaCtx(self.repo, id_familia)
+    def evaluar(self, id_familia: str, id_beneficio: str,
+                declarados: dict | None = None) -> ResultadoBeneficio:
+        ctx = FamiliaCtx(self.repo, id_familia, declarados)
         version = self.version_vigente(id_beneficio)
         if version is None:
             return ResultadoBeneficio(
@@ -215,6 +216,8 @@ class Evaluator:
         if final == Tri.SI:
             res.nivel = Nivel.CONFIRMADO if acreditacion_ok else Nivel.PRELIMINAR
             res.motivos.append(MOTIVO_CRITERIOS_CUMPLEN)
+            if any(t.nota == "declarado" and t.resultado == Tri.SI for t in res.traza):
+                res.motivos.append(MOTIVO_EVIDENCIA_DECLARADA)
             res.monto_estimado = _num(version["monto_referencial_sintetico"])
         elif final == Tri.INDETERMINADO:
             res.datos_faltantes = sorted(faltantes)
@@ -292,7 +295,8 @@ class Evaluator:
             trazas.append(TrazaRegla(
                 id_regla=r["id_regla"], campo=campo, operador=r["operador"],
                 esperado=esperado, observado=(hecho.valor if hecho.presente else None),
-                resultado=tri, binding_grupo=r["binding_grupo"], id_hecho=hecho.id_origen))
+                resultado=tri, binding_grupo=r["binding_grupo"], id_hecho=hecho.id_origen,
+                nota=("declarado" if hecho.estado_dato == "DECLARADO" and hecho.presente else None)))
         return _and_tri(tris), trazas, faltantes, acred_ok
 
     def _eval_binding_exists(self, reglas_b, ctx: FamiliaCtx, rol: str,
@@ -342,7 +346,8 @@ class Evaluator:
                     id_regla=r["id_regla"], campo=campo, operador=r["operador"],
                     esperado=esperado, observado=(hecho.valor if hecho.presente else None),
                     resultado=tri, binding_grupo=r["binding_grupo"],
-                    id_integrante_evaluado=cand["id_integrante"], id_hecho=hecho.id_origen))
+                    id_integrante_evaluado=cand["id_integrante"], id_hecho=hecho.id_origen,
+                    nota=("declarado" if hecho.estado_dato == "DECLARADO" and hecho.presente else None)))
             tri_cand = _and_tri(tris)
             cur = (tri_cand, cand["id_integrante"], trazas, faltantes, acred_ok)
             if rank[tri_cand] > rank[mejor[0]]:

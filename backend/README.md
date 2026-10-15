@@ -111,6 +111,36 @@ El dataset no trae algunos datos que ciertas reglas piden. Política:
 El nivel `PRELIMINAR` es la señal visible de que hubo un supuesto. La traza
 muestra siempre el detalle regla-por-regla para auditar la decisión.
 
+### Reevaluación con hechos DECLARADO por la familia
+
+Cuando una regla pide un dato que el dataset no trae (p. ej. `residencia_total_anios`,
+`semanas_gestacion`), el beneficio queda `INDETERMINADO` → se convierte en una
+pregunta para la tía. Si la familia **declara** ese dato (ficha digital), se
+puede reevaluar inyectándolo: el motor lo trata como `DECLARADO` / no acreditado,
+de modo que el beneficio puede pasar a `SI` pero siempre con nivel `PRELIMINAR`
+(nunca `CONFIRMADO`). Un dato declarado **no** pisa un dato real de la base y, si
+viene ilegible, se ignora (sigue INDETERMINADO).
+
+```python
+from app.engine.service import reevaluar_con_declarados
+
+declarados = {
+    "hogar":      {"dias_desde_evento": 10},
+    "integrante": {"INT-...-001": {"residencia_total_anios": 30,
+                                    "residencia_ultimos20_anios": 10}},
+}
+for r in reevaluar_con_declarados("FAM-SIM-E3-00100", declarados):
+    print(r.id_beneficio, r.resultado.value, r.nivel)   # SI -> PRELIMINAR
+```
+
+Campos declarables: `app.engine.facts.CAMPOS_DECLARABLES` (subconjunto de los
+campos ausentes, con su tipo). Puente desde la propuesta del LLM:
+`app.genai.caracterizador.declarados_desde_propuesta(propuesta)` convierte una
+propuesta estructurada (sección `hechos_declarados`) en el dict `declarados`,
+dejando pasar solo campos declarables conocidos. La traza marca cada hecho
+declarado con `nota="declarado"` y el resultado añade el motivo
+`EVIDENCIA_DECLARADA` — auditable.
+
 ### Alcance de M2
 Resuelve elegibilidad. Los beneficios que dependen del cruce con accesos
 previos / gestiones (BEN-004 Aporte Familiar, BEN-016 Asignación Familiar) o de

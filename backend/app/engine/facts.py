@@ -62,6 +62,69 @@ CAMPOS_FALTANTES = {
     "residencia_ultimos20_anios",
 }
 
+# --- Reevaluación con hechos DECLARADO por la familia (P1) --------------------
+# La tía (o el LLM, vía caracterizador) puede DECLARAR un dato que el dataset no
+# trae. Un hecho declarado nunca viene acreditado -> el beneficio puede dar SI
+# pero como PRELIMINAR (nunca CONFIRMADO). Solo se permiten los campos que hoy
+# son faltantes/ausentes; un declarado NUNCA pisa un dato real de la base.
+#
+# Tipo esperado de cada campo declarable, para validar/convertir el valor:
+#   "num"  -> entero/decimal (se rechaza lo no numérico)
+#   "bool" -> booleano (acepta true/false, "si"/"no", 1/0)
+CAMPOS_DECLARABLES = {
+    "semanas_gestacion": "num",
+    "parto_red_publica": "bool",
+    "control_prenatal_red_publica": "bool",
+    "dias_desde_control": "num",
+    "dias_desde_evento": "num",
+    "residencia_total_anios": "num",
+    "residencia_ultimos20_anios": "num",
+    "antecedente_edad_vigente": "bool",
+}
+
+_VERDADEROS = {"true", "1", "si", "sí", "verdadero", "yes"}
+_FALSOS = {"false", "0", "no", "falso"}
+
+
+def _coerce_declarado(campo: str, valor):
+    """Convierte/valida un valor declarado al tipo del campo.
+
+    Devuelve el valor convertido, o ``None`` si es ilegible (se ignora y el
+    campo sigue INDETERMINADO). No inventa valores.
+    """
+    tipo = CAMPOS_DECLARABLES.get(campo)
+    if tipo is None or valor is None or (isinstance(valor, str) and not valor.strip()):
+        return None
+    if tipo == "num":
+        try:
+            s = str(valor).strip().replace(" ", "")
+            return int(s) if "." not in s else float(s)
+        except (ValueError, TypeError):
+            return None
+    if tipo == "bool":
+        if isinstance(valor, bool):
+            return valor
+        s = str(valor).strip().lower()
+        if s in _VERDADEROS:
+            return True
+        if s in _FALSOS:
+            return False
+        return None
+    return None
+
+
+def desde_declarado(campo: str, valor, id_origen: str | None = None) -> Hecho | None:
+    """Construye un Hecho DECLARADO (no acreditado) a partir de un valor crudo.
+
+    Devuelve ``None`` si el campo no es declarable o el valor es ilegible; en ese
+    caso el resolver sigue su curso normal (-> INDETERMINADO).
+    """
+    conv = _coerce_declarado(campo, valor)
+    if conv is None:
+        return None
+    return Hecho(campo=campo, valor=conv, presente=True, acreditada=False,
+                 estado_dato="DECLARADO", id_origen=id_origen)
+
 # Documento acreditante por campo (alimenta el checklist de M3/M5; aquí solo se define).
 DOCUMENTO_POR_CAMPO = {
     "tramo_rsh": "Registro Social de Hogares al día",

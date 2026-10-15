@@ -80,3 +80,49 @@ def caracterizar_texto_libre(
         "estado_dato": "DECLARADO",     # nunca OBSERVADO/acreditado
         "acreditada": False,            # => el motor dará PRELIMINAR como máximo
     }
+
+
+def declarados_desde_propuesta(propuesta: dict) -> dict:
+    """Convierte una propuesta estructurada en el dict ``declarados`` del motor.
+
+    Puente entre la capa GenAI (o la ficha digital de la tía) y la reevaluación
+    (`engine.service.reevaluar_con_declarados`). La propuesta debe traer una
+    sección ``hechos_declarados`` con la forma del contrato del motor:
+
+        {
+            "hechos_declarados": {
+                "hogar": {campo_dato: valor, ...},
+                "integrante": {id_integrante: {campo_dato: valor, ...}, ...},
+            }
+        }
+
+    Solo se dejan pasar campos declarables conocidos
+    (`engine.facts.CAMPOS_DECLARABLES`); el valor se valida/convierte y, si es
+    ilegible, se descarta. Las claves desconocidas se ignoran (no se inventan
+    campos ni se decide elegibilidad aquí). Devuelve ``{}`` si no hay nada
+    utilizable.
+    """
+    from ..engine.facts import CAMPOS_DECLARABLES, _coerce_declarado
+
+    fuente = (propuesta or {}).get("hechos_declarados", {}) or {}
+    salida: dict = {}
+
+    hogar = {}
+    for campo, valor in (fuente.get("hogar") or {}).items():
+        if campo in CAMPOS_DECLARABLES and _coerce_declarado(campo, valor) is not None:
+            hogar[campo] = valor
+    if hogar:
+        salida["hogar"] = hogar
+
+    integrantes: dict = {}
+    for pid, campos in (fuente.get("integrante") or {}).items():
+        limpio = {
+            c: v for c, v in (campos or {}).items()
+            if c in CAMPOS_DECLARABLES and _coerce_declarado(c, v) is not None
+        }
+        if limpio:
+            integrantes[pid] = limpio
+    if integrantes:
+        salida["integrante"] = integrantes
+
+    return salida
