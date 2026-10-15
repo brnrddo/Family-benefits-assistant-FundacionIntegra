@@ -35,7 +35,7 @@ enganchar lo nuevo.
 |---|---|---|---|---|
 | **P1** | Ficha digital → hechos DECLARADO → **reevaluación** | Día 2, punto 4 | ✅ **Hecho** (ver §2) — `tests/test_reevaluacion.py` | **Alta** |
 | **P2** | Empaquetado AWS (`e3.db` embebido, `make data`, despliegue) | §0 "Soporte a AWS" + §6 | ✅ **Hecho** (ver §3) — `Dockerfile`, `Makefile`, `make.ps1`, `.dockerignore` | **Alta** |
-| **P3** | Sembrar 3 familias demo verificadas (brecha, discapacidad, sin RSH) | Día 2, punto 8 | No verificado: no hay script/test que fije las 3 familias de demo | Media |
+| **P3** | Sembrar 3 familias demo verificadas (brecha, discapacidad, sin RSH) | Día 2, punto 8 | ✅ **Hecho** (ver §P3) — `tests/test_demo_familias.py` + README | Media |
 | **P4** | README de datos: cerrar "cómo desplegar en AWS" con artefactos reales | Día 2, punto 7 + §6 | Parcial: el README describe el flujo pero apunta a artefactos que no existen (depende de P2) | Media (sigue a P2) |
 | **C2** | Emitir el **contrato C2 formal** (schema `urn:brujula:c2:v1`), no solo el objeto interno §2.7.2 | Contrato Rol 1→Rol 2 (INDICE.md, Día 2 12:00) | ✅ **Hecho** (ver §C2) — `app/context/contrato_c2.py`, `tests/test_contrato_c2.py` | **Alta** |
 
@@ -287,3 +287,20 @@ el contrato en el vocabulario correcto.
   (branch `rol4/mapeo-campo-motor-wip`) **no debe aplicarse al CSV**: el
   contrato manda y el Rol 1 ya se adapta vía `contrato_c2.py`. Comunicar al
   equipo.
+
+
+---
+
+## §P3 · 3 familias demo verificadas
+
+Tres familias **reales** del dataset E-3, elegidas para que cada arquetipo sea
+claro y no se solape con los otros, fijadas en `tests/test_demo_familias.py`
+(regresión + guion de demo) y documentadas en el README:
+
+| Arquetipo | Familia | Verificación |
+|---|---|---|
+| **Brecha** | `FAM-SIM-E3-00231` | ≥1 `ELEGIBLE_SIN_ASIGNACION`; BEN-005 SI CONFIRMADO sin gestión. |
+| **Discapacidad** | `FAM-SIM-E3-00361` | BEN-006 SI CONFIRMADO por binding de discapacidad severa vigente. |
+| **Sin RSH** | `FAM-SIM-E3-00256` | `SIN_REGISTRO`: ≥1 beneficio IND por `tramo_rsh` con motivo `DATO_RSH_FALTANTE` (nunca NO). |
+
+6 tests nuevos, verdes. Suite completa: **117 passed**.
