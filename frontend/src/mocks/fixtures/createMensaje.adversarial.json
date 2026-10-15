@@ -1,0 +1,73 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createMensaje",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0403",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "provider": "BEDROCK",
+    "warnings": [
+      "OUTPUT_FILTERED"
+    ],
+    "content": {
+      "benefit_ids": [
+        "BEN-001",
+        "BEN-002",
+        "BEN-003"
+      ],
+      "whatsapp_preview": "<script>alert(1)</script> <img src=x onerror=alert(1)> javascript:alert(1) \u202einvertido\u202c largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-",
+      "printable_card": {
+        "format_version": "CARD_V1",
+        "title": "<script>alert(1)</script>",
+        "introduction": "<img src=x onerror=alert(1)> \"><svg onload=alert(1)> {{constructor.constructor('alert(1)')()}}",
+        "sections": [
+          {
+            "benefit_id": "BEN-001",
+            "heading": "javascript:alert(1)",
+            "reason": "style=\"position:fixed\" url(https://evil.example)",
+            "action": "</article><a href=\"https://evil.example\">x",
+            "where_to_go": "{{constructor.constructor('alert(1)')()}}",
+            "sources": [
+              {
+                "source_id": "SRC-SIM-001",
+                "url": "https://fuentes.brujula-demo.example/ben-001"
+              }
+            ]
+          },
+          {
+            "benefit_id": "BEN-002",
+            "heading": "zlargo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-ma",
+            "reason": "xlargo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo",
+            "action": "xlargo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo",
+            "where_to_go": "ylargo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-largo-maximo-lar",
+            "sources": [
+              {
+                "source_id": "SRC-SIM-002",
+                "url": "https://fuentes.brujula-demo.example/ben-002"
+              }
+            ]
+          },
+          {
+            "benefit_id": "BEN-003",
+            "heading": "\u202eodnumixám ograL",
+            "reason": "\u2066 aislamiento sin cerrar",
+            "action": "Texto normal después de un override.",
+            "where_to_go": null,
+            "sources": [
+              {
+                "source_id": "SRC-SIM-003",
+                "url": "https://fuentes.brujula-demo.example/ben-003"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+  }
+}

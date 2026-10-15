@@ -5,6 +5,11 @@
 fastapi==0.115.6
 uvicorn==0.34.0
 
+# Importadas a nivel de módulo por el código: app/api/app.py sirve el contrato C3
+# en YAML y app/priority/config.py valida el bundle contra el schema cerrado C4.
+PyYAML==6.0.3
+jsonschema==4.26.0
+
 # Capa de IA generativa (Rol 2): SDK de AWS para invocar Amazon Bedrock
 # (Claude vía Converse API). El backend funciona sin esto usando el proveedor
 # "stub" local (app/genai/provider.py); boto3 solo se importa cuando se usa el

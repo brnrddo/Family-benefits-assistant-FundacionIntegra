@@ -1,0 +1,52 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createMensaje",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0401",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "provider": "BEDROCK",
+    "warnings": [],
+    "content": {
+      "benefit_ids": ["BEN-001", "BEN-002", "BEN-003"],
+      "whatsapp_preview": "Hola. Le comparto tres apoyos que podrían servirle: aporte mensual por hijo, bono de invierno y control de salud infantil. Vale la pena consultar en el municipio. Es una orientación; la institución confirma si corresponde.",
+      "printable_card": {
+        "format_version": "CARD_V1",
+        "title": "Apoyos para conversar",
+        "introduction": "Estos apoyos podrían servirle. Confirme siempre en la institución.",
+        "sections": [
+          {
+            "benefit_id": "BEN-001",
+            "heading": "Aporte mensual por hijo",
+            "reason": "Podría recibirlo y aún no lo pide.",
+            "action": "Consulte en la oficina municipal.",
+            "where_to_go": "Oficina municipal de atención social (sintética)",
+            "sources": [{ "source_id": "SRC-SIM-001", "url": "https://fuentes.brujula-demo.example/ben-001" }]
+          },
+          {
+            "benefit_id": "BEN-002",
+            "heading": "Bono de invierno",
+            "reason": "La postulación cierra pronto.",
+            "action": "Pregunte esta semana en la ventanilla de postulaciones.",
+            "where_to_go": "Municipio, ventanilla de postulaciones (sintética)",
+            "sources": [{ "source_id": "SRC-SIM-002", "url": "https://fuentes.brujula-demo.example/ben-002" }]
+          },
+          {
+            "benefit_id": "BEN-003",
+            "heading": "Control de salud infantil",
+            "reason": "Falta saber cuándo fue el último control.",
+            "action": "Revise la fecha en el carnet de salud.",
+            "where_to_go": null,
+            "sources": [{ "source_id": "SRC-SIM-003", "url": "https://fuentes.brujula-demo.example/ben-003" }]
+          }
+        ]
+      }
+    },
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+  }
+}

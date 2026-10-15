@@ -1,0 +1,45 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "getFamilia",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0104",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00004",
+      "garden_id": "JAR-SIM-E3-00001",
+      "composition": [
+        { "role": "ADULT_REFERENCE", "age": 38 },
+        { "role": "OTHER_ADULT", "age": 40 },
+        { "role": "CHILD", "age": 4 }
+      ],
+      "rsh_band": 90,
+      "informed": false,
+      "top_opportunities": [],
+      "benefit_results": [
+        {
+          "benefit_id": "BEN-001",
+          "result": "NO",
+          "level": null,
+          "access_state": "NO_APLICA",
+          "missing_codes": [],
+          "trace": [{ "rule_id": "R-BEN-001-01", "field": "rsh_band", "operator": "LTE", "result": "NO_CUMPLE" }]
+        },
+        {
+          "benefit_id": "BEN-003",
+          "result": "NO_APLICA",
+          "level": null,
+          "access_state": "NO_APLICA",
+          "missing_codes": [],
+          "trace": []
+        }
+      ],
+      "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+    }
+  }
+}

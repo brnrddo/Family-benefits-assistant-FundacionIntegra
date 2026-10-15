@@ -275,6 +275,12 @@ bundle C4 es inválido, **degrada a mocks con un warning sanitizado y nunca
 lanza 500**. Genera la DB con `python -m app.loader.load` + `python -m
 app.db.build_views` antes de usar este modo.
 
+El bundle C4 que carga la priorización es el **mock de desarrollo del Rol 2** en
+`backend/fixtures/c4_mock/` (ver su `README.md` y `DEC-022`); **la autoridad de
+C4 es el bundle del Rol 4 en `content/`** (YAML/CSV/MD, `content/manifest.yaml`)
+y queda pendiente el adaptador JSON→YAML. La ruta del manifest se reapunta con
+`E3_CONTENT_MANIFEST`.
+
 > Estado AWS: `NO_VERIFICADO`. No hay Cognito real; la autorización por scope es
 > un stub de demo por header (`X-Demo-Scopes`). Los logs registran solo
 > `request_id`, método, ruta, status y latencia: nunca cuerpos, prompts,

@@ -1,0 +1,345 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "provenance": "ESCRITO_A_MANO_NO_EJECUTADO_EN_BEDROCK",
+  "nota": "Salidas de referencia escritas a mano para revisar los prompts. No se ejecutaron contra Amazon Bedrock ni contra otro servicio de AWS. Las familias y preguntas son inventadas.",
+  "content_version": "0.1.0",
+  "salidas": [
+    {
+      "output_id": "REF-01",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "SCRIPT",
+      "prompt_template_id": "PROMPT-GUION",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0001",
+      "benefit_ids": ["BEN-001", "BEN-005"],
+      "model_output": {
+        "benefit_ids": ["BEN-001", "BEN-005"],
+        "script": "Hola, ¿cómo está? Le quiero contar de dos apoyos que podrían servirle a su familia. Primero, el Subsidio Familiar. Es un aporte mensual en dinero para familias con niños. Su familia podría calificar y vale la pena pedirlo. Consulte en su municipalidad o en la Ventanilla Única Social. También está el Subsidio al pago del agua. Es un descuento en la cuenta del agua. Según lo conversado, podría calificar, pero falta confirmarlo. Tenga a mano una cuenta reciente del agua. ¿Le parece si consulta pronto en su municipalidad? Orientación referencial; no determina derechos. Confirmar en la institución."
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-02",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "SCRIPT",
+      "prompt_template_id": "PROMPT-GUION",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0002",
+      "benefit_ids": ["BEN-003", "BEN-001"],
+      "model_output": {
+        "benefit_ids": ["BEN-003", "BEN-001"],
+        "script": "Hola, ¿cómo está? Tengo dos preguntas cortas. ¿Hay alguien embarazada en la familia? ¿Tiene el Registro Social de Hogares al día? Con sus respuestas podemos revisar dos apoyos. Uno es el Subsidio Maternal. El otro es el Subsidio Familiar. Por ahora no se puede saber si podría calificar. Si no tiene el Registro, vale la pena consultar en su municipalidad. Orientación referencial; no determina derechos. Confirmar en la institución."
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-03",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "SCRIPT",
+      "prompt_template_id": "PROMPT-GUION",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0003",
+      "benefit_ids": ["BEN-001", "BEN-005"],
+      "model_output": {
+        "benefit_ids": ["BEN-001", "BEN-005"],
+        "script": "Hola, ¿cómo está? Le traigo dos temas cortos. Primero, el Subsidio Familiar. Su trámite ya está en curso. Vale la pena esperar la respuesta. Segundo, el Subsidio al pago del agua. Podría calificar, pero faltan documentos. Tenga a mano una cuenta reciente del agua. Pregunte en su municipalidad qué documentos necesita llevar. Orientación referencial; no determina derechos. Confirmar en la institución."
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-04",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "FAMILY_MESSAGE",
+      "prompt_template_id": "PROMPT-MENSAJE-FAMILIA",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0001",
+      "benefit_ids": ["BEN-001", "BEN-005"],
+      "model_output": {
+        "benefit_ids": ["BEN-001", "BEN-005"],
+        "whatsapp_preview": "Hola. Le escribimos desde el jardín. Revisamos dos apoyos que podrían servirle a su familia. Subsidio Familiar: un aporte mensual en dinero para familias con niños. Vale la pena pedirlo en su municipalidad o en la Ventanilla Única Social. Subsidio al pago del agua: un descuento en la cuenta del agua. Lleve una cuenta reciente del agua a su municipalidad. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "printable_card": {
+          "format_version": "CARD_V1",
+          "title": "Apoyos que podría consultar",
+          "introduction": "Revisamos dos apoyos que podrían servirle a su familia. Vale la pena consultar en la institución.",
+          "sections": [
+            {
+              "benefit_id": "BEN-001",
+              "heading": "Subsidio Familiar",
+              "reason": "Su familia podría calificar. Es un aporte mensual en dinero que ayuda con los gastos de crianza.",
+              "action": "Consulte en su municipalidad o en la Ventanilla Única Social. Mantenga su Registro Social de Hogares al día.",
+              "where_to_go": "Municipalidad o Ventanilla Única Social.",
+              "sources": [
+                {"source_id": "F004", "url": "https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf"}
+              ]
+            },
+            {
+              "benefit_id": "BEN-005",
+              "heading": "Subsidio al pago del agua",
+              "reason": "Según lo conversado, podría calificar. Falta confirmarlo. Es un descuento en la cuenta del agua.",
+              "action": "Consulte en su municipalidad. Tenga a mano una cuenta reciente del agua.",
+              "where_to_go": "Su municipalidad.",
+              "sources": [
+                {"source_id": "F008", "url": "https://www.chileatiende.gob.cl/fichas/51314-subsidio-al-pago-del-consumo-de-agua-potable-y-servicio-de-alcantarillado"}
+              ]
+            }
+          ]
+        }
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-05",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "FAMILY_MESSAGE",
+      "prompt_template_id": "PROMPT-MENSAJE-FAMILIA",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0002",
+      "benefit_ids": ["BEN-003", "BEN-001"],
+      "model_output": {
+        "benefit_ids": ["BEN-003", "BEN-001"],
+        "whatsapp_preview": "Hola. Le escribimos desde el jardín. Queremos revisar dos apoyos con usted. Nos faltan dos datos. ¿Hay alguien embarazada en la familia? ¿Tiene el Registro Social de Hogares al día? Puede responder en el jardín. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "printable_card": {
+          "format_version": "CARD_V1",
+          "title": "Dos preguntas para revisar apoyos",
+          "introduction": "Con dos datos más podemos revisar estos apoyos.",
+          "sections": [
+            {
+              "benefit_id": "BEN-003",
+              "heading": "Subsidio Maternal",
+              "reason": "Aún no se puede saber. Faltan dos datos: si hay alguien embarazada y si tiene el Registro Social de Hogares al día.",
+              "action": "Responda las preguntas en el jardín. Mantenga su Registro Social de Hogares al día.",
+              "where_to_go": "Municipalidad o Ventanilla Única Social.",
+              "sources": [
+                {"source_id": "F006", "url": "https://www.ventanillaunicasocial.gob.cl/ficha/509/subsidio-maternal"}
+              ]
+            },
+            {
+              "benefit_id": "BEN-001",
+              "heading": "Subsidio Familiar",
+              "reason": "Aún no se puede saber. Falta saber si tiene el Registro Social de Hogares al día.",
+              "action": "Si no lo tiene, vale la pena consultar en su municipalidad o en la Ventanilla Única Social.",
+              "where_to_go": "Municipalidad o Ventanilla Única Social.",
+              "sources": [
+                {"source_id": "F004", "url": "https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf"}
+              ]
+            }
+          ]
+        }
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-06",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "FAMILY_MESSAGE",
+      "prompt_template_id": "PROMPT-MENSAJE-FAMILIA",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0003",
+      "benefit_ids": ["BEN-001", "BEN-005"],
+      "model_output": {
+        "benefit_ids": ["BEN-001", "BEN-005"],
+        "whatsapp_preview": "Hola. Le escribimos desde el jardín. Su trámite del Subsidio Familiar ya está en curso. Vale la pena esperar la respuesta. Para el Subsidio al pago del agua faltan documentos. Lleve una cuenta reciente del agua a su municipalidad. Pregunte qué otros documentos necesita. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "printable_card": {
+          "format_version": "CARD_V1",
+          "title": "Sus trámites",
+          "introduction": "Un resumen corto para leer en voz alta.",
+          "sections": [
+            {
+              "benefit_id": "BEN-001",
+              "heading": "Subsidio Familiar",
+              "reason": "Su trámite ya está en curso.",
+              "action": "Vale la pena esperar la respuesta. Si tiene dudas, consulte en su municipalidad.",
+              "where_to_go": "Su municipalidad.",
+              "sources": [
+                {"source_id": "F004", "url": "https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf"}
+              ]
+            },
+            {
+              "benefit_id": "BEN-005",
+              "heading": "Subsidio al pago del agua",
+              "reason": "Según lo conversado, podría calificar. Faltan documentos.",
+              "action": "Tenga a mano una cuenta reciente del agua. Pregunte qué documentos necesita llevar.",
+              "where_to_go": "Su municipalidad.",
+              "sources": [
+                {"source_id": "F008", "url": "https://www.chileatiende.gob.cl/fichas/51314-subsidio-al-pago-del-consumo-de-agua-potable-y-servicio-de-alcantarillado"}
+              ]
+            }
+          ]
+        }
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-07",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "EXPLANATION",
+      "prompt_template_id": "PROMPT-EXPLICACION",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0001",
+      "benefit_ids": ["BEN-001"],
+      "model_output": {
+        "benefit_id": "BEN-001",
+        "heading": "Subsidio Familiar",
+        "reason": "Su familia podría calificar. Es un aporte mensual en dinero para familias con niños, niñas o adolescentes a su cargo.",
+        "action": "Consulte en su municipalidad o en la Ventanilla Única Social. Pregunte qué documentos necesita llevar. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "where_to_go": "Municipalidad o Ventanilla Única Social.",
+        "sources": [
+          {"source_id": "F004", "url": "https://www.chileatiende.gob.cl/fichas/33112-subsidio-familiar-suf"}
+        ]
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-08",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "EXPLANATION",
+      "prompt_template_id": "PROMPT-EXPLICACION",
+      "prompt_version": "1.0.0",
+      "fixture_id": "FAM-SIM-DEMO-0002",
+      "benefit_ids": ["BEN-003"],
+      "model_output": {
+        "benefit_id": "BEN-003",
+        "heading": "Subsidio Maternal",
+        "reason": "Aún no se puede saber si su familia podría calificar. Falta saber si hay alguien embarazada y si tiene el Registro Social de Hogares al día.",
+        "action": "Responda estas preguntas en el jardín. Mantenga su Registro Social de Hogares al día. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "where_to_go": "Municipalidad o Ventanilla Única Social.",
+        "sources": [
+          {"source_id": "F006", "url": "https://www.ventanillaunicasocial.gob.cl/ficha/509/subsidio-maternal"}
+        ]
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-09",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "MODEL_REFERENCE_HANDWRITTEN",
+      "operation": "CATALOG_ASSISTANT",
+      "prompt_template_id": "PROMPT-ASISTENTE-CATALOGO",
+      "prompt_version": "1.0.0",
+      "question": "¿Qué es el Subsidio al pago del agua y dónde se consulta?",
+      "retrieved_benefit_ids": ["BEN-005"],
+      "model_output": {
+        "intent": "CATALOG_INFO",
+        "answer": "El Subsidio al pago del agua es un descuento en la cuenta del agua potable y del alcantarillado. Ayuda a familias a las que les cuesta pagar esa cuenta. El catálogo no indica dónde se consulta. Vale la pena revisar la fuente oficial que aparece en la cita. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "citations": [
+          {"source_id": "F008", "url": "https://www.chileatiende.gob.cl/fichas/51314-subsidio-al-pago-del-consumo-de-agua-potable-y-servicio-de-alcantarillado"}
+        ]
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    },
+    {
+      "output_id": "REF-10",
+      "origen": "SIMULADO_DEMO",
+      "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+      "generated_by": "TEMPLATE_PROVIDER",
+      "operation": "CATALOG_ASSISTANT",
+      "prompt_template_id": "PROMPT-ASISTENTE-CATALOGO",
+      "prompt_version": "1.0.0",
+      "question": "¿Una familia de mi jardín podría recibir el Subsidio Familiar?",
+      "retrieved_benefit_ids": [],
+      "model_output": {
+        "intent": "REQUIRES_DETERMINISTIC_EVALUATION",
+        "answer": "Esta pregunta es sobre una familia en particular. El asistente no evalúa casos individuales. Revise la ficha de la familia en la aplicación. Orientación referencial; no determina derechos. Confirmar en la institución.",
+        "citations": []
+      },
+      "rubrica": {
+        "sin_promesas": true,
+        "sin_pii": true,
+        "sin_montos": true,
+        "frases_max_20": true,
+        "aviso": true,
+        "citas_inventariadas": true,
+        "revision_humana": "PENDIENTE_REVISION_HUMANA"
+      }
+    }
+  ]
+}

@@ -35,8 +35,6 @@ from app.priority.scoring import (  # noqa: E402
     score_opportunities,
 )
 
-REPO_DIR = BACKEND_DIR.parent
-
 
 # --- Fixtures sintéticos -----------------------------------------------------
 
@@ -383,8 +381,8 @@ def test_carga_c4_valido_sintetico(tmp_path: Path):
     assert cfg.content_version == "0.1.0"
 
 
-def test_carga_bundle_real_del_repo():
-    cfg = cargar_ranking_config(REPO_DIR / "content" / "manifest.json")
+def test_carga_bundle_mock_c4_del_repo():
+    cfg = cargar_ranking_config(BACKEND_DIR / "fixtures" / "c4_mock" / "manifest.json")
     aw = cfg.axis_weights
     assert abs(aw["u"] + aw["b"] + aw["v"] - 1.0) < 1e-6
 

@@ -1,0 +1,213 @@
+# Manifiesto C4 del bundle de contenido (Rol 4), 0.2.1. No publicable (DEC-040): falta API-T14 y revisión humana.
+# Los valores que §8 no fija se decidieron en DEC-041..DEC-044 o se calcularon desde E-3 (CALC); ver content/VALORES_RANKING.md.
+# No contiene datos de personas. `ranking` y `accessibility` son copia idéntica de sus archivos (SUP-040).
+# files[].sha256 = SHA-256 de los bytes; content_bundle_hash = SHA-256 de las líneas '<sha256>  <path>' de files[] ordenadas (SUP-041).
+# Cualquier edición de un archivo listado obliga a recalcular su sha256 y el content_bundle_hash.
+schema_version: "1.0.0"
+content_version: "0.2.1"
+content_bundle_hash: "aa1fbe0526001fb42e61d170822bbae15a34ead9286e29f296a6288a97b44b69"
+canonical_i18n: content/i18n/es.json
+files:
+  - path: content/accessibility.yaml
+    sha256: "f3a020f6514eb37bc47fbe5bae887c89986aff26533bd9de30449e7538dcf1e5"
+    kind: ACCESSIBILITY
+  - path: content/beneficios.yaml
+    sha256: "9512d16c1f433b6efc97868121dc003e49fad345113c51072e991b6703547277"
+    kind: BENEFITS
+  - path: content/demo/inventario_activos.yaml
+    sha256: "6aa8653be77be9e3e3bd7b70f0cd9a6ab98433bb96fd14cc64ab75fb7212e632"
+    kind: SYNTHETIC_ASSET_MANIFEST
+  - path: content/i18n/es.json
+    sha256: "d2cffd8dec67c16f816bb695cf5eef620d0f27971f6434799494c384f0bc2044"
+    kind: I18N
+  - path: content/pesos_priorizacion.yaml
+    sha256: "ea7be77170db34a7090f5072c83c5bf63a4a736f76e62baf488880cfa58563d6"
+    kind: WEIGHTS
+  - path: content/preguntas.yaml
+    sha256: "0e3f21ca6610a59a2b4a363822f0127539098b667f28d69d9ca3429466bd1818"
+    kind: QUESTIONS
+  - path: content/prompts/asistente_catalogo.md
+    sha256: "a50ecc5a57f1fbbdfe7c87f266f8798f7db53b7475c5914f7a87853b25d25cbc"
+    kind: PROMPT
+  - path: content/prompts/explicacion.md
+    sha256: "8666afa0501865325b8bccd4df5c4aeb845d48ab18e39aa9608ed2e7d2cf01c0"
+    kind: PROMPT
+  - path: content/prompts/guion.md
+    sha256: "c0dd3900ab87ab0cf3aac9663212f21112e942f1d8332613e7f48795568df0be"
+    kind: PROMPT
+  - path: content/prompts/mensaje_familia.md
+    sha256: "320d6d8fbf42ba4425846d843308c0fb690da740cd6bf4ef0bb8e1d7c5c85d7e"
+    kind: PROMPT
+ranking:
+  axis_weights:
+    u: 0.4
+    b: 0.4
+    v: 0.2
+  urgency:
+    aggregation: MAX
+    use_window: false
+    default_score: 0.2
+    recent_emergency:
+      benefit_id: BEN-020
+      max_age_days: 60
+      score: 1.0
+    newborn_expiry:
+      benefit_id: BEN-008
+      window_days: 90
+      calculation: LINEAR_ELAPSED_OVER_WINDOW
+    therapy_document_expiry:
+      benefit_id: BEN-019
+      window_days: 90
+      calculation: LINEAR_ELAPSED_OVER_WINDOW
+    limited_quota:
+      score: 0.8
+    food_insecurity:
+      minimum_index: 3
+      score: 0.8
+    precarious_housing:
+      housing_types:
+        - CAMP_OR_OCCUPATION
+      score: 0.7
+    application_windows:
+      - maximum_days_remaining: 7
+        score: 1.0
+      - maximum_days_remaining: 30
+        score: 0.6
+  benefit_impact:
+    annualization_multipliers:
+      MENSUAL: 12
+      ANUAL: 1
+      UNICA: 1
+    max_income_share_for_full_score: 0.20
+    default_monthly_household_income: 315150  # CALC DEC-041
+    garden_income_medians:  # CALC DEC-041
+      - {garden_id: JAR-SIM-E3-00001, monthly_household_income: 307800}
+      - {garden_id: JAR-SIM-E3-00002, monthly_household_income: 308100}
+      - {garden_id: JAR-SIM-E3-00003, monthly_household_income: 308400}
+      - {garden_id: JAR-SIM-E3-00004, monthly_household_income: 308700}
+      - {garden_id: JAR-SIM-E3-00005, monthly_household_income: 309000}
+      - {garden_id: JAR-SIM-E3-00006, monthly_household_income: 309300}
+      - {garden_id: JAR-SIM-E3-00007, monthly_household_income: 309600}
+      - {garden_id: JAR-SIM-E3-00008, monthly_household_income: 309900}
+      - {garden_id: JAR-SIM-E3-00009, monthly_household_income: 310200}
+      - {garden_id: JAR-SIM-E3-00010, monthly_household_income: 310500}
+      - {garden_id: JAR-SIM-E3-00011, monthly_household_income: 310800}
+      - {garden_id: JAR-SIM-E3-00012, monthly_household_income: 311100}
+      - {garden_id: JAR-SIM-E3-00013, monthly_household_income: 311400}
+      - {garden_id: JAR-SIM-E3-00014, monthly_household_income: 311700}
+      - {garden_id: JAR-SIM-E3-00015, monthly_household_income: 312000}
+      - {garden_id: JAR-SIM-E3-00016, monthly_household_income: 312300}
+      - {garden_id: JAR-SIM-E3-00017, monthly_household_income: 312600}
+      - {garden_id: JAR-SIM-E3-00018, monthly_household_income: 312900}
+      - {garden_id: JAR-SIM-E3-00019, monthly_household_income: 313200}
+      - {garden_id: JAR-SIM-E3-00020, monthly_household_income: 313500}
+      - {garden_id: JAR-SIM-E3-00021, monthly_household_income: 313800}
+      - {garden_id: JAR-SIM-E3-00022, monthly_household_income: 314100}
+      - {garden_id: JAR-SIM-E3-00023, monthly_household_income: 314400}
+      - {garden_id: JAR-SIM-E3-00024, monthly_household_income: 314700}
+      - {garden_id: JAR-SIM-E3-00025, monthly_household_income: 315000}
+      - {garden_id: JAR-SIM-E3-00026, monthly_household_income: 315300}
+      - {garden_id: JAR-SIM-E3-00027, monthly_household_income: 315600}
+      - {garden_id: JAR-SIM-E3-00028, monthly_household_income: 315900}
+      - {garden_id: JAR-SIM-E3-00029, monthly_household_income: 316200}
+      - {garden_id: JAR-SIM-E3-00030, monthly_household_income: 316500}
+      - {garden_id: JAR-SIM-E3-00031, monthly_household_income: 316800}
+      - {garden_id: JAR-SIM-E3-00032, monthly_household_income: 317100}
+      - {garden_id: JAR-SIM-E3-00033, monthly_household_income: 317400}
+      - {garden_id: JAR-SIM-E3-00034, monthly_household_income: 317700}
+      - {garden_id: JAR-SIM-E3-00035, monthly_household_income: 318000}
+      - {garden_id: JAR-SIM-E3-00036, monthly_household_income: 318300}
+      - {garden_id: JAR-SIM-E3-00037, monthly_household_income: 318600}
+      - {garden_id: JAR-SIM-E3-00038, monthly_household_income: 318900}
+      - {garden_id: JAR-SIM-E3-00039, monthly_household_income: 319200}
+      - {garden_id: JAR-SIM-E3-00040, monthly_household_income: 319500}
+      - {garden_id: JAR-SIM-E3-00041, monthly_household_income: 319800}
+      - {garden_id: JAR-SIM-E3-00042, monthly_household_income: 320100}
+      - {garden_id: JAR-SIM-E3-00043, monthly_household_income: 320400}
+      - {garden_id: JAR-SIM-E3-00044, monthly_household_income: 320700}
+      - {garden_id: JAR-SIM-E3-00045, monthly_household_income: 321000}
+      - {garden_id: JAR-SIM-E3-00046, monthly_household_income: 321300}
+      - {garden_id: JAR-SIM-E3-00047, monthly_household_income: 321600}
+      - {garden_id: JAR-SIM-E3-00048, monthly_household_income: 321900}
+      - {garden_id: JAR-SIM-E3-00049, monthly_household_income: 322200}
+      - {garden_id: JAR-SIM-E3-00050, monthly_household_income: 322500}
+    service_equivalences:
+      - benefit_id: BEN-007
+        annual_equivalent_amount: 360000  # DEC-041
+      - benefit_id: BEN-009
+        annual_equivalent_amount: 150000  # DEC-041
+      - benefit_id: BEN-015
+        annual_equivalent_amount: 40000  # DEC-041
+      - benefit_id: BEN-008
+        annual_equivalent_amount: 250000  # DEC-041
+      - benefit_id: BEN-005  # DEC-041
+        annual_equivalent_amount: 168000  # CALC DEC-041
+  vulnerability:
+    unknown_signals_excluded: true
+    component_weights:
+      rsh: 0.3  # DEC-042
+      income: 0.3  # DEC-042
+      health_coverage: 0.1  # DEC-042
+      cse: 0.1  # DEC-042
+      female_head_program: 0.1  # DEC-042
+      possible_child_disability: 0.1  # DEC-042
+    rsh_scores:
+      band_40: 1.0
+      band_50: 0.85
+      band_60: 0.7
+      band_70: 0.4
+      band_80: 0.2
+      band_90: 0
+      band_100: 0
+      no_rsh: 0.8
+    income_band_scores:
+      UNDER_110K: 1.0
+      110K_250K: 0.67  # DEC-042
+      250K_400K: 0.33  # DEC-042
+      OVER_400K: 0
+    health_coverage_scores:
+      FONASA_A: 1.0  # DEC-042
+      NO_COVERAGE: 1.0  # DEC-042
+    cse:
+      comparison: GTE
+      threshold: 20  # DEC-042
+      score: 1.0  # DEC-042
+    female_head_program_score: 1.0  # DEC-042
+    possible_child_disability_score: 1.0  # DEC-042
+  opportunity_score:
+    state_weights:
+      ELEGIBLE_SIN_ASIGNACION: 10
+      GESTION_RECHAZADA: 7
+      PENDIENTE_ANTECEDENTES: 6
+      INDETERMINADO: 5
+      GESTION_EN_CURSO: 2
+      SIN_CUPO: 1
+      ASIGNADO: 0
+    action_bonus: 1
+    resolvable_question_limit: 1
+  family_priority:
+    top_opportunity_count: 3
+    vulnerability_multiplier: 3
+    not_informed_bonus: 5  # DEC-043
+    new_family_bonus: 3  # DEC-043
+    new_family_max_age_days: 30
+kpi:
+  min_cell_size: 5  # DEC-044
+  max_query_days: 90  # DEC-044
+accessibility:
+  canonical_spanish_label_key: a11y.canonical_spanish_label
+  polly:
+    enabled: false
+    evidence_state: NO_VERIFICADO
+    smoke_test_evidence_id: null
+    allowed_voices: []  # PREG-009
+    max_output_characters: 1500  # DEC-044
+    fallback_label_key: a11y.audio_unavailable
+  translate:
+    enabled: false
+    evidence_state: NO_VERIFICADO
+    smoke_test_evidence_id: null
+    source_language: es
+    allowed_target_languages: []  # PREG-009
+    max_output_characters: 1500  # DEC-044
+    fallback_label_key: a11y.translation_unavailable

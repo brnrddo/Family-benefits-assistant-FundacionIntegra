@@ -1,0 +1,21 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createGuion",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0301",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "provider": "BEDROCK",
+    "warnings": [],
+    "content": {
+      "benefit_ids": ["BEN-001", "BEN-002", "BEN-003"],
+      "script": "Buenos días. Le cuento tres apoyos que podrían servirle.\nPrimero, un aporte mensual por hijo que aún no pide; se consulta en la oficina municipal.\nSegundo, el bono de invierno: la postulación cierra pronto y vale la pena consultar esta semana.\nTercero, el control de salud infantil: ¿cuándo fue el último control de su hija o hijo?\nEsto es una orientación; la institución confirma si corresponde."
+    },
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+  }
+}

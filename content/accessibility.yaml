@@ -1,0 +1,71 @@
+# Accesibilidad de salida (clase C4 ACCESSIBILITY): Polly y Translate empiezan deshabilitados.
+# No contiene datos de personas. 0.2.0: límites de salida fijados en DEC-044 (valores sintéticos de demo); Polly y Translate siguen deshabilitados.
+# `accessibility` debe ser idéntico a `content/manifest.yaml#accessibility` (SUP-040); `trazabilidad` cita cada hoja.
+content_version: "0.2.1"
+estado: PENDIENTE_REVISION_HUMANA
+accessibility:
+  canonical_spanish_label_key: a11y.canonical_spanish_label
+  polly:
+    enabled: false
+    evidence_state: NO_VERIFICADO
+    smoke_test_evidence_id: null
+    allowed_voices: []  # PREG-009
+    max_output_characters: 1500  # DEC-044
+    fallback_label_key: a11y.audio_unavailable
+  translate:
+    enabled: false
+    evidence_state: NO_VERIFICADO
+    smoke_test_evidence_id: null
+    source_language: es
+    allowed_target_languages: []  # PREG-009
+    max_output_characters: 1500  # DEC-044
+    fallback_label_key: a11y.translation_unavailable
+trazabilidad:
+  - ruta: /accessibility/canonical_spanish_label_key
+    origen: I18N_CATALOG
+    literal: a11y.canonical_spanish_label
+  - ruta: /accessibility/polly/enabled
+    origen: .kiro/specs/producto-contenido-demo/design.md#L13
+    literal: "Polly/Translate empiezan deshabilitados y con listas vacías"
+  - ruta: /accessibility/polly/evidence_state
+    origen: docs/ARQUITECTURA_AWS.md#L106
+    literal: "Polly | accesibilidad de texto validado | SHOULD | DECLARADO_POR_EVENTO | NO_VERIFICADO"
+  - ruta: /accessibility/polly/smoke_test_evidence_id
+    origen: .kiro/specs/_shared/contracts/examples/C4-manifest.md#L20
+    literal: "ID sanitizado del smoke test"
+    nota: "Sin ID mientras polly.enabled=false; solo una activación válida lo exige."
+  - ruta: /accessibility/polly/allowed_voices
+    origen: PREG-009
+    literal: null
+    nota: "Lista vacía hasta aprobar voces (design.md L13: listas vacías al inicio)."
+  - ruta: /accessibility/polly/max_output_characters
+    origen: "DEC-044"
+    literal: "1500"
+    nota: "Límite sintético de demo; el servicio sigue deshabilitado y sin evidencia."
+  - ruta: /accessibility/polly/fallback_label_key
+    origen: I18N_CATALOG
+    literal: a11y.audio_unavailable
+  - ruta: /accessibility/translate/enabled
+    origen: .kiro/specs/producto-contenido-demo/design.md#L13
+    literal: "Polly/Translate empiezan deshabilitados y con listas vacías"
+  - ruta: /accessibility/translate/evidence_state
+    origen: docs/ARQUITECTURA_AWS.md#L107
+    literal: "Translate | idioma permitido sobre texto seguro | SHOULD | DECLARADO_POR_EVENTO | NO_VERIFICADO"
+  - ruta: /accessibility/translate/smoke_test_evidence_id
+    origen: .kiro/specs/_shared/contracts/examples/C4-manifest.md#L20
+    literal: "ID sanitizado del smoke test"
+    nota: "Sin ID mientras translate.enabled=false; solo una activación válida lo exige."
+  - ruta: /accessibility/translate/source_language
+    origen: .kiro/specs/_shared/contracts/C4-contenido-manifest.schema.json#L352
+    literal: '"source_language": {"const": "es"}'
+  - ruta: /accessibility/translate/allowed_target_languages
+    origen: PREG-009
+    literal: null
+    nota: "Lista vacía hasta aprobar idiomas (design.md L13: listas vacías al inicio)."
+  - ruta: /accessibility/translate/max_output_characters
+    origen: "DEC-044"
+    literal: "1500"
+    nota: "Límite sintético de demo; el servicio sigue deshabilitado y sin evidencia."
+  - ruta: /accessibility/translate/fallback_label_key
+    origen: I18N_CATALOG
+    literal: a11y.translation_unavailable

@@ -1,0 +1,29 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "ingestSyntheticFlyer",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0901",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "draft_id": "DRAFT-SIM-001",
+      "synthetic_asset_id": "ASSET-SIM-001",
+      "status": "PENDIENTE_REVISION",
+      "confidence": 0.82,
+      "name": "Taller sintético de apoyo escolar",
+      "institution": "Institución sintética de ejemplo",
+      "requirements": "Niñas y niños de 4 a 6 años del jardín (texto sintético).",
+      "commune_id": "COM-001",
+      "valid_from": "2026-10-01",
+      "valid_until": "2026-12-31",
+      "public_contact": null,
+      "benefit_type": "SERVICE",
+      "warnings": ["LOW_CONFIDENCE_FIELD"]
+    }
+  }
+}

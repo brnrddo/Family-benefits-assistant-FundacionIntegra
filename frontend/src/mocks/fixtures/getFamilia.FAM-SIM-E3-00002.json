@@ -1,0 +1,178 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "getFamilia",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0102",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00002",
+      "garden_id": "JAR-SIM-E3-00001",
+      "composition": [
+        {
+          "role": "ADULT_REFERENCE",
+          "age": 29
+        },
+        {
+          "role": "CHILD",
+          "age": 3
+        }
+      ],
+      "rsh_band": null,
+      "informed": false,
+      "top_opportunities": [
+        {
+          "benefit_id": "BEN-003",
+          "simple_title": "Control de salud infantil",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "urgency": 0.7,
+          "benefit": 0.5,
+          "vulnerability": 0.6,
+          "score": 0.72,
+          "position": 1,
+          "estimated_annual_amount": null,
+          "benefit_estimated": false,
+          "action_type": "ASK_FIRST",
+          "why_first": "No sabemos si tiene Registro Social de Hogares; preguntarlo abre otras opciones.",
+          "missing_codes": [
+            "rsh_status"
+          ],
+          "suggested_questions": [
+            "¿El hogar tiene Registro Social de Hogares?"
+          ],
+          "where_to_go": null,
+          "sources": [
+            {
+              "source_id": "SRC-SIM-003",
+              "url": "https://fuentes.brujula-demo.example/ben-003"
+            }
+          ]
+        },
+        {
+          "benefit_id": "BEN-005",
+          "simple_title": "Subsidio para el agua",
+          "result": "SI",
+          "level": "PRELIMINAR",
+          "access_state": "PENDIENTE_ANTECEDENTES",
+          "urgency": 0.5,
+          "benefit": 0.6,
+          "vulnerability": 0.6,
+          "score": 0.65,
+          "position": 2,
+          "estimated_annual_amount": 90000,
+          "benefit_estimated": true,
+          "action_type": "ASK_FIRST",
+          "why_first": "Podría corresponderle, pero faltan antecedentes del ingreso del hogar.",
+          "missing_codes": [
+            "income_band"
+          ],
+          "suggested_questions": [
+            "¿Cuál es el ingreso aproximado por persona del hogar?",
+            "¿El hogar tiene Registro Social de Hogares?"
+          ],
+          "where_to_go": "Municipio (sintético)",
+          "sources": [
+            {
+              "source_id": "SRC-SIM-005",
+              "url": "https://fuentes.brujula-demo.example/ben-005"
+            }
+          ]
+        },
+        {
+          "benefit_id": "BEN-006",
+          "simple_title": "Apoyo de alimentación",
+          "result": "SI",
+          "level": "PRELIMINAR",
+          "access_state": "ELEGIBLE_SIN_ASIGNACION",
+          "urgency": 0.75,
+          "benefit": 0.4,
+          "vulnerability": 0.6,
+          "score": 0.5,
+          "position": 3,
+          "estimated_annual_amount": 45000,
+          "benefit_estimated": true,
+          "action_type": "FAMILY_ACTION",
+          "why_first": "Es un trámite corto y la familia podría pedirlo ya.",
+          "missing_codes": [],
+          "suggested_questions": [
+            "¿Puede acercarse al consultorio esta semana?"
+          ],
+          "where_to_go": "Consultorio de la comuna (sintético)",
+          "sources": [
+            {
+              "source_id": "SRC-SIM-006",
+              "url": "https://fuentes.brujula-demo.example/ben-006"
+            }
+          ]
+        }
+      ],
+      "benefit_results": [
+        {
+          "benefit_id": "BEN-003",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "missing_codes": [
+            "rsh_status"
+          ],
+          "trace": [
+            {
+              "rule_id": "R-BEN-003-02",
+              "field": "rsh_status",
+              "operator": "EQ",
+              "result": "INDETERMINADO"
+            }
+          ]
+        },
+        {
+          "benefit_id": "BEN-005",
+          "result": "SI",
+          "level": "PRELIMINAR",
+          "access_state": "PENDIENTE_ANTECEDENTES",
+          "missing_codes": [
+            "income_band"
+          ],
+          "trace": [
+            {
+              "rule_id": "R-BEN-005-01",
+              "field": "household_income_band",
+              "operator": "IN",
+              "result": "INDETERMINADO"
+            }
+          ]
+        },
+        {
+          "benefit_id": "BEN-006",
+          "result": "SI",
+          "level": "PRELIMINAR",
+          "access_state": "ELEGIBLE_SIN_ASIGNACION",
+          "missing_codes": [],
+          "trace": [
+            {
+              "rule_id": "R-BEN-006-01",
+              "field": "child_age",
+              "operator": "LT",
+              "result": "CUMPLE"
+            }
+          ]
+        },
+        {
+          "benefit_id": "BEN-001",
+          "result": "NO_APLICA",
+          "level": null,
+          "access_state": "NO_APLICA",
+          "missing_codes": [],
+          "trace": []
+        }
+      ],
+      "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+    }
+  }
+}

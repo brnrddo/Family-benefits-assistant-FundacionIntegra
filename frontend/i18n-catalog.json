@@ -1,0 +1,2243 @@
+{
+  "meta": {
+    "catalog_version": "1.2.0",
+    "changes": "1.2.0: no quita ni renombra claves de 1.1.0; agrega 39 obligatorias para lista neutra con acciones prioritarias (DEC-037), nombre de trato local (DEC-038), dos grupos de beneficios en la ficha, Agregar informacion (DEC-039) y edad singular (common.year_one). home.next_family, home.next_family_none, home.family_item y family.title quedan sin uso. Total 407 claves. 1.1.0: agrego new_family.date_future, kpi.range_invalid, kpi.range_too_long {max_days}.",
+    "producer": "Rol 3 Frontend PWA (rama front)",
+    "consumer": "Rol 4 / workflow contenido -> content/i18n/es.json",
+    "es_json_shape": "Objeto JSON plano: { \"<key>\": \"<texto>\" }. Solo strings. Sin objetos anidados, arrays, HTML, Markdown, URLs ni emojis obligatorios.",
+    "key_pattern": "^[a-z0-9_.-]+$ (igual que i18nKey de C4)",
+    "placeholder_syntax": "{nombre}. Cada valor debe contener exactamente los placeholders declarados para su clave, ni mas ni menos.",
+    "placeholder_types": {
+      "integer": "entero ya formateado por el front con Intl es-CL",
+      "string": "texto corto generado por el front (nunca texto libre de usuario)",
+      "id": "identificador sintetico de C3 (p. ej. JAR-SIM-001)",
+      "currency": "monto CLP ya formateado por el front (p. ej. $264.000)",
+      "percent": "porcentaje ya formateado por el front (p. ej. 67 %)",
+      "date": "fecha ya formateada por el front (p. ej. 13-10-2026)",
+      "relative_time": "tiempo relativo ya formateado por el front (p. ej. hace 5 minutos)"
+    },
+    "rules": [
+      "Trato de usted, frases de 20 palabras o menos, siglas explicadas, sin promesas (usar podria / vale la pena consultar).",
+      "notice.referential debe ser EXACTAMENTE: Orientación referencial; no determina derechos. Confirmar en la institución.",
+      "Las claves benefit.*.name son opcionales para el render (fallback: ID del beneficio), el resto son obligatorias.",
+      "Las claves que C4 referencia (accessibility.canonical_spanish_label_key, polly.fallback_label_key, translate.fallback_label_key) deberian apuntar a a11y.canonical_spanish_label, a11y.audio_unavailable y a11y.translation_unavailable."
+    ]
+  },
+  "keys": [
+    {
+      "key": "app.name",
+      "placeholders": [],
+      "uso": "Nombre visible de la PWA en encabezado y titulo de pagina."
+    },
+    {
+      "key": "app.tagline",
+      "placeholders": [],
+      "uso": "Subtitulo corto bajo el nombre en la cabecera de Inicio."
+    },
+    {
+      "key": "app.skip_to_content",
+      "placeholders": [],
+      "uso": "Enlace oculto 'saltar al contenido' para teclado y lector de pantalla."
+    },
+    {
+      "key": "app.synthetic_banner",
+      "placeholders": [],
+      "uso": "Banner fijo en perfiles local/demo: datos sinteticos, no son personas reales."
+    },
+    {
+      "key": "app.copy_mock_badge",
+      "placeholders": [],
+      "uso": "Insignia visible cuando el front usa textos provisionales (mock) por falta de es.json canonico."
+    },
+    {
+      "key": "app.offline_banner",
+      "placeholders": [],
+      "uso": "Banner cuando el dispositivo pierde conexion."
+    },
+    {
+      "key": "app.online_again",
+      "placeholders": [],
+      "uso": "Aviso breve (toast) cuando vuelve la conexion."
+    },
+    {
+      "key": "app.update_available",
+      "placeholders": [],
+      "uso": "Aviso de nueva version de la app (service worker)."
+    },
+    {
+      "key": "app.update_action",
+      "placeholders": [],
+      "uso": "Boton para recargar y aplicar la nueva version."
+    },
+    {
+      "key": "app.loading",
+      "placeholders": [],
+      "uso": "Texto accesible generico de carga (aria-live) junto a skeletons."
+    },
+    {
+      "key": "app.config_error.title",
+      "placeholders": [],
+      "uso": "Titulo de pantalla bloqueante cuando la configuracion de perfil/autenticacion es insegura o incompleta."
+    },
+    {
+      "key": "app.config_error.body",
+      "placeholders": [],
+      "uso": "Explicacion simple de la pantalla de configuracion incompleta; pide avisar al equipo tecnico."
+    },
+    {
+      "key": "nav.main_label",
+      "placeholders": [],
+      "uso": "Etiqueta aria de la barra de navegacion inferior."
+    },
+    {
+      "key": "nav.home",
+      "placeholders": [],
+      "uso": "Pestana Inicio / Mi jardin."
+    },
+    {
+      "key": "nav.new_family",
+      "placeholders": [],
+      "uso": "Pestana Familia nueva."
+    },
+    {
+      "key": "nav.kpi",
+      "placeholders": [],
+      "uso": "Pestana Avance (KPI)."
+    },
+    {
+      "key": "nav.assistant",
+      "placeholders": [],
+      "uso": "Pestana Asistente (preguntar sobre beneficios)."
+    },
+    {
+      "key": "nav.back",
+      "placeholders": [],
+      "uso": "Boton volver en cabeceras de subvistas."
+    },
+    {
+      "key": "auth.login",
+      "placeholders": [],
+      "uso": "Boton iniciar sesion (solo perfiles con Cognito)."
+    },
+    {
+      "key": "auth.logout",
+      "placeholders": [],
+      "uso": "Boton cerrar sesion en el menu."
+    },
+    {
+      "key": "auth.login_required.title",
+      "placeholders": [],
+      "uso": "Titulo de pantalla que pide iniciar sesion."
+    },
+    {
+      "key": "auth.login_required.body",
+      "placeholders": [],
+      "uso": "Texto que explica por que se necesita iniciar sesion."
+    },
+    {
+      "key": "auth.session_expired",
+      "placeholders": [],
+      "uso": "Aviso cuando la API responde 401: la sesion termino."
+    },
+    {
+      "key": "auth.callback.processing",
+      "placeholders": [],
+      "uso": "Texto mientras se procesa el regreso desde el inicio de sesion."
+    },
+    {
+      "key": "auth.callback.error",
+      "placeholders": [],
+      "uso": "Error al completar el inicio de sesion."
+    },
+    {
+      "key": "auth.logout_confirm.title",
+      "placeholders": [],
+      "uso": "Titulo del dialogo de confirmacion de cierre de sesion."
+    },
+    {
+      "key": "auth.logout_confirm.body",
+      "placeholders": [],
+      "uso": "Cuerpo del dialogo: se borraran los datos guardados en este equipo."
+    },
+    {
+      "key": "auth.logout_confirm.body_pending",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Cuerpo del dialogo cuando hay conversaciones Demo sin enviar que se borraran."
+    },
+    {
+      "key": "auth.logout_confirm.body_names",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Aviso adicional del dialogo: se borraran los nombres de trato guardados en este equipo."
+    },
+    {
+      "key": "auth.logout_confirm.accept",
+      "placeholders": [],
+      "uso": "Boton confirmar cierre de sesion y borrado local."
+    },
+    {
+      "key": "auth.logout_confirm.cancel",
+      "placeholders": [],
+      "uso": "Boton cancelar cierre de sesion."
+    },
+    {
+      "key": "common.retry",
+      "placeholders": [],
+      "uso": "Boton reintentar en estados de error."
+    },
+    {
+      "key": "common.cancel",
+      "placeholders": [],
+      "uso": "Boton cancelar generico."
+    },
+    {
+      "key": "common.close",
+      "placeholders": [],
+      "uso": "Boton cerrar dialogos/paneles."
+    },
+    {
+      "key": "common.continue",
+      "placeholders": [],
+      "uso": "Boton continuar al siguiente paso."
+    },
+    {
+      "key": "common.previous",
+      "placeholders": [],
+      "uso": "Boton paso anterior en formularios por pasos."
+    },
+    {
+      "key": "common.yes",
+      "placeholders": [],
+      "uso": "Opcion Si en preguntas de chips."
+    },
+    {
+      "key": "common.no",
+      "placeholders": [],
+      "uso": "Opcion No en preguntas de chips."
+    },
+    {
+      "key": "common.dont_know",
+      "placeholders": [],
+      "uso": "Opcion No se (envia null) en ficha nueva."
+    },
+    {
+      "key": "common.show_more",
+      "placeholders": [],
+      "uso": "Expandir tarjeta o seccion."
+    },
+    {
+      "key": "common.show_less",
+      "placeholders": [],
+      "uso": "Contraer tarjeta o seccion."
+    },
+    {
+      "key": "common.load_more",
+      "placeholders": [],
+      "uso": "Cargar siguiente pagina (cursor) de la lista de familias."
+    },
+    {
+      "key": "common.years",
+      "placeholders": [
+        {
+          "name": "age",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Edad de un integrante en plural, p. ej. '4 anos' (tambien 0)."
+    },
+    {
+      "key": "common.year_one",
+      "placeholders": [],
+      "uso": "Edad de un integrante de exactamente 1 ano (singular)."
+    },
+    {
+      "key": "common.not_available",
+      "placeholders": [],
+      "uso": "Valor nulo o sin datos (nunca mostrar 0 en su lugar)."
+    },
+    {
+      "key": "common.unanswered",
+      "placeholders": [],
+      "uso": "Respuesta no entregada en el resumen de la ficha nueva."
+    },
+    {
+      "key": "notice.referential",
+      "placeholders": [],
+      "uso": "Aviso canonico en ficha, guion, mensaje y tarjeta impresa. Debe ser identico al const de C3."
+    },
+    {
+      "key": "notice.no_sensitive_data",
+      "placeholders": [],
+      "uso": "Advertencia junto a campos de entrada: no escribir nombres, RUT, telefonos ni salud."
+    },
+    {
+      "key": "data.updated_at",
+      "placeholders": [
+        {
+          "name": "when",
+          "tipo": "relative_time"
+        }
+      ],
+      "uso": "Edad del dato recibido en linea, p. ej. 'Actualizado hace 5 minutos'."
+    },
+    {
+      "key": "data.snapshot",
+      "placeholders": [
+        {
+          "name": "snapshot_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Identificador del corte de datos (snapshot) en el pie de las vistas."
+    },
+    {
+      "key": "data.cached",
+      "placeholders": [
+        {
+          "name": "when",
+          "tipo": "relative_time"
+        }
+      ],
+      "uso": "Banner cuando se muestran datos guardados sin conexion (solo Demo)."
+    },
+    {
+      "key": "data.cache_expired",
+      "placeholders": [],
+      "uso": "Los datos guardados vencieron (TTL) y no se muestran."
+    },
+    {
+      "key": "data.snapshot_changed",
+      "placeholders": [],
+      "uso": "Aviso: el corte de datos cambio y se recargo la informacion."
+    },
+    {
+      "key": "data.provider.template",
+      "placeholders": [],
+      "uso": "Insignia cuando provider=PLANTILLA en guion/mensaje/asistente."
+    },
+    {
+      "key": "data.provider.template_hint",
+      "placeholders": [],
+      "uso": "Explicacion breve: la IA no estuvo disponible y se uso texto base revisado."
+    },
+    {
+      "key": "data.provider.bedrock",
+      "placeholders": [],
+      "uso": "Insignia cuando provider=BEDROCK: redactado con IA a partir de resultados de reglas."
+    },
+    {
+      "key": "data.warnings",
+      "placeholders": [],
+      "uso": "Etiqueta generica cuando la respuesta trae warnings tecnicos (codigos no se muestran)."
+    },
+    {
+      "key": "error.generic.title",
+      "placeholders": [],
+      "uso": "Titulo amable de estado de error."
+    },
+    {
+      "key": "error.generic.body",
+      "placeholders": [],
+      "uso": "Cuerpo amable de error inesperado."
+    },
+    {
+      "key": "error.network",
+      "placeholders": [],
+      "uso": "Fallo de red / sin conexion."
+    },
+    {
+      "key": "error.timeout",
+      "placeholders": [],
+      "uso": "La solicitud tardo demasiado."
+    },
+    {
+      "key": "error.bad_request",
+      "placeholders": [],
+      "uso": "HTTP 400."
+    },
+    {
+      "key": "error.unauthorized",
+      "placeholders": [],
+      "uso": "HTTP 401."
+    },
+    {
+      "key": "error.forbidden",
+      "placeholders": [],
+      "uso": "HTTP 403."
+    },
+    {
+      "key": "error.not_found",
+      "placeholders": [],
+      "uso": "HTTP 404 (inexistente o fuera de alcance)."
+    },
+    {
+      "key": "error.conflict",
+      "placeholders": [],
+      "uso": "HTTP 409 (datos cambiaron / idempotencia)."
+    },
+    {
+      "key": "error.unprocessable",
+      "placeholders": [],
+      "uso": "HTTP 422."
+    },
+    {
+      "key": "error.throttled",
+      "placeholders": [],
+      "uso": "HTTP 429: esperar y reintentar."
+    },
+    {
+      "key": "error.unavailable",
+      "placeholders": [],
+      "uso": "HTTP 503 / 5xx: servicio no disponible."
+    },
+    {
+      "key": "error.contract",
+      "placeholders": [],
+      "uso": "La respuesta no cumple C3; no se muestra por seguridad."
+    },
+    {
+      "key": "error.help_code",
+      "placeholders": [
+        {
+          "name": "request_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Codigo de ayuda (request_id) para soporte, sin otros valores."
+    },
+    {
+      "key": "empty.gardens",
+      "placeholders": [],
+      "uso": "Usuario sin jardines autorizados."
+    },
+    {
+      "key": "empty.families",
+      "placeholders": [],
+      "uso": "Jardin sin familias en la lista."
+    },
+    {
+      "key": "empty.opportunities",
+      "placeholders": [],
+      "uso": "Familia sin beneficios para conversar."
+    },
+    {
+      "key": "empty.kpi",
+      "placeholders": [],
+      "uso": "KPI sin datos para el nivel elegido."
+    },
+    {
+      "key": "empty.assistant",
+      "placeholders": [],
+      "uso": "Asistente antes de la primera pregunta."
+    },
+    {
+      "key": "home.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Inicio (Mi jardin)."
+    },
+    {
+      "key": "home.select_garden",
+      "placeholders": [],
+      "uso": "Etiqueta del selector de jardin cuando hay mas de uno."
+    },
+    {
+      "key": "home.garden_label",
+      "placeholders": [
+        {
+          "name": "garden_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Nombre visible del jardin (C3 solo entrega ID)."
+    },
+    {
+      "key": "home.zone.urbana",
+      "placeholders": [],
+      "uso": "Zona URBANA del jardin."
+    },
+    {
+      "key": "home.zone.rural",
+      "placeholders": [],
+      "uso": "Zona RURAL del jardin."
+    },
+    {
+      "key": "home.progress_label",
+      "placeholders": [],
+      "uso": "Etiqueta accesible de la barra de avance."
+    },
+    {
+      "key": "home.progress",
+      "placeholders": [
+        {
+          "name": "informed",
+          "tipo": "integer"
+        },
+        {
+          "name": "total",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Texto de avance, p. ej. '32 de 48 familias conversadas'."
+    },
+    {
+      "key": "home.progress_percent",
+      "placeholders": [
+        {
+          "name": "percent",
+          "tipo": "percent"
+        }
+      ],
+      "uso": "Porcentaje de avance entregado por C3 (no calculado en el front)."
+    },
+    {
+      "key": "home.next_family",
+      "placeholders": [],
+      "uso": "SIN USO desde 1.2.0 (DEC-037: Inicio ya no destaca una siguiente familia). Se mantiene por compatibilidad."
+    },
+    {
+      "key": "home.next_family_none",
+      "placeholders": [],
+      "uso": "SIN USO desde 1.2.0 (DEC-037). Se mantiene por compatibilidad."
+    },
+    {
+      "key": "home.list_title",
+      "placeholders": [],
+      "uso": "Titulo de la lista de familias del jardin en orden neutro (alfabetico), sin prioridad familiar (DEC-037)."
+    },
+    {
+      "key": "home.family_item",
+      "placeholders": [
+        {
+          "name": "family_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "SIN USO desde 1.2.0 (se muestra el nombre de trato o family.generic_name). Se mantiene por compatibilidad."
+    },
+    {
+      "key": "home.opportunity_count",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Cantidad de beneficios para conversar de la familia."
+    },
+    {
+      "key": "home.pending_local",
+      "placeholders": [],
+      "uso": "Insignia local: conversacion en cola en este equipo, aun no cuenta en el avance."
+    },
+    {
+      "key": "home.priority_actions",
+      "placeholders": [],
+      "uso": "Etiqueta en la tarjeta de familia sobre sus acciones prioritarias (top_benefit_ids de C3)."
+    },
+    {
+      "key": "home.no_priority_actions",
+      "placeholders": [],
+      "uso": "Tarjeta de familia sin acciones prioritarias (top_benefit_ids vacio)."
+    },
+    {
+      "key": "home.benefit_fallback",
+      "placeholders": [
+        {
+          "name": "benefit_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Nombre generico de un beneficio cuando no existe benefit.<id>.name."
+    },
+    {
+      "key": "traffic_light.verde",
+      "placeholders": [],
+      "uso": "Semaforo VERDE de la familia (con icono)."
+    },
+    {
+      "key": "traffic_light.amarillo",
+      "placeholders": [],
+      "uso": "Semaforo AMARILLO de la familia."
+    },
+    {
+      "key": "traffic_light.azul",
+      "placeholders": [],
+      "uso": "Semaforo AZUL de la familia."
+    },
+    {
+      "key": "traffic_light.sin_oportunidades",
+      "placeholders": [],
+      "uso": "Semaforo SIN_OPORTUNIDADES."
+    },
+    {
+      "key": "conversation_status.pendiente",
+      "placeholders": [],
+      "uso": "Estado C3 PENDIENTE de la familia."
+    },
+    {
+      "key": "conversation_status.conversada",
+      "placeholders": [],
+      "uso": "Estado C3 CONVERSADA."
+    },
+    {
+      "key": "conversation_status.en_cola",
+      "placeholders": [],
+      "uso": "Estado C3 EN_COLA."
+    },
+    {
+      "key": "family.title",
+      "placeholders": [
+        {
+          "name": "family_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "SIN USO desde 1.2.0 (el titulo es el nombre de trato o family.generic_name). Se mantiene por compatibilidad."
+    },
+    {
+      "key": "family.composition_title",
+      "placeholders": [],
+      "uso": "Titulo de la composicion del hogar (iconos)."
+    },
+    {
+      "key": "family.rsh",
+      "placeholders": [
+        {
+          "name": "band",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Tramo del Registro Social de Hogares (sin sigla RSH)."
+    },
+    {
+      "key": "family.rsh_none",
+      "placeholders": [],
+      "uso": "Sin tramo del Registro Social de Hogares informado."
+    },
+    {
+      "key": "family.informed_yes",
+      "placeholders": [],
+      "uso": "Insignia: familia ya conversada."
+    },
+    {
+      "key": "family.informed_no",
+      "placeholders": [],
+      "uso": "Insignia: familia aun sin conversar."
+    },
+    {
+      "key": "family.top_title",
+      "placeholders": [],
+      "uso": "Titulo de las tres tarjetas de acciones prioritarias de la familia (top tres de C3)."
+    },
+    {
+      "key": "family.order_label",
+      "placeholders": [],
+      "uso": "Etiqueta del selector de orden (lo ordena C3)."
+    },
+    {
+      "key": "family.ask_title",
+      "placeholders": [],
+      "uso": "Seccion 'Preguntar a la familia' (suggested_questions de C3)."
+    },
+    {
+      "key": "family.has_title",
+      "placeholders": [],
+      "uso": "SIN USO desde 1.2.0 (lo cubre family.applies_title). Se mantiene por compatibilidad."
+    },
+    {
+      "key": "family.to_confirm_title",
+      "placeholders": [],
+      "uso": "Seccion de datos no informados o inconsistentes del contexto."
+    },
+    {
+      "key": "family.preferred_format_label",
+      "placeholders": [],
+      "uso": "Etiqueta del formato de mensaje preferido."
+    },
+    {
+      "key": "family.language_note",
+      "placeholders": [
+        {
+          "name": "language",
+          "tipo": "string"
+        }
+      ],
+      "uso": "Idioma preferido distinto de es: el mensaje sigue en espanol."
+    },
+    {
+      "key": "family.actions.script",
+      "placeholders": [],
+      "uso": "Boton ver guion de conversacion."
+    },
+    {
+      "key": "family.actions.message",
+      "placeholders": [],
+      "uso": "Boton mensaje WhatsApp (vista previa) y tarjeta imprimible."
+    },
+    {
+      "key": "family.actions.mark",
+      "placeholders": [],
+      "uso": "Boton principal 'Marcar conversado' (toque 1 de 3)."
+    },
+    {
+      "key": "family.actions.add_info",
+      "placeholders": [],
+      "uso": "Boton 'Agregar informacion' junto a Marcar conversado (DEC-039)."
+    },
+    {
+      "key": "family.generic_name",
+      "placeholders": [
+        {
+          "name": "short_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Nombre generico amable de la familia sin nombre de trato, con el ID corto (p. ej. 00003)."
+    },
+    {
+      "key": "family.name.title",
+      "placeholders": [],
+      "uso": "Etiqueta del campo nombre de trato del nino o nina, guardado solo en este equipo (DEC-038)."
+    },
+    {
+      "key": "family.name.hint",
+      "placeholders": [],
+      "uso": "Ayuda del campo: el nombre queda solo en este equipo y no se envia a ningun servidor."
+    },
+    {
+      "key": "family.name.demo_hint",
+      "placeholders": [],
+      "uso": "Ayuda en la demo: usar un nombre inventado."
+    },
+    {
+      "key": "family.name.open",
+      "placeholders": [],
+      "uso": "Boton para abrir el editor cuando aun no hay nombre."
+    },
+    {
+      "key": "family.name.change",
+      "placeholders": [],
+      "uso": "Boton para abrir el editor cuando ya hay nombre."
+    },
+    {
+      "key": "family.name.save",
+      "placeholders": [],
+      "uso": "Boton guardar nombre de trato."
+    },
+    {
+      "key": "family.name.remove",
+      "placeholders": [],
+      "uso": "Boton quitar el nombre de trato de este equipo."
+    },
+    {
+      "key": "family.name.saved",
+      "placeholders": [],
+      "uso": "Confirmacion (aria-live): nombre guardado en este equipo."
+    },
+    {
+      "key": "family.name.removed",
+      "placeholders": [],
+      "uso": "Confirmacion (aria-live): nombre quitado de este equipo."
+    },
+    {
+      "key": "family.name.error_empty",
+      "placeholders": [],
+      "uso": "Error en linea: el nombre esta vacio."
+    },
+    {
+      "key": "family.name.error_too_long",
+      "placeholders": [
+        {
+          "name": "max",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Error en linea: el nombre supera {max} caracteres."
+    },
+    {
+      "key": "family.name.error_chars",
+      "placeholders": [],
+      "uso": "Error en linea: solo letras, espacios, guion, punto o apostrofo (sin numeros)."
+    },
+    {
+      "key": "family.name.save_failed",
+      "placeholders": [],
+      "uso": "Error: no se pudo guardar el nombre en el almacenamiento local."
+    },
+    {
+      "key": "family.applies_title",
+      "placeholders": [],
+      "uso": "Grupo de la ficha con beneficios de resultado SI (estado de acceso y nivel de C3)."
+    },
+    {
+      "key": "family.applies_empty",
+      "placeholders": [],
+      "uso": "Grupo 'Beneficios que aplica' vacio."
+    },
+    {
+      "key": "family.missing_title",
+      "placeholders": [],
+      "uso": "Grupo de la ficha con beneficios INDETERMINADO o PENDIENTE_ANTECEDENTES."
+    },
+    {
+      "key": "family.missing_empty",
+      "placeholders": [],
+      "uso": "Grupo 'Falta informacion' vacio."
+    },
+    {
+      "key": "family.missing_data_label",
+      "placeholders": [],
+      "uso": "Etiqueta antes de la lista de datos que faltan de un beneficio."
+    },
+    {
+      "key": "family.missing_generic",
+      "placeholders": [],
+      "uso": "Dato faltante con codigo sin traduccion (sin mostrar el codigo tecnico)."
+    },
+    {
+      "key": "family.suggested_question_label",
+      "placeholders": [],
+      "uso": "Etiqueta antes de la pregunta sugerida de C3 para un beneficio."
+    },
+    {
+      "key": "family.pending_confirm_label",
+      "placeholders": [],
+      "uso": "Etiqueta de datos por confirmar en un beneficio que si aplica."
+    },
+    {
+      "key": "family.add_info_done",
+      "placeholders": [],
+      "uso": "Aviso en la ficha tras Agregar informacion: resultados actualizados y preliminares."
+    },
+    {
+      "key": "role.adult_reference",
+      "placeholders": [],
+      "uso": "Rol ADULT_REFERENCE en la composicion."
+    },
+    {
+      "key": "role.child",
+      "placeholders": [],
+      "uso": "Rol CHILD en la composicion."
+    },
+    {
+      "key": "role.other_adult",
+      "placeholders": [],
+      "uso": "Rol OTHER_ADULT en la composicion."
+    },
+    {
+      "key": "format.text",
+      "placeholders": [],
+      "uso": "preferred_format TEXT."
+    },
+    {
+      "key": "format.visual",
+      "placeholders": [],
+      "uso": "preferred_format VISUAL (tarjeta con iconos)."
+    },
+    {
+      "key": "format.audio",
+      "placeholders": [],
+      "uso": "preferred_format AUDIO (la tia lo lee en voz alta)."
+    },
+    {
+      "key": "order.prioridad",
+      "placeholders": [],
+      "uso": "Opcion de orden 'Prioridad' (por defecto)."
+    },
+    {
+      "key": "order.urgencia",
+      "placeholders": [],
+      "uso": "Opcion de orden 'Lo mas urgente'."
+    },
+    {
+      "key": "order.beneficio",
+      "placeholders": [],
+      "uso": "Opcion de orden 'Lo que mas ayuda'."
+    },
+    {
+      "key": "group.go.label",
+      "placeholders": [],
+      "uso": "Grupo visual verde 'Puede pedirlo ya' (ELEGIBLE_SIN_ASIGNACION)."
+    },
+    {
+      "key": "group.ask.label",
+      "placeholders": [],
+      "uso": "Grupo visual amarillo 'Preguntar primero' (INDETERMINADO, PENDIENTE_ANTECEDENTES)."
+    },
+    {
+      "key": "group.has.label",
+      "placeholders": [],
+      "uso": "Grupo visual azul 'Ya lo tiene / esta en tramite' (ASIGNADO, GESTION_EN_CURSO)."
+    },
+    {
+      "key": "group.other.label",
+      "placeholders": [],
+      "uso": "Grupo visual neutro 'Para tener en cuenta' (GESTION_RECHAZADA, SIN_CUPO)."
+    },
+    {
+      "key": "access_state.asignado",
+      "placeholders": [],
+      "uso": "Descripcion simple de ASIGNADO."
+    },
+    {
+      "key": "access_state.gestion_en_curso",
+      "placeholders": [],
+      "uso": "Descripcion simple de GESTION_EN_CURSO."
+    },
+    {
+      "key": "access_state.gestion_rechazada",
+      "placeholders": [],
+      "uso": "Descripcion simple de GESTION_RECHAZADA (sin prometer)."
+    },
+    {
+      "key": "access_state.elegible_sin_asignacion",
+      "placeholders": [],
+      "uso": "Descripcion simple de ELEGIBLE_SIN_ASIGNACION (la brecha)."
+    },
+    {
+      "key": "access_state.sin_cupo",
+      "placeholders": [],
+      "uso": "Descripcion simple de SIN_CUPO."
+    },
+    {
+      "key": "access_state.pendiente_antecedentes",
+      "placeholders": [],
+      "uso": "Descripcion simple de PENDIENTE_ANTECEDENTES."
+    },
+    {
+      "key": "access_state.indeterminado",
+      "placeholders": [],
+      "uso": "Descripcion simple de INDETERMINADO (falta un dato)."
+    },
+    {
+      "key": "access_state.no_aplica",
+      "placeholders": [],
+      "uso": "Descripcion de NO_APLICA (solo detalle tecnico)."
+    },
+    {
+      "key": "result.si",
+      "placeholders": [],
+      "uso": "Resultado SI en detalle tecnico."
+    },
+    {
+      "key": "result.no",
+      "placeholders": [],
+      "uso": "Resultado NO en detalle tecnico."
+    },
+    {
+      "key": "result.indeterminado",
+      "placeholders": [],
+      "uso": "Resultado INDETERMINADO en detalle tecnico."
+    },
+    {
+      "key": "result.no_aplica",
+      "placeholders": [],
+      "uso": "Resultado NO_APLICA en detalle tecnico."
+    },
+    {
+      "key": "level.confirmado",
+      "placeholders": [],
+      "uso": "Nivel CONFIRMADO."
+    },
+    {
+      "key": "level.preliminar",
+      "placeholders": [],
+      "uso": "Nivel PRELIMINAR (insignia visible en tarjeta)."
+    },
+    {
+      "key": "chip.urgency.high",
+      "placeholders": [],
+      "uso": "Chip de urgencia alta ('Urgente')."
+    },
+    {
+      "key": "chip.urgency.week",
+      "placeholders": [],
+      "uso": "Chip de urgencia media ('Esta semana')."
+    },
+    {
+      "key": "chip.benefit.amount",
+      "placeholders": [
+        {
+          "name": "amount",
+          "tipo": "currency"
+        }
+      ],
+      "uso": "Chip de beneficio con monto anual estimado de C3, p. ej. '≈ $264.000 al ano'."
+    },
+    {
+      "key": "chip.benefit.estimated",
+      "placeholders": [],
+      "uso": "Sufijo cuando benefit_estimated=true."
+    },
+    {
+      "key": "chip.benefit.no_amount",
+      "placeholders": [],
+      "uso": "Chip cuando estimated_annual_amount es null (apoyo en servicio o especie)."
+    },
+    {
+      "key": "action_type.family_action",
+      "placeholders": [],
+      "uso": "Chip FAMILY_ACTION ('Tiene que ir a pedirlo')."
+    },
+    {
+      "key": "action_type.automatic",
+      "placeholders": [],
+      "uso": "Chip AUTOMATIC ('Le llega solo')."
+    },
+    {
+      "key": "action_type.follow_up",
+      "placeholders": [],
+      "uso": "Chip FOLLOW_UP ('Hacer seguimiento')."
+    },
+    {
+      "key": "action_type.ask_first",
+      "placeholders": [],
+      "uso": "Chip ASK_FIRST ('Preguntar primero')."
+    },
+    {
+      "key": "card.position",
+      "placeholders": [
+        {
+          "name": "position",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Etiqueta accesible de la posicion de la tarjeta (de C3)."
+    },
+    {
+      "key": "card.why_first_label",
+      "placeholders": [],
+      "uso": "Etiqueta de la linea '¿Por que esta primero?' (texto why_first de C3)."
+    },
+    {
+      "key": "card.where_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Donde ir' (where_to_go de C3)."
+    },
+    {
+      "key": "card.where_none",
+      "placeholders": [],
+      "uso": "Cuando where_to_go es null."
+    },
+    {
+      "key": "card.missing_label",
+      "placeholders": [],
+      "uso": "Etiqueta de datos faltantes en la tarjeta."
+    },
+    {
+      "key": "card.sources_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Mas informacion' para citas."
+    },
+    {
+      "key": "card.source_link",
+      "placeholders": [
+        {
+          "name": "source_id",
+          "tipo": "id"
+        }
+      ],
+      "uso": "Texto del enlace de una cita HTTPS (SourceCitation)."
+    },
+    {
+      "key": "card.expand",
+      "placeholders": [],
+      "uso": "Boton expandir tarjeta (por que / detalle)."
+    },
+    {
+      "key": "card.collapse",
+      "placeholders": [],
+      "uso": "Boton contraer tarjeta."
+    },
+    {
+      "key": "tech.title",
+      "placeholders": [],
+      "uso": "Titulo del panel 'Ver detalle tecnico'."
+    },
+    {
+      "key": "tech.open",
+      "placeholders": [],
+      "uso": "Boton abrir detalle tecnico."
+    },
+    {
+      "key": "tech.urgency",
+      "placeholders": [],
+      "uso": "Etiqueta U en detalle tecnico."
+    },
+    {
+      "key": "tech.benefit",
+      "placeholders": [],
+      "uso": "Etiqueta B en detalle tecnico."
+    },
+    {
+      "key": "tech.vulnerability",
+      "placeholders": [],
+      "uso": "Etiqueta V en detalle tecnico."
+    },
+    {
+      "key": "tech.score",
+      "placeholders": [],
+      "uso": "Etiqueta puntaje final."
+    },
+    {
+      "key": "tech.position",
+      "placeholders": [],
+      "uso": "Etiqueta posicion."
+    },
+    {
+      "key": "tech.result",
+      "placeholders": [],
+      "uso": "Etiqueta resultado del motor."
+    },
+    {
+      "key": "tech.level",
+      "placeholders": [],
+      "uso": "Etiqueta nivel."
+    },
+    {
+      "key": "tech.access_state",
+      "placeholders": [],
+      "uso": "Etiqueta estado de acceso (muestra codigo tecnico)."
+    },
+    {
+      "key": "tech.benefit_estimated",
+      "placeholders": [],
+      "uso": "Nota cuando B es estimado (benefit_estimated=true)."
+    },
+    {
+      "key": "tech.missing_codes",
+      "placeholders": [],
+      "uso": "Etiqueta lista de codigos faltantes."
+    },
+    {
+      "key": "tech.trace_title",
+      "placeholders": [],
+      "uso": "Titulo de la tabla de reglas evaluadas (trace de C3)."
+    },
+    {
+      "key": "tech.trace.rule",
+      "placeholders": [],
+      "uso": "Columna regla."
+    },
+    {
+      "key": "tech.trace.field",
+      "placeholders": [],
+      "uso": "Columna campo."
+    },
+    {
+      "key": "tech.trace.operator",
+      "placeholders": [],
+      "uso": "Columna operador."
+    },
+    {
+      "key": "tech.trace.result",
+      "placeholders": [],
+      "uso": "Columna resultado de regla."
+    },
+    {
+      "key": "tech.no_trace",
+      "placeholders": [],
+      "uso": "Sin reglas para mostrar."
+    },
+    {
+      "key": "trace_result.cumple",
+      "placeholders": [],
+      "uso": "Resultado de regla CUMPLE."
+    },
+    {
+      "key": "trace_result.no_cumple",
+      "placeholders": [],
+      "uso": "Resultado de regla NO_CUMPLE."
+    },
+    {
+      "key": "trace_result.indeterminado",
+      "placeholders": [],
+      "uso": "Resultado de regla INDETERMINADO."
+    },
+    {
+      "key": "context.missing.composition",
+      "placeholders": [],
+      "uso": "missing_code composition."
+    },
+    {
+      "key": "context.missing.child_age",
+      "placeholders": [],
+      "uso": "missing_code child_age."
+    },
+    {
+      "key": "context.missing.siblings_under_6",
+      "placeholders": [],
+      "uso": "missing_code siblings_under_6."
+    },
+    {
+      "key": "context.missing.siblings_6_14",
+      "placeholders": [],
+      "uso": "missing_code siblings_6_14."
+    },
+    {
+      "key": "context.missing.siblings_15_18",
+      "placeholders": [],
+      "uso": "missing_code siblings_15_18."
+    },
+    {
+      "key": "context.missing.rsh_status",
+      "placeholders": [],
+      "uso": "missing_code rsh_status."
+    },
+    {
+      "key": "context.missing.rsh_band",
+      "placeholders": [],
+      "uso": "missing_code rsh_band."
+    },
+    {
+      "key": "context.missing.income_band",
+      "placeholders": [],
+      "uso": "missing_code income_band."
+    },
+    {
+      "key": "context.missing.ssyo_participation",
+      "placeholders": [],
+      "uso": "missing_code ssyo_participation."
+    },
+    {
+      "key": "context.missing.chile_crece_contigo_access",
+      "placeholders": [],
+      "uso": "missing_code chile_crece_contigo_access."
+    },
+    {
+      "key": "context.missing.last_health_control_date",
+      "placeholders": [],
+      "uso": "missing_code last_health_control_date."
+    },
+    {
+      "key": "context.missing.possible_disability",
+      "placeholders": [],
+      "uso": "missing_code possible_disability (sin diagnosticos)."
+    },
+    {
+      "key": "context.missing.therapy",
+      "placeholders": [],
+      "uso": "missing_code therapy."
+    },
+    {
+      "key": "context.missing.housing_type",
+      "placeholders": [],
+      "uso": "missing_code housing_type."
+    },
+    {
+      "key": "context.missing.pregnancy",
+      "placeholders": [],
+      "uso": "missing_code pregnancy."
+    },
+    {
+      "key": "context.missing.adult_over_65",
+      "placeholders": [],
+      "uso": "missing_code adult_over_65."
+    },
+    {
+      "key": "context.missing.employment_or_pension",
+      "placeholders": [],
+      "uso": "missing_code employment_or_pension."
+    },
+    {
+      "key": "context.missing.water_difficulty",
+      "placeholders": [],
+      "uso": "missing_code water_difficulty."
+    },
+    {
+      "key": "context.missing.food_difficulty",
+      "placeholders": [],
+      "uso": "missing_code food_difficulty."
+    },
+    {
+      "key": "context.inconsistency.siblings_under_6_mismatch",
+      "placeholders": [],
+      "uso": "inconsistency SIBLINGS_UNDER_6_MISMATCH (convertir en pregunta amable)."
+    },
+    {
+      "key": "context.inconsistency.siblings_6_14_mismatch",
+      "placeholders": [],
+      "uso": "inconsistency SIBLINGS_6_14_MISMATCH."
+    },
+    {
+      "key": "context.inconsistency.siblings_15_18_mismatch",
+      "placeholders": [],
+      "uso": "inconsistency SIBLINGS_15_18_MISMATCH."
+    },
+    {
+      "key": "context.inconsistency.rsh_status_mismatch",
+      "placeholders": [],
+      "uso": "inconsistency RSH_STATUS_MISMATCH."
+    },
+    {
+      "key": "context.inconsistency.household_size_mismatch",
+      "placeholders": [],
+      "uso": "inconsistency HOUSEHOLD_SIZE_MISMATCH."
+    },
+    {
+      "key": "script.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Guion para conversar."
+    },
+    {
+      "key": "script.generate",
+      "placeholders": [],
+      "uso": "Boton preparar guion."
+    },
+    {
+      "key": "script.generating",
+      "placeholders": [],
+      "uso": "Estado de carga del guion."
+    },
+    {
+      "key": "script.benefits_label",
+      "placeholders": [],
+      "uso": "Etiqueta de beneficios incluidos en el guion."
+    },
+    {
+      "key": "script.read_hint",
+      "placeholders": [],
+      "uso": "Sugerencia de uso: leerlo en unos 2 minutos."
+    },
+    {
+      "key": "message.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Mensaje para la familia."
+    },
+    {
+      "key": "message.generate",
+      "placeholders": [],
+      "uso": "Boton preparar mensaje y tarjeta."
+    },
+    {
+      "key": "message.generating",
+      "placeholders": [],
+      "uso": "Estado de carga del mensaje."
+    },
+    {
+      "key": "message.whatsapp_title",
+      "placeholders": [],
+      "uso": "Titulo de la vista previa para WhatsApp."
+    },
+    {
+      "key": "message.whatsapp_hint",
+      "placeholders": [],
+      "uso": "Explica que la app no envia: copiar y pegar manualmente."
+    },
+    {
+      "key": "message.copy",
+      "placeholders": [],
+      "uso": "Boton copiar texto de la vista previa."
+    },
+    {
+      "key": "message.copied",
+      "placeholders": [],
+      "uso": "Confirmacion de copiado (aria-live)."
+    },
+    {
+      "key": "message.copy_failed",
+      "placeholders": [],
+      "uso": "Fallo al copiar; instruccion para copiar manualmente."
+    },
+    {
+      "key": "message.card_title",
+      "placeholders": [],
+      "uso": "Titulo de la seccion tarjeta imprimible."
+    },
+    {
+      "key": "message.print",
+      "placeholders": [],
+      "uso": "Boton imprimir tarjeta."
+    },
+    {
+      "key": "message.translation_unavailable",
+      "placeholders": [],
+      "uso": "Mensaje solo en espanol porque la traduccion no esta disponible."
+    },
+    {
+      "key": "card_v1.reason_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Por que' en cada seccion de la tarjeta CARD_V1."
+    },
+    {
+      "key": "card_v1.action_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Que hacer' en la tarjeta CARD_V1."
+    },
+    {
+      "key": "card_v1.where_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Donde ir' en la tarjeta CARD_V1."
+    },
+    {
+      "key": "card_v1.sources_label",
+      "placeholders": [],
+      "uso": "Etiqueta 'Mas informacion' en la tarjeta CARD_V1."
+    },
+    {
+      "key": "card_v1.printed_on",
+      "placeholders": [
+        {
+          "name": "date",
+          "tipo": "date"
+        }
+      ],
+      "uso": "Pie de la tarjeta impresa con la fecha de impresion."
+    },
+    {
+      "key": "conversation.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Marcar conversado."
+    },
+    {
+      "key": "conversation.benefits_label",
+      "placeholders": [],
+      "uso": "Pregunta: ¿de que beneficios conversaron? (preseleccion top tres)."
+    },
+    {
+      "key": "conversation.next_step_label",
+      "placeholders": [],
+      "uso": "Pregunta: siguiente paso acordado (toque 2 de 3)."
+    },
+    {
+      "key": "conversation.channel_label",
+      "placeholders": [],
+      "uso": "Pregunta: como conversaron (por defecto en persona)."
+    },
+    {
+      "key": "conversation.confirm",
+      "placeholders": [],
+      "uso": "Boton confirmar (toque 3 de 3)."
+    },
+    {
+      "key": "conversation.sending",
+      "placeholders": [],
+      "uso": "Estado enviando."
+    },
+    {
+      "key": "conversation.success",
+      "placeholders": [],
+      "uso": "Confirmacion 201: conversacion registrada."
+    },
+    {
+      "key": "conversation.queued",
+      "placeholders": [],
+      "uso": "Sin conexion en Demo: guardada en cola local, aun no cuenta en el avance."
+    },
+    {
+      "key": "conversation.queue_disabled",
+      "placeholders": [],
+      "uso": "Sin conexion en Escala: no se guardo nada, reintentar con conexion."
+    },
+    {
+      "key": "conversation.conflict",
+      "placeholders": [],
+      "uso": "409: la informacion cambio, revisar y confirmar de nuevo."
+    },
+    {
+      "key": "conversation.paused_auth",
+      "placeholders": [],
+      "uso": "401: iniciar sesion para enviar pendientes."
+    },
+    {
+      "key": "conversation.unavailable",
+      "placeholders": [],
+      "uso": "503: servicio no disponible, reintento manual."
+    },
+    {
+      "key": "conversation.rejected",
+      "placeholders": [],
+      "uso": "400/404/422: no se pudo registrar; puede descartarse."
+    },
+    {
+      "key": "conversation.retry",
+      "placeholders": [],
+      "uso": "Boton reintentar envio manual."
+    },
+    {
+      "key": "conversation.discard",
+      "placeholders": [],
+      "uso": "Boton descartar un pendiente."
+    },
+    {
+      "key": "conversation.no_benefits",
+      "placeholders": [],
+      "uso": "Familia sin beneficios: no se puede registrar."
+    },
+    {
+      "key": "conversation.select_at_least_one",
+      "placeholders": [],
+      "uso": "Validacion: elegir al menos un beneficio."
+    },
+    {
+      "key": "conversation.no_free_text_note",
+      "placeholders": [],
+      "uso": "Nota: por privacidad no hay notas de texto libre."
+    },
+    {
+      "key": "next_step.go_to_institution",
+      "placeholders": [],
+      "uso": "next_step GO_TO_INSTITUTION."
+    },
+    {
+      "key": "next_step.update_rsh",
+      "placeholders": [],
+      "uso": "next_step UPDATE_RSH (sin sigla)."
+    },
+    {
+      "key": "next_step.bring_documents",
+      "placeholders": [],
+      "uso": "next_step BRING_DOCUMENTS."
+    },
+    {
+      "key": "next_step.none",
+      "placeholders": [],
+      "uso": "next_step NONE."
+    },
+    {
+      "key": "channel.in_person",
+      "placeholders": [],
+      "uso": "channel IN_PERSON."
+    },
+    {
+      "key": "channel.group_meeting",
+      "placeholders": [],
+      "uso": "channel GROUP_MEETING."
+    },
+    {
+      "key": "channel.whatsapp_preview",
+      "placeholders": [],
+      "uso": "channel WHATSAPP_PREVIEW (la tia lo envio ella misma)."
+    },
+    {
+      "key": "channel.printed",
+      "placeholders": [],
+      "uso": "channel PRINTED."
+    },
+    {
+      "key": "queue.title",
+      "placeholders": [],
+      "uso": "Titulo del panel de conversaciones pendientes (solo Demo)."
+    },
+    {
+      "key": "queue.count",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Cantidad de pendientes de envio."
+    },
+    {
+      "key": "queue.send_now",
+      "placeholders": [],
+      "uso": "Boton enviar pendientes ahora."
+    },
+    {
+      "key": "queue.status.pending",
+      "placeholders": [],
+      "uso": "Estado local EN_ESPERA."
+    },
+    {
+      "key": "queue.status.paused_auth",
+      "placeholders": [],
+      "uso": "Estado local PAUSADA_AUTH."
+    },
+    {
+      "key": "queue.status.conflict",
+      "placeholders": [],
+      "uso": "Estado local CONFLICTO."
+    },
+    {
+      "key": "queue.status.unavailable",
+      "placeholders": [],
+      "uso": "Estado local REINTENTO_MANUAL (503/429)."
+    },
+    {
+      "key": "queue.status.rejected",
+      "placeholders": [],
+      "uso": "Estado local RECHAZADA (400/404/422)."
+    },
+    {
+      "key": "new_family.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Familia nueva."
+    },
+    {
+      "key": "new_family.intro",
+      "placeholders": [],
+      "uso": "Introduccion: preguntas opcionales con 'No se'."
+    },
+    {
+      "key": "new_family.demo_notice",
+      "placeholders": [],
+      "uso": "Aviso: ficha de demostracion, usar solo datos inventados."
+    },
+    {
+      "key": "new_family.demo_notice_accept",
+      "placeholders": [],
+      "uso": "Casilla obligatoria de aceptacion (demo_notice_accepted=true)."
+    },
+    {
+      "key": "new_family.no_text_note",
+      "placeholders": [],
+      "uso": "Nota: no se piden nombres, RUT, contacto ni texto libre."
+    },
+    {
+      "key": "new_family.step",
+      "placeholders": [
+        {
+          "name": "current",
+          "tipo": "integer"
+        },
+        {
+          "name": "total",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Indicador de paso, p. ej. 'Paso 2 de 5'."
+    },
+    {
+      "key": "new_family.step.child",
+      "placeholders": [],
+      "uso": "Titulo paso 1: la nina o el nino y hermanos."
+    },
+    {
+      "key": "new_family.step.rsh_income",
+      "placeholders": [],
+      "uso": "Titulo paso 2: Registro Social de Hogares e ingresos."
+    },
+    {
+      "key": "new_family.step.programs_health",
+      "placeholders": [],
+      "uso": "Titulo paso 3: programas, salud y vivienda."
+    },
+    {
+      "key": "new_family.step.extra",
+      "placeholders": [],
+      "uso": "Titulo paso 4: otras preguntas del hogar."
+    },
+    {
+      "key": "new_family.step.review",
+      "placeholders": [],
+      "uso": "Titulo paso 5: revisar y enviar."
+    },
+    {
+      "key": "new_family.q.child_age",
+      "placeholders": [],
+      "uso": "Pregunta edad del nino/a (0-120, entero)."
+    },
+    {
+      "key": "new_family.q.siblings_under_6",
+      "placeholders": [],
+      "uso": "Pregunta hermanos menores de 6."
+    },
+    {
+      "key": "new_family.q.siblings_6_14",
+      "placeholders": [],
+      "uso": "Pregunta hermanos de 6 a 14."
+    },
+    {
+      "key": "new_family.q.siblings_15_18",
+      "placeholders": [],
+      "uso": "Pregunta hermanos de 15 a 18."
+    },
+    {
+      "key": "new_family.q.has_rsh",
+      "placeholders": [],
+      "uso": "Pregunta si tiene Registro Social de Hogares."
+    },
+    {
+      "key": "new_family.q.rsh_band",
+      "placeholders": [],
+      "uso": "Pregunta tramo (solo si has_rsh=Si)."
+    },
+    {
+      "key": "new_family.q.household_income_band",
+      "placeholders": [],
+      "uso": "Pregunta rango de ingreso por persona."
+    },
+    {
+      "key": "new_family.q.ssyo_participation",
+      "placeholders": [],
+      "uso": "Pregunta Subsistema Seguridades y Oportunidades (sin sigla)."
+    },
+    {
+      "key": "new_family.q.chile_crece_contigo_access",
+      "placeholders": [],
+      "uso": "Pregunta Chile Crece Contigo."
+    },
+    {
+      "key": "new_family.q.last_child_health_control_date",
+      "placeholders": [],
+      "uso": "Pregunta fecha del ultimo control de salud del nino/a."
+    },
+    {
+      "key": "new_family.date_future",
+      "placeholders": [],
+      "uso": "Error en linea: la fecha del ultimo control no puede ser futura."
+    },
+    {
+      "key": "new_family.q.child_possible_disability",
+      "placeholders": [],
+      "uso": "Pregunta posible discapacidad (sin diagnostico)."
+    },
+    {
+      "key": "new_family.q.child_in_therapy",
+      "placeholders": [],
+      "uso": "Pregunta si esta en terapia."
+    },
+    {
+      "key": "new_family.q.housing_type",
+      "placeholders": [],
+      "uso": "Pregunta tipo de vivienda."
+    },
+    {
+      "key": "new_family.q.household_pregnancy",
+      "placeholders": [],
+      "uso": "Pregunta si alguien esta embarazada."
+    },
+    {
+      "key": "new_family.q.household_has_adult_over_65",
+      "placeholders": [],
+      "uso": "Pregunta si vive alguien mayor de 65."
+    },
+    {
+      "key": "new_family.q.household_formal_employment_or_pension",
+      "placeholders": [],
+      "uso": "Pregunta trabajo con contrato o pension."
+    },
+    {
+      "key": "new_family.q.household_water_payment_difficulty",
+      "placeholders": [],
+      "uso": "Pregunta dificultad para pagar el agua."
+    },
+    {
+      "key": "new_family.q.household_food_purchase_difficulty",
+      "placeholders": [],
+      "uso": "Pregunta dificultad para comprar alimentos."
+    },
+    {
+      "key": "new_family.rsh_band_option",
+      "placeholders": [
+        {
+          "name": "band",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Opcion de tramo, p. ej. 'Tramo 40 %'."
+    },
+    {
+      "key": "income_band.under_110k",
+      "placeholders": [],
+      "uso": "Opcion UNDER_110K."
+    },
+    {
+      "key": "income_band.110k_250k",
+      "placeholders": [],
+      "uso": "Opcion 110K_250K."
+    },
+    {
+      "key": "income_band.250k_400k",
+      "placeholders": [],
+      "uso": "Opcion 250K_400K."
+    },
+    {
+      "key": "income_band.over_400k",
+      "placeholders": [],
+      "uso": "Opcion OVER_400K."
+    },
+    {
+      "key": "housing.adequate",
+      "placeholders": [],
+      "uso": "Opcion ADEQUATE."
+    },
+    {
+      "key": "housing.camp_or_occupation",
+      "placeholders": [],
+      "uso": "Opcion CAMP_OR_OCCUPATION."
+    },
+    {
+      "key": "housing.room_in_other_home",
+      "placeholders": [],
+      "uso": "Opcion ROOM_IN_OTHER_HOME."
+    },
+    {
+      "key": "housing.other",
+      "placeholders": [],
+      "uso": "Opcion OTHER."
+    },
+    {
+      "key": "housing.unknown",
+      "placeholders": [],
+      "uso": "Opcion UNKNOWN (la familia no sabe como clasificarla)."
+    },
+    {
+      "key": "new_family.submit",
+      "placeholders": [],
+      "uso": "Boton enviar preevaluacion."
+    },
+    {
+      "key": "new_family.submitting",
+      "placeholders": [],
+      "uso": "Estado enviando preevaluacion."
+    },
+    {
+      "key": "new_family.result_title",
+      "placeholders": [],
+      "uso": "Titulo del resultado preliminar."
+    },
+    {
+      "key": "new_family.result_level",
+      "placeholders": [],
+      "uso": "Explicacion: resultado PRELIMINAR basado en lo declarado."
+    },
+    {
+      "key": "new_family.questions_title",
+      "placeholders": [],
+      "uso": "Titulo de preguntas para completar (questions de C3)."
+    },
+    {
+      "key": "new_family.go_to_family",
+      "placeholders": [],
+      "uso": "Boton ir a la ficha de la familia creada."
+    },
+    {
+      "key": "new_family.start_over",
+      "placeholders": [],
+      "uso": "Boton empezar otra ficha (borra el formulario en memoria)."
+    },
+    {
+      "key": "add_info.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Agregar informacion de una familia existente (DEC-039)."
+    },
+    {
+      "key": "add_info.intro",
+      "placeholders": [],
+      "uso": "Introduccion: responder solo lo que la familia cuente; se puede elegir No se."
+    },
+    {
+      "key": "add_info.no_fields",
+      "placeholders": [],
+      "uso": "No hay datos faltantes con pregunta cerrada para esta familia."
+    },
+    {
+      "key": "add_info.guide_title",
+      "placeholders": [],
+      "uso": "Titulo de preguntas de guia sin campo de respuesta (datos sin campo cerrado, DEC-039)."
+    },
+    {
+      "key": "add_info.guide_hint",
+      "placeholders": [],
+      "uso": "Explica que esas preguntas no se registran en la app; solo orientan la conversacion."
+    },
+    {
+      "key": "add_info.submit",
+      "placeholders": [],
+      "uso": "Boton enviar la informacion agregada."
+    },
+    {
+      "key": "add_info.submitting",
+      "placeholders": [],
+      "uso": "Estado enviando informacion agregada."
+    },
+    {
+      "key": "add_info.answer_one",
+      "placeholders": [],
+      "uso": "Validacion: responder al menos una pregunta antes de enviar."
+    },
+    {
+      "key": "add_info.offline",
+      "placeholders": [],
+      "uso": "Sin conexion: esta accion no se guarda en cola; necesita internet."
+    },
+    {
+      "key": "kpi.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Avance (KPI)."
+    },
+    {
+      "key": "kpi.level_label",
+      "placeholders": [],
+      "uso": "Etiqueta del selector de nivel."
+    },
+    {
+      "key": "kpi.level.jardin",
+      "placeholders": [],
+      "uso": "Nivel jardin."
+    },
+    {
+      "key": "kpi.level.comuna",
+      "placeholders": [],
+      "uso": "Nivel comuna."
+    },
+    {
+      "key": "kpi.level.region",
+      "placeholders": [],
+      "uso": "Nivel region."
+    },
+    {
+      "key": "kpi.level.nacional",
+      "placeholders": [],
+      "uso": "Nivel nacional."
+    },
+    {
+      "key": "kpi.from_label",
+      "placeholders": [],
+      "uso": "Etiqueta fecha desde."
+    },
+    {
+      "key": "kpi.to_label",
+      "placeholders": [],
+      "uso": "Etiqueta fecha hasta."
+    },
+    {
+      "key": "kpi.apply",
+      "placeholders": [],
+      "uso": "Boton aplicar filtro de periodo."
+    },
+    {
+      "key": "kpi.range_invalid",
+      "placeholders": [],
+      "uso": "Error en linea: la fecha desde es posterior a la fecha hasta."
+    },
+    {
+      "key": "kpi.range_too_long",
+      "placeholders": [
+        {
+          "name": "max_days",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Error en linea: el periodo supera {max_days} dias."
+    },
+    {
+      "key": "kpi.informed",
+      "placeholders": [],
+      "uso": "Indicador familias informadas."
+    },
+    {
+      "key": "kpi.informed_new",
+      "placeholders": [],
+      "uso": "Indicador familias nuevas informadas."
+    },
+    {
+      "key": "kpi.coverage",
+      "placeholders": [],
+      "uso": "Indicador cobertura de oportunidades mencionadas."
+    },
+    {
+      "key": "kpi.ratio",
+      "placeholders": [
+        {
+          "name": "informed",
+          "tipo": "integer"
+        },
+        {
+          "name": "total",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Texto 'X de Y' de C3 (no calculado)."
+    },
+    {
+      "key": "kpi.gaps_title",
+      "placeholders": [],
+      "uso": "Titulo top brechas (beneficios con mas familias por informar)."
+    },
+    {
+      "key": "kpi.gap_families",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Familias con brecha en un beneficio."
+    },
+    {
+      "key": "kpi.gap_amount",
+      "placeholders": [
+        {
+          "name": "amount",
+          "tipo": "currency"
+        }
+      ],
+      "uso": "Monto potencial anual estimado no cobrado."
+    },
+    {
+      "key": "kpi.suppressed",
+      "placeholders": [],
+      "uso": "suppressed=true: datos ocultos por grupo pequeno (no mostrar cifras)."
+    },
+    {
+      "key": "kpi.period",
+      "placeholders": [
+        {
+          "name": "start",
+          "tipo": "date"
+        },
+        {
+          "name": "end",
+          "tipo": "date"
+        }
+      ],
+      "uso": "Periodo del KPI."
+    },
+    {
+      "key": "kpi.calculated_at",
+      "placeholders": [
+        {
+          "name": "when",
+          "tipo": "relative_time"
+        }
+      ],
+      "uso": "Momento de calculo del KPI (calculated_at)."
+    },
+    {
+      "key": "assistant.title",
+      "placeholders": [],
+      "uso": "Titulo de la vista Asistente."
+    },
+    {
+      "key": "assistant.intro",
+      "placeholders": [],
+      "uso": "Explica: solo preguntas generales; para una familia usar su ficha."
+    },
+    {
+      "key": "assistant.question_label",
+      "placeholders": [],
+      "uso": "Etiqueta del campo de pregunta (max 500)."
+    },
+    {
+      "key": "assistant.char_count",
+      "placeholders": [
+        {
+          "name": "count",
+          "tipo": "integer"
+        },
+        {
+          "name": "max",
+          "tipo": "integer"
+        }
+      ],
+      "uso": "Contador de caracteres."
+    },
+    {
+      "key": "assistant.submit",
+      "placeholders": [],
+      "uso": "Boton preguntar."
+    },
+    {
+      "key": "assistant.thinking",
+      "placeholders": [],
+      "uso": "Estado de carga del asistente."
+    },
+    {
+      "key": "assistant.answer_title",
+      "placeholders": [],
+      "uso": "Titulo de la respuesta."
+    },
+    {
+      "key": "assistant.citations_title",
+      "placeholders": [],
+      "uso": "Titulo de fuentes citadas."
+    },
+    {
+      "key": "assistant.deterministic_redirect",
+      "placeholders": [],
+      "uso": "intent=REQUIRES_DETERMINISTIC_EVALUATION: revisar la ficha de la familia."
+    },
+    {
+      "key": "assistant.go_home",
+      "placeholders": [],
+      "uso": "Boton ir a Mi jardin desde la redireccion."
+    },
+    {
+      "key": "assistant.pii_blocked",
+      "placeholders": [],
+      "uso": "Bloqueo local: la pregunta parece incluir RUT, telefono o correo."
+    },
+    {
+      "key": "assistant.name_blocked",
+      "placeholders": [],
+      "uso": "Bloqueo local: la pregunta incluye un nombre de trato guardado en este equipo (DEC-038)."
+    },
+    {
+      "key": "assistant.not_saved",
+      "placeholders": [],
+      "uso": "Nota: la pregunta y la respuesta no se guardan."
+    },
+    {
+      "key": "assistant.examples_title",
+      "placeholders": [],
+      "uso": "Titulo de preguntas de ejemplo (chips)."
+    },
+    {
+      "key": "assistant.example.1",
+      "placeholders": [],
+      "uso": "Pregunta de ejemplo general 1 (sin datos de familia)."
+    },
+    {
+      "key": "assistant.example.2",
+      "placeholders": [],
+      "uso": "Pregunta de ejemplo general 2."
+    },
+    {
+      "key": "assistant.example.3",
+      "placeholders": [],
+      "uso": "Pregunta de ejemplo general 3."
+    },
+    {
+      "key": "a11y.canonical_spanish_label",
+      "placeholders": [],
+      "uso": "Etiqueta de la version canonica en espanol (C4 canonical_spanish_label_key)."
+    },
+    {
+      "key": "a11y.audio_unavailable",
+      "placeholders": [],
+      "uso": "Fallback de audio (C4 polly.fallback_label_key)."
+    },
+    {
+      "key": "a11y.translation_unavailable",
+      "placeholders": [],
+      "uso": "Fallback de traduccion (C4 translate.fallback_label_key)."
+    },
+    {
+      "key": "a11y.external_link",
+      "placeholders": [],
+      "uso": "Sufijo accesible: el enlace se abre en otra pestana."
+    },
+    {
+      "key": "a11y.required",
+      "placeholders": [],
+      "uso": "Indicador accesible de campo obligatorio."
+    },
+    {
+      "key": "a11y.selected",
+      "placeholders": [],
+      "uso": "Estado accesible de chip seleccionado."
+    },
+    {
+      "key": "notfound.title",
+      "placeholders": [],
+      "uso": "Titulo de pagina inexistente."
+    },
+    {
+      "key": "notfound.back_home",
+      "placeholders": [],
+      "uso": "Boton volver a Mi jardin."
+    },
+    {
+      "key": "benefit.ben-001.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-001 para KPI/detalle tecnico cuando C3 no trae simple_title."
+    },
+    {
+      "key": "benefit.ben-002.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-002."
+    },
+    {
+      "key": "benefit.ben-003.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-003."
+    },
+    {
+      "key": "benefit.ben-004.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-004."
+    },
+    {
+      "key": "benefit.ben-005.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-005."
+    },
+    {
+      "key": "benefit.ben-006.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-006."
+    },
+    {
+      "key": "benefit.ben-007.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-007."
+    },
+    {
+      "key": "benefit.ben-008.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-008."
+    },
+    {
+      "key": "benefit.ben-009.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-009."
+    },
+    {
+      "key": "benefit.ben-010.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-010."
+    },
+    {
+      "key": "benefit.ben-011.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-011."
+    },
+    {
+      "key": "benefit.ben-012.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-012."
+    },
+    {
+      "key": "benefit.ben-013.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-013."
+    },
+    {
+      "key": "benefit.ben-014.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-014."
+    },
+    {
+      "key": "benefit.ben-015.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-015."
+    },
+    {
+      "key": "benefit.ben-016.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-016."
+    },
+    {
+      "key": "benefit.ben-017.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-017."
+    },
+    {
+      "key": "benefit.ben-018.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-018."
+    },
+    {
+      "key": "benefit.ben-019.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-019."
+    },
+    {
+      "key": "benefit.ben-020.name",
+      "placeholders": [],
+      "uso": "OPCIONAL. Nombre simple BEN-020."
+    }
+  ]
+}

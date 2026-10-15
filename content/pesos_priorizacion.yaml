@@ -1,0 +1,778 @@
+# Configuración de ranking U/B/V (clase C4 WEIGHTS) para "3 cosas para conversar" (§8).
+# No contiene datos de personas ni parámetros normativos de elegibilidad: estos valores solo ordenan.
+# 0.2.0: lo que la fuente no fija se decidió en DEC-041..DEC-043 (valores sintéticos de demo, no normativos) o se
+# calculó desde E-3 (origen CALC: script + sha256 LF del CSV). Explicación en content/VALORES_RANKING.md.
+# `ranking` debe ser idéntico a `content/manifest.yaml#ranking` (SUP-040); `trazabilidad` cita cada hoja.
+content_version: "0.2.1"
+estado: PENDIENTE_REVISION_HUMANA
+fuente: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md
+ranking:
+  axis_weights:
+    u: 0.4
+    b: 0.4
+    v: 0.2
+  urgency:
+    aggregation: MAX
+    use_window: false
+    default_score: 0.2
+    recent_emergency:
+      benefit_id: BEN-020
+      max_age_days: 60
+      score: 1.0
+    newborn_expiry:
+      benefit_id: BEN-008
+      window_days: 90
+      calculation: LINEAR_ELAPSED_OVER_WINDOW
+    therapy_document_expiry:
+      benefit_id: BEN-019
+      window_days: 90
+      calculation: LINEAR_ELAPSED_OVER_WINDOW
+    limited_quota:
+      score: 0.8
+    food_insecurity:
+      minimum_index: 3
+      score: 0.8
+    precarious_housing:
+      housing_types:
+        - CAMP_OR_OCCUPATION
+      score: 0.7
+    application_windows:
+      - maximum_days_remaining: 7
+        score: 1.0
+      - maximum_days_remaining: 30
+        score: 0.6
+  benefit_impact:
+    annualization_multipliers:
+      MENSUAL: 12
+      ANUAL: 1
+      UNICA: 1
+    max_income_share_for_full_score: 0.20
+    default_monthly_household_income: 315150  # CALC DEC-041
+    garden_income_medians:  # CALC DEC-041
+      - {garden_id: JAR-SIM-E3-00001, monthly_household_income: 307800}
+      - {garden_id: JAR-SIM-E3-00002, monthly_household_income: 308100}
+      - {garden_id: JAR-SIM-E3-00003, monthly_household_income: 308400}
+      - {garden_id: JAR-SIM-E3-00004, monthly_household_income: 308700}
+      - {garden_id: JAR-SIM-E3-00005, monthly_household_income: 309000}
+      - {garden_id: JAR-SIM-E3-00006, monthly_household_income: 309300}
+      - {garden_id: JAR-SIM-E3-00007, monthly_household_income: 309600}
+      - {garden_id: JAR-SIM-E3-00008, monthly_household_income: 309900}
+      - {garden_id: JAR-SIM-E3-00009, monthly_household_income: 310200}
+      - {garden_id: JAR-SIM-E3-00010, monthly_household_income: 310500}
+      - {garden_id: JAR-SIM-E3-00011, monthly_household_income: 310800}
+      - {garden_id: JAR-SIM-E3-00012, monthly_household_income: 311100}
+      - {garden_id: JAR-SIM-E3-00013, monthly_household_income: 311400}
+      - {garden_id: JAR-SIM-E3-00014, monthly_household_income: 311700}
+      - {garden_id: JAR-SIM-E3-00015, monthly_household_income: 312000}
+      - {garden_id: JAR-SIM-E3-00016, monthly_household_income: 312300}
+      - {garden_id: JAR-SIM-E3-00017, monthly_household_income: 312600}
+      - {garden_id: JAR-SIM-E3-00018, monthly_household_income: 312900}
+      - {garden_id: JAR-SIM-E3-00019, monthly_household_income: 313200}
+      - {garden_id: JAR-SIM-E3-00020, monthly_household_income: 313500}
+      - {garden_id: JAR-SIM-E3-00021, monthly_household_income: 313800}
+      - {garden_id: JAR-SIM-E3-00022, monthly_household_income: 314100}
+      - {garden_id: JAR-SIM-E3-00023, monthly_household_income: 314400}
+      - {garden_id: JAR-SIM-E3-00024, monthly_household_income: 314700}
+      - {garden_id: JAR-SIM-E3-00025, monthly_household_income: 315000}
+      - {garden_id: JAR-SIM-E3-00026, monthly_household_income: 315300}
+      - {garden_id: JAR-SIM-E3-00027, monthly_household_income: 315600}
+      - {garden_id: JAR-SIM-E3-00028, monthly_household_income: 315900}
+      - {garden_id: JAR-SIM-E3-00029, monthly_household_income: 316200}
+      - {garden_id: JAR-SIM-E3-00030, monthly_household_income: 316500}
+      - {garden_id: JAR-SIM-E3-00031, monthly_household_income: 316800}
+      - {garden_id: JAR-SIM-E3-00032, monthly_household_income: 317100}
+      - {garden_id: JAR-SIM-E3-00033, monthly_household_income: 317400}
+      - {garden_id: JAR-SIM-E3-00034, monthly_household_income: 317700}
+      - {garden_id: JAR-SIM-E3-00035, monthly_household_income: 318000}
+      - {garden_id: JAR-SIM-E3-00036, monthly_household_income: 318300}
+      - {garden_id: JAR-SIM-E3-00037, monthly_household_income: 318600}
+      - {garden_id: JAR-SIM-E3-00038, monthly_household_income: 318900}
+      - {garden_id: JAR-SIM-E3-00039, monthly_household_income: 319200}
+      - {garden_id: JAR-SIM-E3-00040, monthly_household_income: 319500}
+      - {garden_id: JAR-SIM-E3-00041, monthly_household_income: 319800}
+      - {garden_id: JAR-SIM-E3-00042, monthly_household_income: 320100}
+      - {garden_id: JAR-SIM-E3-00043, monthly_household_income: 320400}
+      - {garden_id: JAR-SIM-E3-00044, monthly_household_income: 320700}
+      - {garden_id: JAR-SIM-E3-00045, monthly_household_income: 321000}
+      - {garden_id: JAR-SIM-E3-00046, monthly_household_income: 321300}
+      - {garden_id: JAR-SIM-E3-00047, monthly_household_income: 321600}
+      - {garden_id: JAR-SIM-E3-00048, monthly_household_income: 321900}
+      - {garden_id: JAR-SIM-E3-00049, monthly_household_income: 322200}
+      - {garden_id: JAR-SIM-E3-00050, monthly_household_income: 322500}
+    service_equivalences:
+      - benefit_id: BEN-007
+        annual_equivalent_amount: 360000  # DEC-041
+      - benefit_id: BEN-009
+        annual_equivalent_amount: 150000  # DEC-041
+      - benefit_id: BEN-015
+        annual_equivalent_amount: 40000  # DEC-041
+      - benefit_id: BEN-008
+        annual_equivalent_amount: 250000  # DEC-041
+      - benefit_id: BEN-005  # DEC-041
+        annual_equivalent_amount: 168000  # CALC DEC-041
+  vulnerability:
+    unknown_signals_excluded: true
+    component_weights:
+      rsh: 0.3  # DEC-042
+      income: 0.3  # DEC-042
+      health_coverage: 0.1  # DEC-042
+      cse: 0.1  # DEC-042
+      female_head_program: 0.1  # DEC-042
+      possible_child_disability: 0.1  # DEC-042
+    rsh_scores:
+      band_40: 1.0
+      band_50: 0.85
+      band_60: 0.7
+      band_70: 0.4
+      band_80: 0.2
+      band_90: 0
+      band_100: 0
+      no_rsh: 0.8
+    income_band_scores:
+      UNDER_110K: 1.0
+      110K_250K: 0.67  # DEC-042
+      250K_400K: 0.33  # DEC-042
+      OVER_400K: 0
+    health_coverage_scores:
+      FONASA_A: 1.0  # DEC-042
+      NO_COVERAGE: 1.0  # DEC-042
+    cse:
+      comparison: GTE
+      threshold: 20  # DEC-042
+      score: 1.0  # DEC-042
+    female_head_program_score: 1.0  # DEC-042
+    possible_child_disability_score: 1.0  # DEC-042
+  opportunity_score:
+    state_weights:
+      ELEGIBLE_SIN_ASIGNACION: 10
+      GESTION_RECHAZADA: 7
+      PENDIENTE_ANTECEDENTES: 6
+      INDETERMINADO: 5
+      GESTION_EN_CURSO: 2
+      SIN_CUPO: 1
+      ASIGNADO: 0
+    action_bonus: 1
+    resolvable_question_limit: 1
+  family_priority:
+    top_opportunity_count: 3
+    vulnerability_multiplier: 3
+    not_informed_bonus: 5  # DEC-043
+    new_family_bonus: 3  # DEC-043
+    new_family_max_age_days: 30
+trazabilidad:
+  - ruta: /ranking/axis_weights/u
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
+    literal: "w_U = 0.4"
+  - ruta: /ranking/axis_weights/b
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
+    literal: "w_B = 0.4"
+  - ruta: /ranking/axis_weights/v
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
+    literal: "w_V = 0.2"
+  - ruta: /ranking/urgency/aggregation
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L503
+    literal: "Se toma el **máximo**"
+  - ruta: /ranking/urgency/use_window
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L515
+    literal: "usar_ventana: false"
+  - ruta: /ranking/urgency/default_score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L513
+    literal: "Nada de lo anterior | 0.2"
+  - ruta: /ranking/urgency/recent_emergency/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L506
+    literal: "BEN-020"
+  - ruta: /ranking/urgency/recent_emergency/max_age_days
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L506
+    literal: "evento ≤ 60 días"
+  - ruta: /ranking/urgency/recent_emergency/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L506
+    literal: "| 1.0 |"
+  - ruta: /ranking/urgency/newborn_expiry/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L507
+    literal: "BEN-008"
+  - ruta: /ranking/urgency/newborn_expiry/window_days
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L507
+    literal: "de los 90 de BEN-008"
+  - ruta: /ranking/urgency/newborn_expiry/calculation
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L507
+    literal: "1 − días_restantes/90"
+  - ruta: /ranking/urgency/therapy_document_expiry/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L508
+    literal: "BEN-019"
+  - ruta: /ranking/urgency/therapy_document_expiry/window_days
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L508
+    literal: "≤ 90 días"
+  - ruta: /ranking/urgency/therapy_document_expiry/calculation
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L508
+    literal: "1 − días_restantes/90"
+  - ruta: /ranking/urgency/limited_quota/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L509
+    literal: "dentro del cupo | 0.8"
+  - ruta: /ranking/urgency/food_insecurity/minimum_index
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L510
+    literal: "Inseguridad alimentaria ≥ 3"
+  - ruta: /ranking/urgency/food_insecurity/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L510
+    literal: "≥ 3 | 0.8"
+  - ruta: /ranking/urgency/precarious_housing/housing_types/0
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L511
+    literal: "campamento o toma"
+    nota: "No se agrega ROOM_IN_OTHER_HOME: esta línea no nombra la pieza en otra casa."
+  - ruta: /ranking/urgency/precarious_housing/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L511
+    literal: "| 0.7 |"
+  - ruta: /ranking/urgency/application_windows/0/maximum_days_remaining
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L512
+    literal: "≤ 7 días"
+  - ruta: /ranking/urgency/application_windows/0/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L512
+    literal: "1.0 / 0.6"
+  - ruta: /ranking/urgency/application_windows/1/maximum_days_remaining
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L512
+    literal: "≤ 30 días"
+  - ruta: /ranking/urgency/application_windows/1/score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L512
+    literal: "1.0 / 0.6"
+  - ruta: /ranking/benefit_impact/annualization_multipliers/MENSUAL
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L519
+    literal: "MENSUAL ×12"
+  - ruta: /ranking/benefit_impact/annualization_multipliers/ANUAL
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L519
+    literal: "ANUAL ×1"
+  - ruta: /ranking/benefit_impact/annualization_multipliers/UNICA
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L519
+    literal: "UNICA ×1"
+  - ruta: /ranking/benefit_impact/max_income_share_for_full_score
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L521
+    literal: "/ 0.20)"
+  - ruta: /ranking/benefit_impact/default_monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO"
+    nota: "Mediana de las 500 familias, redondeada al peso. Ingreso mensual del hogar (SUP-045). DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/0/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/0/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/1/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/1/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/2/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/2/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/3/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/3/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/4/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/4/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/5/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/5/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/6/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/6/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/7/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/7/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/8/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/8/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/9/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/9/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/10/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/10/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/11/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/11/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/12/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/12/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/13/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/13/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/14/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/14/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/15/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/15/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/16/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/16/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/17/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/17/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/18/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/18/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/19/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/19/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/20/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/20/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/21/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/21/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/22/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/22/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/23/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/23/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/24/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/24/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/25/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/25/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/26/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/26/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/27/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/27/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/28/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/28/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/29/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/29/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/30/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/30/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/31/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/31/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/32/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/32/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/33/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/33/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/34/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/34/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/35/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/35/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/36/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/36/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/37/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/37/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/38/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/38/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/39/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/39/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/40/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/40/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/41/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/41/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/42/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/42/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/43/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/43/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/44/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/44/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/45/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/45/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/46/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/46/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/47/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/47/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/48/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/48/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/garden_income_medians/49/garden_id
+    origen: "CALC:calc-valores-ranking.mjs@30ce0ff03b209eda963ad5944857fb19f00692bb49bf045383e130008502bef4"
+    literal: "data/publico/jardines.csv id_jardin"
+  - ruta: /ranking/benefit_impact/garden_income_medians/49/monthly_household_income
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv INGRESO_HOGAR.MONTO mediana por id_jardin"
+    nota: "Agrupa con data/publico/familias.csv@fcded15d9eb91e2ba3fed342449be5e57897fff434d7b4821d20f2946a91a374. DEC-041."
+  - ruta: /ranking/benefit_impact/service_equivalences/0/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L523
+    literal: "PAE"
+    nota: "Programa de Alimentación Escolar = BEN-007 en data/publico/beneficios.csv."
+  - ruta: /ranking/benefit_impact/service_equivalences/0/annual_equivalent_amount
+    origen: "DEC-041"
+    literal: "360000"
+    nota: "PAE: cerca de 2.000 por ración por 180 días hábiles. Valor sintético de demo."
+  - ruta: /ranking/benefit_impact/service_equivalences/1/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L523
+    literal: "Apoyo Biopsicosocial"
+    nota: "Programa de Apoyo al Desarrollo Biopsicosocial = BEN-009 en data/publico/beneficios.csv."
+  - ruta: /ranking/benefit_impact/service_equivalences/1/annual_equivalent_amount
+    origen: "DEC-041"
+    literal: "150000"
+    nota: "Apoyo Biopsicosocial: 6 controles al año (controles_objetivo_anual de V017 y V018) por 25.000 cada uno."
+  - ruta: /ranking/benefit_impact/service_equivalences/2/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L523
+    literal: "Útiles"
+    nota: "Programa Útiles Escolares = BEN-015 en data/publico/beneficios.csv."
+  - ruta: /ranking/benefit_impact/service_equivalences/2/annual_equivalent_amount
+    origen: "DEC-041"
+    literal: "40000"
+    nota: "Útiles: un set al año."
+  - ruta: /ranking/benefit_impact/service_equivalences/3/benefit_id
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L523
+    literal: "Recién Nacido"
+    nota: "Programa de Apoyo al Recién Nacido = BEN-008 en data/publico/beneficios.csv."
+  - ruta: /ranking/benefit_impact/service_equivalences/3/annual_equivalent_amount
+    origen: "DEC-041"
+    literal: "250000"
+    nota: "Recién Nacido: kit único (cantidad_kit = 1), entrega UNICA."
+  - ruta: /ranking/benefit_impact/service_equivalences/4/benefit_id
+    origen: "DEC-041"
+    literal: "BEN-005"
+    nota: "Subsidio de agua sin monto_referencial_sintetico en V009 y V010: necesita equivalencia."
+  - ruta: /ranking/benefit_impact/service_equivalences/4/annual_equivalent_amount
+    origen: "CALC:calc-valores-ranking.mjs@16e147a897daa858e67e51b7256b6f1c36867ea60a5d8e20e2a7b1500b9c1287"
+    literal: "data/publico/antecedentes_familia.csv BOLETA_AGUA.MONTO"
+    nota: "descuento_pct 70 de V010 en data/publico/parametros_version.csv@ab440cf9dd149c597e11871d0e96b26dae24e5ce00201ecab7f6f955d3346c1c por la mediana de la boleta por 12, redondeado a miles; ignora el tope de consumo. Versión vigente según data/publico/beneficios_versiones.csv@f2b830d89b866c54f3a7c91192938135a911250c396c265f5e86d7047cb1b3f8. DEC-041."
+  - ruta: /ranking/vulnerability/unknown_signals_excluded
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L532
+    literal: "no suman ni restan"
+  - ruta: /ranking/vulnerability/component_weights/rsh
+    origen: "DEC-042"
+    literal: "0.3"
+    nota: "RSH e ingreso pesan más porque existen para casi todas las familias."
+  - ruta: /ranking/vulnerability/component_weights/income
+    origen: "DEC-042"
+    literal: "0.3"
+    nota: "RSH e ingreso pesan más porque existen para casi todas las familias."
+  - ruta: /ranking/vulnerability/component_weights/health_coverage
+    origen: "DEC-042"
+    literal: "0.1"
+    nota: "Señal de la ficha; si no se conoce queda fuera del promedio."
+  - ruta: /ranking/vulnerability/component_weights/cse
+    origen: "DEC-042"
+    literal: "0.1"
+    nota: "Señal de la ficha; si no se conoce queda fuera del promedio."
+  - ruta: /ranking/vulnerability/component_weights/female_head_program
+    origen: "DEC-042"
+    literal: "0.1"
+    nota: "Señal de la ficha; si no se conoce queda fuera del promedio."
+  - ruta: /ranking/vulnerability/component_weights/possible_child_disability
+    origen: "DEC-042"
+    literal: "0.1"
+    nota: "Señal de la ficha; si no se conoce queda fuera del promedio."
+  - ruta: /ranking/vulnerability/rsh_scores/band_40
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "40 → 1.0"
+  - ruta: /ranking/vulnerability/rsh_scores/band_50
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "50 → 0.85"
+  - ruta: /ranking/vulnerability/rsh_scores/band_60
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "60 → 0.7"
+  - ruta: /ranking/vulnerability/rsh_scores/band_70
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "70 → 0.4"
+  - ruta: /ranking/vulnerability/rsh_scores/band_80
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "80 → 0.2"
+  - ruta: /ranking/vulnerability/rsh_scores/band_90
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "90–100 → 0"
+  - ruta: /ranking/vulnerability/rsh_scores/band_100
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "90–100 → 0"
+  - ruta: /ranking/vulnerability/rsh_scores/no_rsh
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    literal: "sin RSH → 0.8"
+  - ruta: /ranking/vulnerability/income_band_scores/UNDER_110K
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L529
+    literal: "< 110.000 → 1.0"
+  - ruta: /ranking/vulnerability/income_band_scores/110K_250K
+    origen: "DEC-042"
+    literal: "0.67"
+    nota: "Tercios entre los extremos literales 1.0 y 0 de §8.1 L529."
+  - ruta: /ranking/vulnerability/income_band_scores/250K_400K
+    origen: "DEC-042"
+    literal: "0.33"
+    nota: "Tercios entre los extremos literales 1.0 y 0 de §8.1 L529."
+  - ruta: /ranking/vulnerability/income_band_scores/OVER_400K
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L529
+    literal: "> 400.000 → 0"
+  - ruta: /ranking/vulnerability/health_coverage_scores/FONASA_A
+    origen: "DEC-042"
+    literal: "1.0"
+    nota: "La fuente agrupa FONASA A o sin previsión (§8.1 L530); otras categorías conocidas valen 0 y la desconocida queda fuera."
+  - ruta: /ranking/vulnerability/health_coverage_scores/NO_COVERAGE
+    origen: "DEC-042"
+    literal: "1.0"
+    nota: "La fuente agrupa FONASA A o sin previsión (§8.1 L530); otras categorías conocidas valen 0 y la desconocida queda fuera."
+  - ruta: /ranking/vulnerability/cse/comparison
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L530
+    literal: "puntaje CSE alto"
+    nota: "Alto se interpreta como GTE, confirmado por DEC-042 (cierra R-3)."
+  - ruta: /ranking/vulnerability/cse/threshold
+    origen: "DEC-042"
+    literal: "20"
+    nota: "Umbral sintético de demo; el schema C4 admite 0 a 34."
+  - ruta: /ranking/vulnerability/cse/score
+    origen: "DEC-042"
+    literal: "1.0"
+    nota: "Señal presente = máxima; conocida bajo el umbral = 0."
+  - ruta: /ranking/vulnerability/female_head_program_score
+    origen: "DEC-042"
+    literal: "1.0"
+    nota: "Señal presente = máxima; conocida ausente = 0."
+  - ruta: /ranking/vulnerability/possible_child_disability_score
+    origen: "DEC-042"
+    literal: "1.0"
+    nota: "Señal presente = máxima; conocida ausente = 0."
+  - ruta: /ranking/opportunity_score/state_weights/ELEGIBLE_SIN_ASIGNACION
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L537
+    literal: "ELEGIBLE_SIN_ASIGNACION 10"
+  - ruta: /ranking/opportunity_score/state_weights/GESTION_RECHAZADA
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L537
+    literal: "GESTION_RECHAZADA 7"
+  - ruta: /ranking/opportunity_score/state_weights/PENDIENTE_ANTECEDENTES
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L537
+    literal: "PENDIENTE_ANTECEDENTES 6"
+  - ruta: /ranking/opportunity_score/state_weights/INDETERMINADO
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L538
+    literal: "INDETERMINADO (resoluble con 1 pregunta) 5"
+  - ruta: /ranking/opportunity_score/state_weights/GESTION_EN_CURSO
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L538
+    literal: "GESTION_EN_CURSO 2"
+  - ruta: /ranking/opportunity_score/state_weights/SIN_CUPO
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L538
+    literal: "SIN_CUPO 1"
+  - ruta: /ranking/opportunity_score/state_weights/ASIGNADO
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L538
+    literal: "ASIGNADO 0"
+  - ruta: /ranking/opportunity_score/action_bonus
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L539
+    literal: "bonus_accion: +1"
+  - ruta: /ranking/opportunity_score/resolvable_question_limit
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L538
+    literal: "resoluble con 1 pregunta"
+  - ruta: /ranking/family_priority/top_opportunity_count
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L546
+    literal: "suma de los 3 mejores puntajes"
+  - ruta: /ranking/family_priority/vulnerability_multiplier
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L547
+    literal: "+ 3 × V"
+  - ruta: /ranking/family_priority/not_informed_bonus
+    origen: "DEC-043"
+    literal: "5"
+    nota: "Pesa menos que una oportunidad fuerte; reordena familias parecidas."
+  - ruta: /ranking/family_priority/new_family_bonus
+    origen: "DEC-043"
+    literal: "3"
+    nota: "Menor que el bonus de familia no conversada."
+  - ruta: /ranking/family_priority/new_family_max_age_days
+    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L549
+    literal: "(≤ 30 días)"

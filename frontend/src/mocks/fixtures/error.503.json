@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 503,
+  "payload": {
+    "error": {
+      "code": "UNAVAILABLE",
+      "message": "Dependencia sin fallback seguro.",
+      "request_id": "REQ-SIM-ERR-503",
+      "retryable": true,
+      "details": []
+    }
+  }
+}

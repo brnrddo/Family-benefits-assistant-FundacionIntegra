@@ -1,0 +1,103 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listOportunidades",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0022",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "benefit_id": "BEN-006",
+        "simple_title": "Apoyo de alimentación",
+        "result": "SI",
+        "level": "PRELIMINAR",
+        "access_state": "ELEGIBLE_SIN_ASIGNACION",
+        "urgency": 0.75,
+        "benefit": 0.4,
+        "vulnerability": 0.6,
+        "score": 0.5,
+        "position": 3,
+        "estimated_annual_amount": 45000,
+        "benefit_estimated": true,
+        "action_type": "FAMILY_ACTION",
+        "why_first": "Es un trámite corto y la familia podría pedirlo ya.",
+        "missing_codes": [],
+        "suggested_questions": [
+          "¿Puede acercarse al consultorio esta semana?"
+        ],
+        "where_to_go": "Consultorio de la comuna (sintético)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-006",
+            "url": "https://fuentes.brujula-demo.example/ben-006"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-003",
+        "simple_title": "Control de salud infantil",
+        "result": "INDETERMINADO",
+        "level": null,
+        "access_state": "INDETERMINADO",
+        "urgency": 0.7,
+        "benefit": 0.5,
+        "vulnerability": 0.6,
+        "score": 0.72,
+        "position": 1,
+        "estimated_annual_amount": null,
+        "benefit_estimated": false,
+        "action_type": "ASK_FIRST",
+        "why_first": "No sabemos si tiene Registro Social de Hogares; preguntarlo abre otras opciones.",
+        "missing_codes": [
+          "rsh_status"
+        ],
+        "suggested_questions": [
+          "¿El hogar tiene Registro Social de Hogares?"
+        ],
+        "where_to_go": null,
+        "sources": [
+          {
+            "source_id": "SRC-SIM-003",
+            "url": "https://fuentes.brujula-demo.example/ben-003"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-005",
+        "simple_title": "Subsidio para el agua",
+        "result": "SI",
+        "level": "PRELIMINAR",
+        "access_state": "PENDIENTE_ANTECEDENTES",
+        "urgency": 0.5,
+        "benefit": 0.6,
+        "vulnerability": 0.6,
+        "score": 0.65,
+        "position": 2,
+        "estimated_annual_amount": 90000,
+        "benefit_estimated": true,
+        "action_type": "ASK_FIRST",
+        "why_first": "Podría corresponderle, pero faltan antecedentes del ingreso del hogar.",
+        "missing_codes": [
+          "income_band"
+        ],
+        "suggested_questions": [
+          "¿Cuál es el ingreso aproximado por persona del hogar?",
+          "¿El hogar tiene Registro Social de Hogares?"
+        ],
+        "where_to_go": "Municipio (sintético)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-005",
+            "url": "https://fuentes.brujula-demo.example/ben-005"
+          }
+        ]
+      }
+    ],
+    "next_cursor": null
+  }
+}

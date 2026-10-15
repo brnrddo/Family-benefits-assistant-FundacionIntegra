@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 403,
+  "payload": {
+    "error": {
+      "code": "FORBIDDEN",
+      "message": "Operacion no permitida.",
+      "request_id": "REQ-SIM-ERR-403",
+      "retryable": false,
+      "details": []
+    }
+  }
+}

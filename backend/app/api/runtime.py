@@ -29,15 +29,18 @@ _provider: TemplateProvider | None = None
 
 
 def _cargar_catalogo() -> dict:
-    """Lee BENEFITS + I18N del bundle C4 (provisional) y arma el catálogo."""
+    """Lee BENEFITS + I18N del bundle C4 mock del Rol 2 y arma el catálogo."""
     import json
     from pathlib import Path
 
     from app.priority.config import _DEFAULT_MANIFEST  # ruta por defecto validada
 
-    repo_dir = Path(_DEFAULT_MANIFEST).resolve().parent.parent
-    benefits_path = repo_dir / "content" / "benefits.json"
-    i18n_path = repo_dir / "content" / "i18n" / "es.json"
+    # Las rutas del catálogo se resuelven contra el directorio del manifest por
+    # defecto, no contra la raíz del repo: el bundle es relocalizable (DEC-022).
+    # El catálogo NO sigue E3_CONTENT_MANIFEST: siempre lee el mock del Rol 2.
+    bundle_dir = Path(_DEFAULT_MANIFEST).resolve().parent
+    benefits_path = bundle_dir / "benefits.json"
+    i18n_path = bundle_dir / "i18n" / "es.json"
 
     with benefits_path.open(encoding="utf-8") as fh:
         benefits = json.load(fh).get("benefits", [])

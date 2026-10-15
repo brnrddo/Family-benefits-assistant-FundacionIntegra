@@ -1,0 +1,52 @@
+# Inventario de activos sintéticos de content/demo/ (clase C4 SYNTHETIC_ASSET_MANIFEST, CONT-T05). Todo es inventado.
+# Una entrada por archivo de content/demo/ salvo este inventario. sha256 y bytes son de los bytes exactos (UTF-8 sin BOM, LF).
+# Si se edita un activo hay que recalcular su sha256/bytes aquí y luego el sha256 de este archivo en content/manifest.yaml.
+# El afiche solo viaja a Textract como TextractFlyerRequestV1 (metadata); nunca bytes, base64, URL ni clave S3 (PRIVACIDAD_DEMO).
+data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+content_version: "0.2.1"
+estado: PENDIENTE_REVISION_HUMANA
+nota: "Activos inventados para la demo. Ninguno deriva de una persona, documento o afiche real."
+activos:
+  - asset_id: AST-SIM-AFICHE-001-DESC
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    path: content/demo/afiche_sintetico_001.md
+    media_type: text/markdown
+    sha256: "322d6a70fb6f1be9baf641417c7ff3aa3d60922dc07f9ed6e0689aeaedf45feb"
+    bytes: 1700
+    procedencia: ESCRITO_A_MANO
+    review_state: PENDIENTE_REVISION
+    prohibited_fields_scan: PASS
+  - asset_id: AST-SIM-AFICHE-001
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    path: content/demo/afiche_sintetico_001.png
+    media_type: image/png
+    sha256: "a0a33801f0f2f86b0e38be38753ac2437773e250012daf7307a4264c136a566e"
+    bytes: 70612
+    width: 1240
+    height: 1754
+    procedencia: GENERADO_POR_SCRIPT_SINTETICO
+    descripcion: content/demo/afiche_sintetico_001.md
+    review_state: PENDIENTE_REVISION  # CONT-011: nunca se publica ni se vuelve regla automáticamente (DEC-013)
+    prohibited_fields_scan: PASS
+    textract_request:  # TextractFlyerRequestV1; prueba futura PREG-008
+      synthetic_asset_id: AST-SIM-AFICHE-001
+      media_type: image/png
+      sha256: "a0a33801f0f2f86b0e38be38753ac2437773e250012daf7307a4264c136a566e"
+  - asset_id: AST-SIM-FAMILIAS-DEMO-001
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    path: content/demo/familias_demo.yaml
+    media_type: application/yaml
+    sha256: "24d8cb10c24e6b2960dc93b384fa179d5f78068537f98fcada886019548c52e5"
+    bytes: 4368
+    procedencia: ESCRITO_A_MANO
+    review_state: PENDIENTE_REVISION_HUMANA
+    prohibited_fields_scan: PASS
+  - asset_id: AST-SIM-SALIDAS-REF-001
+    data_classification: SYNTHETIC_DEMO_NOT_A_REAL_PERSON
+    path: content/demo/salidas_referencia_prompts.json
+    media_type: application/json
+    sha256: "8e574d2ac48ba42ab116d78eef04efbbed448c22edbdd1c256c398ee9a699c2b"
+    bytes: 16660
+    procedencia: ESCRITO_A_MANO
+    review_state: PENDIENTE_REVISION_HUMANA
+    prohibited_fields_scan: PASS
