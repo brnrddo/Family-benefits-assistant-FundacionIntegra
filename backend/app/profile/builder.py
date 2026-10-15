@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import sqlite3
 
-from ..access.model import EstadoAcceso
 from ..access.service import AccesoService
 from ..config import DB_PATH, FECHA_EVALUACION
 from ..engine.facts import Repo
-from ..engine.model import Nivel, Tri
+from ..engine.model import Tri
 
 # Beneficios cuya elegibilidad NO es determinable solo con los datos públicos
 # (dependen de datos externos ausentes o del cruce de accesos — ver M2/M3).
@@ -260,18 +259,28 @@ class ProfileBuilder:
         }
 
     # --- perfil completo -----------------------------------------------------
-    def build(self, id_familia: str) -> dict | None:
+    def build(self, id_familia: str, incluir_recomendacion: bool = True) -> dict | None:
+        """Perfil consolidado de la familia.
+
+        ``incluir_recomendacion=False`` omite la sección
+        ``contexto_recomendacion`` (que recalcula el estado de acceso de los 20
+        beneficios y el cupo global de BEN-018). La ficha sintética y el
+        contrato C2 no necesitan esa sección y la evitan para no pagar un
+        cálculo colectivo caro por cada familia.
+        """
         fam = self.repo.familia(id_familia)
         if fam is None:
             return None
-        return {
+        perfil = {
             "identidad": self._identidad(fam),
             "rsh": self._rsh(fam),
             "composicion": self._composicion(fam),
             "antecedentes": self._antecedentes(fam),
             "historial": self._historial(fam),
-            "contexto_recomendacion": self._contexto_recomendacion(id_familia),
         }
+        if incluir_recomendacion:
+            perfil["contexto_recomendacion"] = self._contexto_recomendacion(id_familia)
+        return perfil
 
 
 def construir_perfil(id_familia: str, conn=None, fecha=FECHA_EVALUACION) -> dict | None:

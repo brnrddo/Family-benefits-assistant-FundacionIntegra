@@ -29,10 +29,6 @@ def _hogar_directo(campo: str, ctx: FamiliaCtx) -> Hecho | None:
     f = ctx.familia
     if f is None:
         return None
-    directos = {
-        "tramo_rsh": "tramo_rsh_corte",
-        "subtramo_sintetico": None,  # viene de rsh_historial; se resuelve aparte
-    }
     if campo == "tramo_rsh":
         v = f["tramo_rsh_corte"]
         return Hecho(campo=campo, valor=_num_or_none(v), presente=v not in (None, ""),
@@ -41,7 +37,6 @@ def _hogar_directo(campo: str, ctx: FamiliaCtx) -> Hecho | None:
 
 
 def _hogar_derivado(campo: str, ctx: FamiliaCtx) -> Hecho | None:
-    repo = ctx.repo
     if campo == "ingreso_per_capita":
         ingreso = _eav_hogar_valor(ctx, "INGRESO_HOGAR", "MONTO")
         n = _num_or_none(ctx.familia["numero_integrantes_corte"]) if ctx.familia else None

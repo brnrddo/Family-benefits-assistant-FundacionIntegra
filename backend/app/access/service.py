@@ -13,6 +13,12 @@ from .model import (Checklist, EstadoAcceso, RequisitoDoc, ResultadoAcceso,
 # Estados de una postulación considerados "en curso".
 EN_CURSO = {"POSTULADA", "EN_REVISION", "DERIVADA", "APROBADA"}
 
+# Beneficio con cupo contingente (Canasta Familiar, privado sintético).
+# El cupo real se lee de la versión vigente (cupo_contingente); este es el
+# fallback si la versión no lo trae.
+BEN_CUPO = "BEN-018"
+CUPO_BEN018_DEFAULT = 75
+
 
 def _conn(db_path=None) -> sqlite3.Connection:
     c = sqlite3.connect(str(db_path or DB_PATH))
@@ -26,6 +32,9 @@ class AccesoService:
         self.conn.row_factory = sqlite3.Row
         self.fecha = fecha
         self.ev = Evaluator(conn, fecha)
+        # Cache del cupo de BEN-018: {id_familia dentro del cupo}. Se calcula una
+        # sola vez por servicio (cálculo colectivo, no por familia).
+        self._dentro_cupo: set[str] | None = None
 
     # --- gestiones -----------------------------------------------------------
     def _ultima_postulacion(self, id_familia: str, id_beneficio: str):
@@ -91,6 +100,73 @@ class AccesoService:
             documentos=docs,
         )
 
+    # --- cupo BEN-018 (Canasta Familiar) -------------------------------------
+    def _cupo_ben018(self) -> int:
+        """Cupo de la versión vigente de BEN-018 (fallback a 75)."""
+        version = self.ev.version_vigente(BEN_CUPO)
+        if version is not None:
+            raw = version["cupo_contingente"]
+            try:
+                if raw not in (None, ""):
+                    return int(raw)
+            except (ValueError, TypeError):
+                pass
+        return CUPO_BEN018_DEFAULT
+
+    def _eav_hogar_num(self, id_familia: str, tipo: str, subtipo: str):
+        """Valor numérico de un antecedente del hogar vigente (o None)."""
+        rows = self.conn.execute(
+            "SELECT valor_numero, vigencia_desde, vigencia_hasta FROM antecedentes_familia "
+            "WHERE id_familia = ? AND tipo_antecedente = ? AND subtipo = ?",
+            (id_familia, tipo, subtipo),
+        ).fetchall()
+        from ..engine.facts import Repo
+        for r in rows:
+            if not Repo._vig(r["vigencia_desde"], r["vigencia_hasta"], self.fecha):
+                continue
+            v = r["valor_numero"]
+            if v in (None, ""):
+                continue
+            try:
+                return float(v)
+            except (ValueError, TypeError):
+                return None
+        return None
+
+    def _familias_dentro_cupo(self) -> set[str]:
+        """Set de familias de BEN-018 que caen DENTRO del cupo.
+
+        Spec §7: ordenar elegibles (resultado SI) por índice de inseguridad
+        descendente, luego ingreso per cápita ascendente, luego id; las primeras
+        ``cupo`` entran, el resto queda SIN_CUPO.
+        """
+        if self._dentro_cupo is not None:
+            return self._dentro_cupo
+
+        cupo = self._cupo_ben018()
+        elegibles: list[tuple] = []
+        familias = [r[0] for r in self.conn.execute(
+            "SELECT id_familia FROM familias ORDER BY id_familia").fetchall()]
+        for fam in familias:
+            elig = self.ev.evaluar(fam, BEN_CUPO)
+            if elig.resultado != Tri.SI:
+                continue
+            inseguridad = self._eav_hogar_num(fam, "INSEGURIDAD_ALIMENTARIA", "INDICE") or 0.0
+            ingreso = self._eav_hogar_num(fam, "INGRESO_HOGAR", "MONTO")
+            n = self.conn.execute(
+                "SELECT numero_integrantes_corte FROM familias WHERE id_familia = ?",
+                (fam,)).fetchone()[0]
+            try:
+                pc = (ingreso / float(n)) if (ingreso is not None and n) else float("inf")
+            except (ValueError, TypeError, ZeroDivisionError):
+                pc = float("inf")
+            # Orden: inseguridad DESC, ingreso_pc ASC, id ASC.
+            elegibles.append((-inseguridad, pc, fam))
+
+        elegibles.sort()
+        self._dentro_cupo = {fam for _, _, fam in elegibles[:cupo]}
+        return self._dentro_cupo
+
     # --- estado de acceso ----------------------------------------------------
     def evaluar(self, id_familia: str, id_beneficio: str) -> ResultadoAcceso:
         elig = self.ev.evaluar(id_familia, id_beneficio)
@@ -104,8 +180,8 @@ class AccesoService:
 
         version = self.ev.version_vigente(id_beneficio)
 
-        estado = self._derivar_estado(elig.resultado, preliminar, tiene_gestion, ultimo,
-                                      id_beneficio)
+        estado = self._derivar_estado(id_familia, elig.resultado, preliminar, tiene_gestion,
+                                      ultimo, id_beneficio)
 
         # Checklist solo tiene sentido cuando puede calificar (SI o IND con criterios).
         checklist = None
@@ -119,8 +195,9 @@ class AccesoService:
             id_postulacion=id_post, checklist=checklist, elegibilidad=elig_dict,
         )
 
-    def _derivar_estado(self, resultado: Tri, preliminar: bool, tiene_gestion: bool,
-                        ultimo: str | None, id_beneficio: str) -> EstadoAcceso:
+    def _derivar_estado(self, id_familia: str, resultado: Tri, preliminar: bool,
+                        tiene_gestion: bool, ultimo: str | None,
+                        id_beneficio: str) -> EstadoAcceso:
         if resultado == Tri.NO:
             return EstadoAcceso.NO_APLICA
         if resultado == Tri.INDETERMINADO:
@@ -138,6 +215,11 @@ class AccesoService:
             return EstadoAcceso.GESTION_EN_CURSO
 
         # SI sin gestión:
+        # BEN-018 tiene cupo contingente: si la familia es elegible pero queda
+        # sobre el cupo (posición > cupo), es SIN_CUPO (spec §7).
+        if id_beneficio == BEN_CUPO and id_familia not in self._familias_dentro_cupo():
+            return EstadoAcceso.SIN_CUPO
+
         # decisión [3] del usuario: preliminar prima -> PENDIENTE_ANTECEDENTES
         if preliminar:
             return EstadoAcceso.PENDIENTE_ANTECEDENTES

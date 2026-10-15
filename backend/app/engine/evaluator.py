@@ -120,7 +120,8 @@ class Evaluator:
         return regla["valor_literal"]
 
     # --- evaluación de una regla atómica sobre una entidad --------------------
-    def _eval_regla(self, regla, hecho: Hecho, cantidad_rel=None, pago_reciente=None):
+    def _eval_regla(self, regla, hecho: Hecho, cantidad_rel=None, pago_reciente=None,
+                    ref_eq=None):
         op = regla["operador"]
         esperado = self._esperado(regla)
         obs = hecho.valor if hecho.presente else None
@@ -149,9 +150,32 @@ class Evaluator:
         if op == "NOT_EXISTS_WITHIN":
             return ops.op_not_exists_within(pago_reciente), esperado, None
         if op == "REF_EQ":
-            # resuelto fuera (depende de binding padre); aquí IND por defecto.
-            return Tri.INDETERMINADO, esperado, None
+            # REF_EQ se resuelve fuera (necesita la entidad ganadora del
+            # binding_padre). El llamador pasa `ref_eq` ya evaluado como Tri.
+            return (ref_eq if ref_eq is not None else Tri.INDETERMINADO), esperado, None
         return Tri.INDETERMINADO, esperado, None
+
+    def _carga_acreditada_de(self, id_origen: str, id_destino: str | None) -> Tri:
+        """REF_EQ `carga_acreditada_de`: ¿`origen` es carga acreditada y vigente
+        de `destino` (el ganador del binding padre)?
+
+        - Si aún no hay ganador del padre -> INDETERMINADO (no se puede resolver).
+        - Si existe relación CARGA_DE acreditada y vigente origen->destino -> SI.
+        - Si no -> NO.
+        """
+        if not id_destino:
+            return Tri.INDETERMINADO
+        rows = self.conn.execute(
+            "SELECT acreditada, vigencia_desde, vigencia_hasta FROM relaciones_integrantes "
+            "WHERE tipo_relacion = 'CARGA_DE' AND id_integrante_origen = ? "
+            "AND id_integrante_destino = ?", (id_origen, id_destino)
+        ).fetchall()
+        for r in rows:
+            if not Repo._vig(r["vigencia_desde"], r["vigencia_hasta"], self.fecha):
+                continue
+            if str(r["acreditada"]).strip().lower() == "true":
+                return Tri.SI
+        return Tri.NO
 
     def evaluar(self, id_familia: str, id_beneficio: str) -> ResultadoBeneficio:
         ctx = FamiliaCtx(self.repo, id_familia)
@@ -215,7 +239,18 @@ class Evaluator:
         ganadores: dict[str, str] = {}
         acred_ok = True
 
-        for binding, reglas_b in por_binding.items():
+        # Orden de evaluación: los bindings PADRE antes que sus hijos, para que
+        # REF_EQ (p. ej. CAUSANTE_1 carga_de BENEFICIARIO_1) pueda resolverse
+        # contra la entidad ya ganada del padre. HOGAR primero (no depende de
+        # nadie); luego bindings sin binding_padre; luego los que lo tienen.
+        def _orden(binding_reglas):
+            binding, reglas_b = binding_reglas
+            padre = reglas_b[0]["binding_padre"]
+            if binding == "HOGAR":
+                return 0
+            return 1 if not padre else 2
+
+        for binding, reglas_b in sorted(por_binding.items(), key=_orden):
             cuant = reglas_b[0]["cuantificador"]
             rol = reglas_b[0]["rol_causante"]
 
@@ -226,7 +261,8 @@ class Evaluator:
                 faltantes.update(falt)
                 acred_ok = acred_ok and acred
             elif cuant in ("EXISTS", "COUNT"):
-                tri_b, ganador, trz, falt, acred = self._eval_binding_exists(reglas_b, ctx, rol)
+                tri_b, ganador, trz, falt, acred = self._eval_binding_exists(
+                    reglas_b, ctx, rol, ganadores)
                 tris.append(tri_b)
                 trazas.extend(trz)
                 faltantes.update(falt)
@@ -259,8 +295,14 @@ class Evaluator:
                 resultado=tri, binding_grupo=r["binding_grupo"], id_hecho=hecho.id_origen))
         return _and_tri(tris), trazas, faltantes, acred_ok
 
-    def _eval_binding_exists(self, reglas_b, ctx: FamiliaCtx, rol: str):
-        """EXISTS: busca un integrante (misma persona) que cumpla todas las reglas."""
+    def _eval_binding_exists(self, reglas_b, ctx: FamiliaCtx, rol: str,
+                             ganadores_previos: dict[str, str] | None = None):
+        """EXISTS: busca un integrante (misma persona) que cumpla todas las reglas.
+
+        `ganadores_previos` trae las entidades ya ganadas de otros bindings del
+        mismo grupo, para resolver REF_EQ contra el binding_padre.
+        """
+        ganadores_previos = ganadores_previos or {}
         candidatos = _candidatos(rol, ctx)
         if not candidatos:
             # Sin candidatos: si el motivo es falta de datos -> IND; si no -> NO.
@@ -280,7 +322,17 @@ class Evaluator:
                 campo = r["campo_dato"]
                 hecho = resolver_integrante(campo, ctx, cand)
                 cantidad = self._contar_hijos(ctx, cand) if r["operador"] == "COUNT_REL_GTE" else None
-                tri, esperado, _ = self._eval_regla(r, hecho, cantidad, None)
+                # REF_EQ: resolver la relación carga_de contra el ganador del padre.
+                ref_eq = None
+                esperado_ref = None
+                if r["operador"] == "REF_EQ":
+                    padre = r["valor_binding_ref"] or r["binding_padre"]
+                    id_destino = ganadores_previos.get(padre)
+                    ref_eq = self._carga_acreditada_de(cand["id_integrante"], id_destino)
+                    esperado_ref = f"carga_de:{padre}={id_destino or '?'}"
+                tri, esperado, _ = self._eval_regla(r, hecho, cantidad, None, ref_eq)
+                if esperado_ref is not None:
+                    esperado = esperado_ref
                 tris.append(tri)
                 if tri == Tri.INDETERMINADO:
                     faltantes.add(campo)
