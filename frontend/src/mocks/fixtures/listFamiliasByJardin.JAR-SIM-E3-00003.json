@@ -1,0 +1,26 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listFamiliasByJardin",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0004",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "family_id": "FAM-SIM-E3-00009",
+        "priority_score": 0.66,
+        "vulnerability": 0.6,
+        "opportunity_count": 3,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "AMARILLO",
+        "top_benefit_ids": ["BEN-003", "BEN-005", "BEN-006"]
+      }
+    ],
+    "next_cursor": null
+  }
+}

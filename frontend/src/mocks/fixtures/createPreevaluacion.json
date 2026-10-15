@@ -1,0 +1,63 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createPreevaluacion",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0601",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00101",
+      "level": "PRELIMINAR",
+      "created_at": "2026-10-14T10:00:00-03:00",
+      "opportunities": [
+        {
+          "benefit_id": "BEN-006",
+          "simple_title": "Apoyo de alimentación",
+          "result": "SI",
+          "level": "PRELIMINAR",
+          "access_state": "ELEGIBLE_SIN_ASIGNACION",
+          "urgency": 0.7,
+          "benefit": 0.4,
+          "vulnerability": 0.6,
+          "score": 0.55,
+          "position": 1,
+          "estimated_annual_amount": 45000,
+          "benefit_estimated": true,
+          "action_type": "FAMILY_ACTION",
+          "why_first": "Con lo declarado, podría pedirlo ya; vale la pena consultar.",
+          "missing_codes": [],
+          "suggested_questions": ["¿Puede acercarse al consultorio esta semana?"],
+          "where_to_go": "Consultorio de la comuna (sintético)",
+          "sources": [{ "source_id": "SRC-SIM-006", "url": "https://fuentes.brujula-demo.example/ben-006" }]
+        },
+        {
+          "benefit_id": "BEN-003",
+          "simple_title": "Control de salud infantil",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "urgency": 0.5,
+          "benefit": 0.4,
+          "vulnerability": 0.6,
+          "score": 0.48,
+          "position": 2,
+          "estimated_annual_amount": null,
+          "benefit_estimated": false,
+          "action_type": "ASK_FIRST",
+          "why_first": "Falta la fecha del último control para saber si corresponde.",
+          "missing_codes": ["last_health_control_date"],
+          "suggested_questions": ["¿Cuándo fue el último control de salud?"],
+          "where_to_go": null,
+          "sources": [{ "source_id": "SRC-SIM-003", "url": "https://fuentes.brujula-demo.example/ben-003" }]
+        }
+      ],
+      "questions": ["¿El hogar tiene Registro Social de Hogares?", "¿Cuándo fue el último control de salud?"],
+      "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+    }
+  }
+}

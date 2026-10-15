@@ -1,25 +1,26 @@
-# Bundle C4 — PROVISIONAL (NO autoritativo)
+# content/ — contenido del Rol 4
 
-DATOS SINTETICOS - NO CORRESPONDEN A UNA PERSONA REAL
+Datos y textos que consumen los demás roles: mapeo C0 de la ficha y bundle C4 (ranking, preguntas, beneficios, prompts, accesibilidad, i18n y activos demo). Solo CSV, JSON, YAML, Markdown y un PNG sintético; sin código ni reglas de elegibilidad. No contiene datos de personas.
 
-Este bundle C4 es **PROVISIONAL** y existe solo para desbloquear el ranking
-determinista U/B/V del Rol 2 (FEAT-001) mientras el contenido autoritativo lo
-produce el Rol 4. **No** es la autoridad final de contenido ni de los números
-de negocio de §8: cuando el Rol 4 publique el bundle C4 definitivo (con
-`content_bundle_hash` real y revisión humana), este directorio se reemplaza.
+Estado: **0.2.0, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045), falta API-T14 y revisión humana. Ninguna capa runtime debe activarlo.
 
-Alcance y límites:
+| Archivo | Clase | Consumidor |
+|---|---|---|
+| `mapeo_ficha.csv` | C0 (fuera del bundle C4) | Rol 1 (motor) y Rol 2 |
+| `manifest.yaml` | instancia C4 (no se lista a sí mismo) | Rol 2 |
+| `pesos_priorizacion.yaml` | `WEIGHTS` | Rol 2 (ranking U/B/V) |
+| `accessibility.yaml` | `ACCESSIBILITY` | Roles 2 y 3 |
+| `beneficios.yaml` | `BENEFITS` | Rol 2 (catálogo y prompts) |
+| `preguntas.yaml` | `QUESTIONS` | Rol 2 |
+| `i18n/es.json` | `I18N` (canónico, DEC-010) | Rol 3 (PWA) |
+| `prompts/*.md` (4) | `PROMPT` | Rol 2 (GenAI con plantilla de respaldo) |
+| `demo/inventario_activos.yaml` | `SYNTHETIC_ASSET_MANIFEST` | Roles 2 y 4 |
+| `demo/*` (fixtures, salidas de referencia, afiche) | vía inventario | Roles 2 y 4 |
+| `VALORES_RANKING.md` | explicación de los valores (fuera del bundle C4) | equipo e Integra |
+| `.gitattributes` | fin de línea LF para los hashes (DEC-045, fuera del bundle C4) | Git |
 
-- Valida contra `.kiro/specs/_shared/contracts/C4-contenido-manifest.schema.json`.
-- Las seis clases obligatorias (`WEIGHTS`, `QUESTIONS`, `BENEFITS`, `PROMPT`,
-  `ACCESSIBILITY`, `I18N`) apuntan a archivos reales bajo `content/`.
-- Los `sha256` de cada archivo en `manifest.json` corresponden al contenido real.
-- `content_bundle_hash` es un placeholder consistente de 64 hex; no es el hash
-  canónico del Rol 4.
-- Polly y Translate están deshabilitados (`enabled=false`) con `evidence_state`
-  `NO_VERIFICADO`, allowlists vacías y claves i18n de fallback.
-- Ningún archivo C4 reemplaza parámetros normativos de elegibilidad: la
-  elegibilidad y el acceso los decide el motor del Rol 1 (C1).
+Hashes: `files[].sha256` y `content_bundle_hash` siguen SUP-041; `ranking` y `accessibility` del manifiesto son copia idéntica de sus archivos (SUP-040). Al editar un archivo listado hay que recalcular su hash y el del bundle. Las fixtures de `content/demo/` (`familias_demo.yaml`, `salidas_referencia_prompts.json`) conservan su versión 0.1.0: es la versión del set de fixtures y sus bytes no cambiaron.
 
-Los valores numéricos (pesos, umbrales, medianas, bonus) son demostrativos y
-no provienen de datos reales.
+Preguntas pendientes: PREG-045 (beneficios sin fuente HTTPS), PREG-047 (semántica de `amount`), PREG-048 (BEN-010 sin monto), PREG-008 (Textract) y PREG-009 (voces e idiomas).
+
+Validación oficial: la futura tarea API-T14 (`python -m backend.app.contracts.validate_content --manifest content/manifest.yaml`), aún no implementada. Mientras tanto, el Rol 4 usa un validador local fuera del repositorio.

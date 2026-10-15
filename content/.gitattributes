@@ -1,0 +1,3 @@
+# DEC-045: bytes LF en el checkout para que los sha256 de SUP-041 no cambien con core.autocrlf=true.
+* text eol=lf
+*.png binary

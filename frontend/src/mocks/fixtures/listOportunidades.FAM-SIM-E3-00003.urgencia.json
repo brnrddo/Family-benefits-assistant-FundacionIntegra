@@ -1,0 +1,121 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listOportunidades",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0032",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "benefit_id": "BEN-008",
+        "simple_title": "Bono por control al día",
+        "result": "SI",
+        "level": "CONFIRMADO",
+        "access_state": "GESTION_RECHAZADA",
+        "urgency": 0.65,
+        "benefit": 0.6,
+        "vulnerability": 0.5,
+        "score": 0.4,
+        "position": 3,
+        "estimated_annual_amount": 80000,
+        "benefit_estimated": false,
+        "action_type": "FOLLOW_UP",
+        "why_first": "Una solicitud anterior no avanzó; vale la pena consultar si puede volver a postular.",
+        "missing_codes": [],
+        "suggested_questions": [
+          "¿Le explicaron por qué no avanzó la solicitud?"
+        ],
+        "where_to_go": "Municipio (sintético)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-008",
+            "url": "https://fuentes.brujula-demo.example/ben-008"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-007",
+        "simple_title": "Pensión de apoyo al hogar",
+        "result": "SI",
+        "level": "CONFIRMADO",
+        "access_state": "GESTION_EN_CURSO",
+        "urgency": 0.4,
+        "benefit": 0.5,
+        "vulnerability": 0.5,
+        "score": 0.42,
+        "position": 2,
+        "estimated_annual_amount": 150000,
+        "benefit_estimated": false,
+        "action_type": "FOLLOW_UP",
+        "why_first": "La solicitud está en trámite; conviene preguntar si falta algo.",
+        "missing_codes": [],
+        "suggested_questions": [
+          "¿Le avisaron si falta algún documento?"
+        ],
+        "where_to_go": "Institución a cargo del trámite (sintética)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-007",
+            "url": "https://fuentes.brujula-demo.example/ben-007"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-009",
+        "simple_title": "Taller de apoyo escolar",
+        "result": "SI",
+        "level": "PRELIMINAR",
+        "access_state": "SIN_CUPO",
+        "urgency": 0.3,
+        "benefit": 0.2,
+        "vulnerability": 0.5,
+        "score": 0.3,
+        "position": 4,
+        "estimated_annual_amount": null,
+        "benefit_estimated": false,
+        "action_type": "FOLLOW_UP",
+        "why_first": "Por ahora no hay cupos; puede quedar en lista de espera.",
+        "missing_codes": [],
+        "suggested_questions": [],
+        "where_to_go": null,
+        "sources": [
+          {
+            "source_id": "SRC-SIM-009",
+            "url": "https://fuentes.brujula-demo.example/ben-009"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-004",
+        "simple_title": "Asignación escolar",
+        "result": "SI",
+        "level": "CONFIRMADO",
+        "access_state": "ASIGNADO",
+        "urgency": 0.2,
+        "benefit": 0.3,
+        "vulnerability": 0.5,
+        "score": 0.45,
+        "position": 1,
+        "estimated_annual_amount": 60000,
+        "benefit_estimated": false,
+        "action_type": "AUTOMATIC",
+        "why_first": "Ya lo recibe; confirme que siga vigente este año.",
+        "missing_codes": [],
+        "suggested_questions": [],
+        "where_to_go": null,
+        "sources": [
+          {
+            "source_id": "SRC-SIM-004",
+            "url": "https://fuentes.brujula-demo.example/ben-004"
+          }
+        ]
+      }
+    ],
+    "next_cursor": null
+  }
+}

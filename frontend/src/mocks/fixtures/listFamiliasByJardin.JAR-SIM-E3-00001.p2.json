@@ -1,0 +1,44 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listFamiliasByJardin",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0003",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "family_id": "FAM-SIM-E3-00007",
+        "priority_score": 0.55,
+        "vulnerability": 0.45,
+        "opportunity_count": 4,
+        "conversation_status": "CONVERSADA",
+        "traffic_light": "AZUL",
+        "top_benefit_ids": ["BEN-004", "BEN-007", "BEN-008"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00008",
+        "priority_score": 0.48,
+        "vulnerability": 0.4,
+        "opportunity_count": 4,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "VERDE",
+        "top_benefit_ids": ["BEN-001", "BEN-002", "BEN-003"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00004",
+        "priority_score": 0.1,
+        "vulnerability": 0.2,
+        "opportunity_count": 0,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "SIN_OPORTUNIDADES",
+        "top_benefit_ids": []
+      }
+    ],
+    "next_cursor": null
+  }
+}

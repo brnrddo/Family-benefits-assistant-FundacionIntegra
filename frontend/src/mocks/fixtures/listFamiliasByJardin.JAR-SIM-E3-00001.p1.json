@@ -1,0 +1,62 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listFamiliasByJardin",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0002",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "family_id": "FAM-SIM-E3-00001",
+        "priority_score": 0.91,
+        "vulnerability": 0.8,
+        "opportunity_count": 4,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "VERDE",
+        "top_benefit_ids": ["BEN-001", "BEN-002", "BEN-003"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00002",
+        "priority_score": 0.84,
+        "vulnerability": 0.6,
+        "opportunity_count": 3,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "AMARILLO",
+        "top_benefit_ids": ["BEN-003", "BEN-005", "BEN-006"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00005",
+        "priority_score": 0.77,
+        "vulnerability": 0.7,
+        "opportunity_count": 4,
+        "conversation_status": "CONVERSADA",
+        "traffic_light": "VERDE",
+        "top_benefit_ids": ["BEN-001", "BEN-002", "BEN-003"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00003",
+        "priority_score": 0.7,
+        "vulnerability": 0.5,
+        "opportunity_count": 4,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "AZUL",
+        "top_benefit_ids": ["BEN-004", "BEN-007", "BEN-008"]
+      },
+      {
+        "family_id": "FAM-SIM-E3-00006",
+        "priority_score": 0.62,
+        "vulnerability": 0.55,
+        "opportunity_count": 3,
+        "conversation_status": "PENDIENTE",
+        "traffic_light": "AMARILLO",
+        "top_benefit_ids": ["BEN-003", "BEN-005", "BEN-006"]
+      }
+    ],
+    "next_cursor": "CURSOR-SIM-JAR1-P2"
+  }
+}
