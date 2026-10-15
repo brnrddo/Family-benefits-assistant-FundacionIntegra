@@ -279,8 +279,9 @@ como mocks sintéticos válidos (contrato C3 = fuente de verdad del OpenAPI).
 ### Arranque local (sin AWS ni DB)
 
 ```bash
-# Desde backend/ (interprete py -3.11):
-py -3.11 -m uvicorn app.api.app:app --port 8080 --reload
+# Desde backend/ (interprete py -3.11). 8000 es el puerto que usa el front
+# (BRUJULA_DEV_API_PROXY y npm run check:api, DEC-034):
+py -3.11 -m uvicorn app.api.app:app --port 8000 --reload
 ```
 
 - **App:** `app.api.app:app` (FastAPI construida en `app/api/app.py`).
@@ -297,24 +298,75 @@ guion/mensaje/asistente lo genera el `TemplateProvider` (provider `PLANTILLA`),
 nunca un LLM; una pregunta de elegibilidad individual al asistente devuelve
 `REQUIRES_DETERMINISTIC_EVALUATION` sin invocar Bedrock.
 
-### Integración opcional del motor (`E3_MOCK=0`)
+### Integración del motor (`E3_MOCK=0`)
 
-Con `E3_MOCK=0` el servidor intenta usar el motor real (priorización FEAT-001 +
-filtro GenAI FEAT-002). Si falta la DB (`E3_DB_PATH`/`e3.db` inexistente) o el
-bundle C4 es inválido, **degrada a mocks con un warning sanitizado y nunca
-lanza 500**. Genera la DB con `python -m app.loader.load` + `python -m
-app.db.build_views` antes de usar este modo.
+Con `E3_MOCK=0` la API sirve datos calculados por el motor del Rol 1 en vez de
+mocks. Todo es local: sin AWS ni red.
 
-El bundle C4 que carga la priorización es el **mock de desarrollo del Rol 2** en
-`backend/fixtures/c4_mock/` (ver su `README.md` y `DEC-022`); **la autoridad de
-C4 es el bundle del Rol 4 en `content/`** (YAML/CSV/MD, `content/manifest.yaml`)
-y queda pendiente el adaptador JSON→YAML. La ruta del manifest se reapunta con
-`E3_CONTENT_MANIFEST`.
+```powershell
+# Desde backend/: 1) DB desde los CSV, 2) precálculo 500×20 (~20 s, una vez)
+py -3.11 -m app.loader.load --force
+py -3.11 -m app.db.build_views
+# 3) API en modo real (el snapshot se precalienta al arrancar, ~4–5 s)
+$env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
+```
+
+- **Por qué `build_views`:** la API lee las tablas `evaluaciones` + `accesos`
+  (salida exacta de `AccesoService`: motor, acceso y cupo BEN-018) y no evalúa
+  en cada request. Con ellas arma una vez por proceso un snapshot en memoria;
+  si regeneras la DB, el siguiente request lo toma. Un cursor de paginación
+  emitido antes de regenerar la DB responde 422 (lleva una huella del build).
+- **Endpoints reales:** `GET /jardines`, `GET /jardines/{id}/familias`,
+  `GET /familias/{id}` (los 20 `benefit_results` con traza),
+  `GET /familias/{id}/contexto` y `GET /familias/{id}/oportunidades`.
+  `POST /conversaciones`, `/guion` y `/mensaje` validan contra los IDs reales
+  (`FAM-SIM-E3-00001`…; los IDs mock como `FAM-SIM-0001` dan 404). Siguen
+  sintéticos el KPI, la preevaluación, el asistente, la ingesta de afiche y el
+  texto de guion/mensaje (`TemplateProvider`). `POST /antecedentes` con un ID
+  real responde 503 retryable: reevaluar con hechos declarados exige cambiar el
+  motor (propuesta DEC-052).
+- **C4 = `content/` del Rol 4 (propuesta DEC-048):** en modo real, U/B/V, las
+  medianas por jardín, el título, dónde ir, la cita oficial y las preguntas
+  sugeridas salen de `content/manifest.yaml` 0.2.1 (adaptador
+  `app/priority/content_c4.py`). Se valida fallando cerrado: schema C4, sha256
+  de cada archivo (LF) y `content_bundle_hash`, las 6 clases y la suma U/B/V.
+  `content/` sigue declarado no publicable (DEC-040) hasta API-T14 y la revisión
+  humana. El mock `backend/fixtures/c4_mock/` queda para `E3_MOCK=1` y sus tests
+  (`E3_CONTENT_MANIFEST` lo reapunta).
+- **Orden (propuesta DEC-053):** primero lo que la familia puede pedir o le
+  falta (`ELEGIBLE_SIN_ASIGNACION`, `PENDIENTE_ANTECEDENTES`, `INDETERMINADO`),
+  luego `SIN_CUPO` y al final lo que ya tiene o ya postuló. Define `position`,
+  `top_benefit_ids` y `top_opportunities`. La prioridad familiar no cambia.
+- **Citas y montos (PREG-045/048, propuesta DEC-050 pendiente de confirmar con
+  Rol 3 y Rol 4):** BEN-018/019/020 no tienen cita HTTPS en C4: aparecen en
+  `benefit_results`, nunca como oportunidad. Sin monto anual (p. ej. BEN-010),
+  B queda en 0 con `benefit_estimated=true`; hoy ese flag no distingue
+  "mediana default" de "sin monto".
+- **Degradación:** sin DB, sin precálculo, con DB ilegible, C4 inválido o una
+  invariante rota, las rutas responden los mocks (nunca 500) y el log registra
+  `runtime_degradado_a_mock: motivo=<CODIGO>` (`DB_AUSENTE`,
+  `PRECALCULO_AUSENTE`, `DB_ILEGIBLE`, `C4_INVALIDO`, `INVARIANTE_MOTOR`).
+  El fallo se registra una vez y no se reintenta hasta que cambie la DB o el
+  manifest C4 (mtime o tamaño).
+- **`why_first`:** frase fija por estado de acceso, con la forma "podría
+  calificar… / vale la pena consultar…" (fuente funcional §2.4.2) y sin cifras.
+- **Front:** con la API en `:8000`, desde `frontend/` usa `npm run dev:api` y
+  `npm run check:api -- http://127.0.0.1:8000/api/v1`. En otro puerto, exporta
+  `$env:BRUJULA_DEV_API_PROXY='http://127.0.0.1:<puerto>'`.
+- `meta` mantiene `snapshot_id`/hashes constantes de demo (el front compara
+  `snapshot_id`); los hashes reales quedan pendientes.
 
 > Estado AWS: `NO_VERIFICADO`. No hay Cognito real; la autorización por scope es
-> un stub de demo por header (`X-Demo-Scopes`). Los logs registran solo
-> `request_id`, método, ruta, status y latencia: nunca cuerpos, prompts,
-> preguntas, respuestas, identificadores completos ni tokens.
+> un stub de demo por header (`X-Demo-Scopes`): la API local no tiene
+> autenticación y solo debe escuchar en loopback. Los logs de la app
+> (`app.api`) registran solo `request_id`, método, ruta normalizada
+> (`/api/v1/familias/{id}`), status y latencia: nunca cuerpos, prompts,
+> preguntas, respuestas, identificadores completos ni tokens. El access log
+> propio de uvicorn (`uvicorn.access`) pasa por un filtro de la app
+> (`FiltroAccessLog`) en ambos modos: deja solo los segmentos fijos de las
+> rutas, cambia el resto por `{id}` y descarta la query. No hace falta
+> `--no-access-log`. Otros loggers (p. ej. errores de uvicorn) quedan fuera de
+> ese filtro.
 
 ---
 

@@ -23,7 +23,7 @@ import uuid
 from fastapi import APIRouter, Depends, Header, Request
 
 from app.api import antecedentes_store as store
-from app.api import mock_data
+from app.api import mock_data, motor_real
 from app.api.antecedentes_service import aplicar_declarados, hechos_declarados
 from app.api.deps import construir_meta, mock_habilitado, require_scope
 from app.api.errors import ApiError
@@ -83,8 +83,9 @@ def _procesar(
     except ValueError:
         raise ApiError(status_code=422) from None
 
-    if not mock_data.familia_existe(id):
+    if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
         # Se oculta la existencia igual que el resto de /familias/{id} (API-005).
+        # Con el motor real activo se verifica contra los IDs reales (DEC-052).
         raise ApiError(status_code=404)
 
     declarados = body.model_dump(exclude_unset=True)

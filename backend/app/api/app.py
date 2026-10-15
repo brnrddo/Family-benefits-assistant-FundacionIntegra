@@ -5,13 +5,16 @@
 - Sirve el contrato C3 como OpenAPI oficial en ``/api/v1/openapi.yaml`` (y lo usa
   en ``/docs``): el YAML del contrato es la FUENTE DE VERDAD; no se regenera el
   schema desde los modelos Pydantic.
-- Logs sanitizados: solo request_id, método, ruta, status y latencia; NUNCA
-  body/prompt/respuesta/identificadores completos/tokens.
+- Logs sanitizados: solo request_id, método, ruta normalizada (plantilla, sin
+  IDs), status y latencia; NUNCA body/prompt/respuesta/identificadores
+  completos/tokens. El access log de uvicorn pasa por ``FiltroAccessLog``.
+- Con ``E3_MOCK=0`` precalienta el snapshot del motor real al arrancar.
 """
 from __future__ import annotations
 
 import logging
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import yaml
@@ -19,7 +22,8 @@ from fastapi import FastAPI, Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
-from app.api.deps import nuevo_request_id
+from app.api import motor_real
+from app.api.deps import mock_habilitado, nuevo_request_id
 from app.api.errors import registrar_handlers
 from app.api.routers import (
     antecedentes,
@@ -46,6 +50,71 @@ def _cargar_c3_openapi() -> dict:
         return yaml.safe_load(fh)
 
 
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    """Precalienta el snapshot del motor real (``E3_MOCK=0``) al arrancar.
+
+    Nunca rompe el arranque: si el motor no está disponible, ``obtener_snapshot``
+    ya registró el motivo y las rutas degradan a mocks.
+    """
+    if not mock_habilitado():
+        try:
+            motor_real.obtener_snapshot()
+        except Exception:  # noqa: BLE001 - el arranque no depende del motor
+            logger.warning("precalentamiento_motor_fallido")
+    yield
+
+
+def _ruta_normalizada(request: Request) -> str:
+    """Plantilla de la ruta (``/api/v1/familias/{id}``), nunca el ID real."""
+    ruta = getattr(request.scope.get("route"), "path", None)
+    return ruta if isinstance(ruta, str) else "unmatched"
+
+
+class FiltroAccessLog(logging.Filter):
+    """Sanitiza el access log propio de uvicorn (``uvicorn.access``).
+
+    uvicorn registra ``'%s - "%s %s HTTP/%s" %d'`` con la URL completa (IDs de
+    familia y query libre). Por allowlist positiva, el filtro deja solo los
+    segmentos literales de las rutas de la app; cualquier otro segmento pasa a
+    ``{id}`` y la query se descarta. Así el log no depende de ``--no-access-log``.
+    """
+
+    def __init__(self, segmentos_literales: frozenset[str]) -> None:
+        super().__init__()
+        self._literales = segmentos_literales
+
+    def sanitizar(self, ruta: str) -> str:
+        sin_query = ruta.split("?", 1)[0]
+        return "/".join(
+            s if s == "" or s in self._literales else "{id}" for s in sin_query.split("/")
+        ) or "/"
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) == 5 and isinstance(args[2], str):
+            record.args = (args[0], args[1], self.sanitizar(args[2]), args[3], args[4])
+        return True
+
+
+def _segmentos_literales(app: FastAPI) -> frozenset[str]:
+    """Segmentos fijos de todas las rutas montadas (sin parámetros ``{...}``)."""
+    return frozenset(
+        s
+        for r in app.routes
+        for s in str(getattr(r, "path", "")).split("/")
+        if s and not s.startswith("{")
+    )
+
+
+def _instalar_filtro_access_log(app: FastAPI) -> None:
+    access = logging.getLogger("uvicorn.access")
+    for f in list(access.filters):
+        if isinstance(f, FiltroAccessLog):
+            access.removeFilter(f)
+    access.addFilter(FiltroAccessLog(_segmentos_literales(app)))
+
+
 def crear_app() -> FastAPI:
     app = FastAPI(
         title="Brújula Familiar API",
@@ -53,6 +122,7 @@ def crear_app() -> FastAPI:
         docs_url=None,       # servimos Swagger apuntando al contrato C3
         redoc_url=None,
         openapi_url=None,    # el OpenAPI oficial es el YAML del contrato
+        lifespan=_lifespan,
     )
 
     # --- request_id + logging sanitizado ---------------------------------
@@ -66,13 +136,14 @@ def crear_app() -> FastAPI:
             latencia_ms = (time.perf_counter() - inicio) * 1000
             logger.exception(
                 "api_error rid=%s method=%s path=%s latency_ms=%.1f",
-                request.state.request_id, request.method, request.url.path, latencia_ms,
+                request.state.request_id, request.method, _ruta_normalizada(request),
+                latencia_ms,
             )
             raise
         latencia_ms = (time.perf_counter() - inicio) * 1000
         logger.info(
             "api rid=%s method=%s path=%s status=%s latency_ms=%.1f",
-            request.state.request_id, request.method, request.url.path,
+            request.state.request_id, request.method, _ruta_normalizada(request),
             response.status_code, latencia_ms,
         )
         response.headers["X-Request-Id"] = request.state.request_id
@@ -112,6 +183,8 @@ def crear_app() -> FastAPI:
     for modulo in (jardines, familias, antecedentes, tracking, genai, kpi, catalogo):
         app.include_router(modulo.router, prefix=_API_PREFIX)
 
+    # Con todas las rutas montadas: el access log de uvicorn queda sanitizado.
+    _instalar_filtro_access_log(app)
     return app
 
 

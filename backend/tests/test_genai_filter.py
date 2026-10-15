@@ -91,8 +91,8 @@ def _catalogo() -> dict:
         "BEN-001": CatalogEntry(
             benefit_id="BEN-001",
             title="Subsidio Único Familiar",
-            reason="Según su ficha, podría corresponderle este apoyo.",
-            action="Vale la pena consultar los requisitos en la institución.",
+            description="Es un aporte mensual en dinero para familias.",
+            institution="Instituto de Previsión Social",
             where_to_go="ChileAtiende de su comuna",
             source_id="SRC-OFICIAL",
             source_url="https://www.chileatiende.gob.cl/",
@@ -100,8 +100,8 @@ def _catalogo() -> dict:
         "BEN-012": CatalogEntry(
             benefit_id="BEN-012",
             title="Aporte Familiar Permanente",
-            reason="Podría corresponderle según su situación.",
-            action="Consulte en la institución para confirmar.",
+            description="Es un pago en dinero que llega una vez al año.",
+            institution="Instituto de Previsión Social",
             where_to_go=None,
             source_id="SRC-OFICIAL",
             source_url="https://www.chileatiende.gob.cl/",
@@ -218,8 +218,8 @@ def test_printable_card_neutraliza_markup():
     cat["BEN-001"] = CatalogEntry(
         benefit_id="BEN-001",
         title="<script>alert(1)</script>Subsidio",
-        reason="onclick=hack() texto .class{color:red} normal",
-        action="visite https://malicioso.example/pay ahora",
+        description="onclick=hack() texto .class{color:red} normal",
+        institution="visite https://malicioso.example/pay ahora",
         where_to_go="<b>oficina</b>",
         source_id="SRC-OFICIAL",
         source_url="https://www.chileatiende.gob.cl/",

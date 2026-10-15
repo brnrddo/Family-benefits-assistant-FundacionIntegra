@@ -9,14 +9,16 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 
-from app.api import mock_data
+from app.api import mock_data, motor_real
 from app.api.antecedentes_service import aplicar_declarados
 from app.api.antecedentes_store import declarados_get
 from app.api.deps import construir_meta, require_scope
 from app.api.errors import ApiError
 from app.api.models import FamilyGenerationPublicRequest, PreevaluationRequest
+from app.api.routers.tracking import familias_conversadas
 from app.api.runtime import generar_guion, generar_mensaje
 from app.api.serializers import familia_detail_data
+from app.priority.orden import ORDENES
 
 router = APIRouter(tags=["familias"])
 
@@ -45,6 +47,16 @@ def get_familia(
     id: str,
     _scope=Depends(require_scope("familias:read")),
 ) -> dict:
+    snap = motor_real.obtener_snapshot()
+    if snap is not None:
+        # Motor real (E3_MOCK=0): la ficha sale tal cual del precálculo del
+        # Rol 1; solo ``informed`` depende de las conversaciones registradas.
+        if id not in snap.familias:
+            raise ApiError(status_code=404)
+        vista = motor_real.vista_familia(snap, id, id in familias_conversadas())
+        data = familia_detail_data(vista)
+        return {"meta": construir_meta(request.state.request_id), "data": data}
+
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
         raise ApiError(status_code=404)
@@ -60,6 +72,14 @@ def get_contexto_familia(
     id: str,
     _scope=Depends(require_scope("familias:read")),
 ) -> dict:
+    snap = motor_real.obtener_snapshot()
+    if snap is not None:
+        # Vista minimizada y cerrada desde C2 por allowlist (DEC-049).
+        if id not in snap.familias:
+            raise ApiError(status_code=404)
+        ctx = motor_real.contexto(snap, id)
+        return {"meta": construir_meta(request.state.request_id), "data": ctx}
+
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
         raise ApiError(status_code=404)
@@ -76,6 +96,22 @@ def list_oportunidades(
     cursor: str | None = Query(default=None, max_length=2048),
     _scope=Depends(require_scope("familias:read")),
 ) -> dict:
+    snap = motor_real.obtener_snapshot()
+    if snap is not None:
+        if id not in snap.familias:
+            raise ApiError(status_code=404)
+        if orden not in ORDENES:
+            raise ApiError(status_code=422)
+        # Orden por grupo de acción (DEC-053) y paginación por cursor (DEC-051).
+        items, siguiente = motor_real.paginar(
+            snap, motor_real.oportunidades(snap, id, orden), limit, cursor
+        )
+        return {
+            "meta": construir_meta(request.state.request_id),
+            "items": items,
+            "next_cursor": siguiente,
+        }
+
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
         raise ApiError(status_code=404)
@@ -100,7 +136,7 @@ def create_guion(
     body: FamilyGenerationPublicRequest,
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
-    if not mock_data.familia_existe(id):
+    if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
         raise ApiError(status_code=404)
     return generar_guion(body.benefit_ids, request.state.request_id)
 
@@ -112,6 +148,6 @@ def create_mensaje(
     body: FamilyGenerationPublicRequest,
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
-    if not mock_data.familia_existe(id):
+    if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
         raise ApiError(status_code=404)
     return generar_mensaje(body.benefit_ids, request.state.request_id)
