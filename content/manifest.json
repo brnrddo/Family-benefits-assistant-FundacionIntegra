@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "0.1.0",
+  "content_bundle_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "canonical_i18n": "content/i18n/es.json",
+  "files": [
+    {"path": "content/weights.json", "sha256": "08078e78b2c5b5af90785692ba914b1ebd20566a21217e8bf1d3d1c5689faafb", "kind": "WEIGHTS"},
+    {"path": "content/questions.json", "sha256": "8a339ddae52fbb3b3c079b4374fe352f4f6e3791628c1a9d8139dee79d6b7f50", "kind": "QUESTIONS"},
+    {"path": "content/benefits.json", "sha256": "0038810fee621219e997259b2c700fae60ce4b8d16524ccd5c4e9b512cd3a65b", "kind": "BENEFITS"},
+    {"path": "content/prompt.json", "sha256": "bb8ce1702bebd8bb075e9b1a25e7e62afe3dea223c6bc726812fb1208ca1ef93", "kind": "PROMPT"},
+    {"path": "content/accessibility.json", "sha256": "d38d8f12359bb8292188487c499c43e3d2f8b244859d088d47ca90a16db81b1c", "kind": "ACCESSIBILITY"},
+    {"path": "content/i18n/es.json", "sha256": "3f7dac630ff14086e363eec464c07c5bae3ef9c590c1d5b32371f33121374dd2", "kind": "I18N"}
+  ],
+  "ranking": {
+    "axis_weights": {"u": 0.4, "b": 0.3, "v": 0.3},
+    "urgency": {
+      "aggregation": "MAX",
+      "use_window": false,
+      "default_score": 0.1,
+      "recent_emergency": {"benefit_id": "BEN-901", "max_age_days": 30, "score": 0.9},
+      "newborn_expiry": {"benefit_id": "BEN-902", "window_days": 180, "calculation": "LINEAR_ELAPSED_OVER_WINDOW"},
+      "therapy_document_expiry": {"benefit_id": "BEN-903", "window_days": 90, "calculation": "LINEAR_ELAPSED_OVER_WINDOW"},
+      "limited_quota": {"score": 0.8},
+      "food_insecurity": {"minimum_index": 1, "score": 0.7},
+      "precarious_housing": {"housing_types": ["CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME"], "score": 0.75},
+      "application_windows": [
+        {"maximum_days_remaining": 7, "score": 0.9},
+        {"maximum_days_remaining": 30, "score": 0.6}
+      ]
+    },
+    "benefit_impact": {
+      "annualization_multipliers": {"MENSUAL": 12, "ANUAL": 1, "UNICA": 1},
+      "max_income_share_for_full_score": 0.5,
+      "default_monthly_household_income": 500000,
+      "garden_income_medians": [
+        {"garden_id": "JARDIN-001", "monthly_household_income": 420000},
+        {"garden_id": "JARDIN-002", "monthly_household_income": 610000}
+      ],
+      "service_equivalences": [
+        {"benefit_id": "BEN-012", "annual_equivalent_amount": 240000},
+        {"benefit_id": "BEN-018", "annual_equivalent_amount": 600000}
+      ]
+    },
+    "vulnerability": {
+      "unknown_signals_excluded": true,
+      "component_weights": {
+        "rsh": 0.3,
+        "income": 0.25,
+        "health_coverage": 0.15,
+        "cse": 0.1,
+        "female_head_program": 0.1,
+        "possible_child_disability": 0.1
+      },
+      "rsh_scores": {
+        "band_40": 1.0,
+        "band_50": 0.9,
+        "band_60": 0.75,
+        "band_70": 0.6,
+        "band_80": 0.4,
+        "band_90": 0.2,
+        "band_100": 0.1,
+        "no_rsh": 0.5
+      },
+      "income_band_scores": {
+        "UNDER_110K": 1.0,
+        "110K_250K": 0.75,
+        "250K_400K": 0.4,
+        "OVER_400K": 0.1
+      },
+      "health_coverage_scores": {"FONASA_A": 0.9, "NO_COVERAGE": 1.0},
+      "cse": {"comparison": "LTE", "threshold": 8, "score": 1.0},
+      "female_head_program_score": 0.8,
+      "possible_child_disability_score": 0.9
+    },
+    "opportunity_score": {
+      "state_weights": {
+        "ELEGIBLE_SIN_ASIGNACION": 1.0,
+        "GESTION_RECHAZADA": 0.9,
+        "PENDIENTE_ANTECEDENTES": 0.7,
+        "INDETERMINADO": 0.5,
+        "GESTION_EN_CURSO": 0.3,
+        "SIN_CUPO": 0.2,
+        "ASIGNADO": 0.0
+      },
+      "action_bonus": 0.1,
+      "resolvable_question_limit": 5
+    },
+    "family_priority": {
+      "top_opportunity_count": 3,
+      "vulnerability_multiplier": 1.2,
+      "not_informed_bonus": 0.15,
+      "new_family_bonus": 0.1,
+      "new_family_max_age_days": 30
+    }
+  },
+  "kpi": {"min_cell_size": 5, "max_query_days": 90},
+  "accessibility": {
+    "canonical_spanish_label_key": "a11y.canonical_es",
+    "polly": {
+      "enabled": false,
+      "evidence_state": "NO_VERIFICADO",
+      "smoke_test_evidence_id": null,
+      "allowed_voices": [],
+      "max_output_characters": 1500,
+      "fallback_label_key": "a11y.polly_fallback"
+    },
+    "translate": {
+      "enabled": false,
+      "evidence_state": "NO_VERIFICADO",
+      "smoke_test_evidence_id": null,
+      "source_language": "es",
+      "allowed_target_languages": [],
+      "max_output_characters": 1500,
+      "fallback_label_key": "a11y.translate_fallback"
+    }
+  }
+}

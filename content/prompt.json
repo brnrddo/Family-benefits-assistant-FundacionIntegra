@@ -1,0 +1,9 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. Plantillas de prompt deterministas; el LLM solo redacta sobre hechos resueltos.",
+  "prompt_version": "0.1.0",
+  "templates": {
+    "guion": "Explica de forma simple y respetuosa, en {language}, las oportunidades de beneficio ya resueltas por el motor. No decidas elegibilidad.",
+    "mensaje": "Redacta un mensaje breve en {language} para la familia sobre los beneficios autorizados. No inventes montos ni requisitos."
+  }
+}

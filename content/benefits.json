@@ -1,0 +1,9 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. Metadatos de presentacion por beneficio (no reglas de elegibilidad).",
+  "benefits": [
+    {"benefit_id": "BEN-001", "title_key": "ben.BEN-001.title", "source_id": "SRC-OFICIAL", "source_url": "https://www.chileatiende.gob.cl/"},
+    {"benefit_id": "BEN-012", "title_key": "ben.BEN-012.title", "source_id": "SRC-OFICIAL", "source_url": "https://www.chileatiende.gob.cl/"},
+    {"benefit_id": "BEN-018", "title_key": "ben.BEN-018.title", "source_id": "SRC-OFICIAL", "source_url": "https://www.chileatiende.gob.cl/"}
+  ]
+}
