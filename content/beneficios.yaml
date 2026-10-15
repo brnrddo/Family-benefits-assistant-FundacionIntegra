@@ -3,6 +3,7 @@
 # la elegibilidad la decide solo el motor determinista.
 # Fuentes: data/publico/beneficios.csv, data/publico/beneficios_fuentes.csv y data/publico/fuentes.csv.
 # official_source_id es la fuente DESCRIPCION con URL HTTPS; BEN-018, BEN-019 y BEN-020 solo tienen F900 (PREG-045).
+# DEC-062: esos tres ejemplos locales usan copy fijo, no entran al RAG/Bedrock y no muestran enlace oficial.
 content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 beneficios:
@@ -69,7 +70,7 @@ beneficios:
     description: "Es un aporte mensual en dinero para niños, niñas o adolescentes con discapacidad. Ayuda a la familia con los gastos de cuidado."
     actions:
       - "Consulte en la Ventanilla Única Social o en ChileAtiende."
-      - "Pregunte si necesita la credencial de discapacidad."
+      - "Pregunte qué documento vigente permite acreditar la discapacidad."
       - "Mantenga su Registro Social de Hogares al día."
     institution: "Instituto de Previsión Social (IPS)"
     where_to_go: "Ventanilla Única Social, ChileAtiende o Instituto de Previsión Social."
@@ -111,6 +112,7 @@ beneficios:
     simple_title: "Bono de Protección"
     description: "Es un aporte mensual en dinero para familias del Subsistema Seguridades y Oportunidades. Acompaña el apoyo que la familia recibe del programa."
     actions:
+      - "No necesita postular: se asigna de forma automática."
       - "Si tiene dudas, consulte en el Instituto de Previsión Social."
     institution: "Subsistema Seguridades y Oportunidades e Instituto de Previsión Social (IPS)"
     where_to_go: "Se asigna de forma automática."
@@ -121,6 +123,7 @@ beneficios:
     simple_title: "Bono Base Familiar"
     description: "Es un aporte mensual en dinero para familias del Subsistema Seguridades y Oportunidades. Ayuda a cubrir gastos básicos del hogar."
     actions:
+      - "No necesita postular: se asigna de forma automática."
       - "Si tiene dudas, consulte en el Instituto de Previsión Social."
     institution: "Subsistema Seguridades y Oportunidades e Instituto de Previsión Social (IPS)"
     where_to_go: "Se asigna de forma automática."
@@ -131,6 +134,7 @@ beneficios:
     simple_title: "Bono Control Niño Sano"
     description: "Es un aporte en dinero para familias del Subsistema Seguridades y Oportunidades. Reconoce que niños y niñas pequeños tengan sus controles de salud al día."
     actions:
+      - "No necesita postular: se asigna de forma automática."
       - "Mantenga al día los controles de salud del niño o niña."
       - "Lleve el cuaderno de salud a cada control."
     institution: "Subsistema Seguridades y Oportunidades"
@@ -142,8 +146,8 @@ beneficios:
     simple_title: "Bono Asistencia Escolar"
     description: "Es un aporte en dinero para familias del Subsistema Seguridades y Oportunidades. Reconoce que los estudiantes vayan a clases con regularidad."
     actions:
-      - "Procure que su hijo o hija asista a clases."
-      - "Mantenga la matrícula al día."
+      - "No necesita postular: se asigna de forma automática."
+      - "Revise que la matrícula y la asistencia estén registradas correctamente."
     institution: "Subsistema Seguridades y Oportunidades"
     where_to_go: "Se asigna de forma automática."
     official_source_id: F017
@@ -172,9 +176,9 @@ beneficios:
     source_ids: [F019, F900]
   - benefit_id: BEN-016
     simple_title: "Asignación Familiar"
-    description: "Es un aporte en dinero por cada carga familiar reconocida. Se asocia al trabajo con contrato o a una pensión."
+    description: "Es un aporte en dinero por cada carga familiar reconocida. Depende de la situación laboral o previsional de la persona beneficiaria."
     actions:
-      - "Consulte en la entidad que le paga el sueldo o la pensión."
+      - "Consulte en la entidad que administra sus cotizaciones, su sueldo, pensión o subsidio."
       - "Pregunte cómo reconocer a sus cargas familiares."
     institution: "Instituto de Previsión Social (IPS) y entidades administradoras"
     where_to_go: "Entidad administradora de su asignación."
@@ -193,33 +197,33 @@ beneficios:
     official_url: https://www.ips.gob.cl/fichas/bono-por-hijo
     source_ids: [F021, F900]
   - benefit_id: BEN-018
-    simple_title: "Canasta familiar (programa de demostración)"
-    description: "Es un programa de demostración y no existe en la realidad. Entrega una canasta de alimentos a familias con dificultad para comprar comida."
+    simple_title: "Canasta familiar (ejemplo de programa local)"
+    description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa una canasta de alimentos para familias con dificultad para comprar comida."
     actions:
-      - "Converse con el jardín sobre una posible derivación."
+      - "En la demostración, converse con el jardín sobre una posible derivación."
     institution: "Organización Social Sintética A"
-    where_to_go: "Derivación desde el jardín infantil."
+    where_to_go: "Ejemplo: derivación desde el jardín infantil."
     official_source_id: null  # PREG-045
     official_url: null  # PREG-045
     source_ids: [F900]
   - benefit_id: BEN-019
-    simple_title: "Traslado a terapias (programa de demostración)"
-    description: "Es un programa de demostración y no existe en la realidad. Ayuda a pagar el traslado de niños y niñas a sus terapias."
+    simple_title: "Traslado a terapias (ejemplo de programa local)"
+    description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa un apoyo para trasladar a niños y niñas a sus terapias."
     actions:
-      - "Converse con el jardín sobre el formulario o la derivación."
+      - "En la demostración, converse con el jardín sobre el formulario o la derivación."
     institution: "Fundación Sintética B"
-    where_to_go: "Formulario o derivación."
+    where_to_go: "Ejemplo: formulario o derivación."
     official_source_id: null  # PREG-045
     official_url: null  # PREG-045
     source_ids: [F900]
   - benefit_id: BEN-020
-    simple_title: "Apoyo ante emergencias familiares (programa de demostración)"
-    description: "Es un programa de demostración y no existe en la realidad. Entrega un apoyo en dinero a familias que vivieron una emergencia reciente."
+    simple_title: "Apoyo ante emergencias familiares (ejemplo de programa local)"
+    description: "Es un ejemplo sintético para la demostración y no existe en la realidad. Representa un apoyo para familias que vivieron una emergencia reciente."
     actions:
-      - "Converse con el jardín sobre una posible derivación."
+      - "En la demostración, converse con el jardín sobre una posible derivación."
       - "El equipo social evalúa cada situación."
     institution: "Red Comunitaria Sintética C"
-    where_to_go: "Derivación y evaluación social."
+    where_to_go: "Ejemplo: derivación y evaluación social."
     official_source_id: null  # PREG-045
     official_url: null  # PREG-045
     source_ids: [F900]
