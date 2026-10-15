@@ -28,3 +28,13 @@ export function benefitName(benefitId: string, simpleTitle?: string | null): str
   if (typeof simpleTitle === 'string' && simpleTitle !== '') return simpleTitle;
   return copyValues[`benefit.${benefitId.toLowerCase()}.name`] ?? benefitId;
 }
+
+/** Nombre simple de un beneficio solo por ID (Inicio): `benefit.<id>.name` o el genérico `home.benefit_fallback`. */
+export function benefitLabel(benefitId: string): string {
+  return copyValues[`benefit.${benefitId.toLowerCase()}.name`] ?? t('home.benefit_fallback', { benefit_id: benefitId });
+}
+
+/** Edad con singular/plural: "1 año", "0 años", "4 años" (`age` ya formateado aparte). */
+export function yearsLabel(age: number, formatted: string): string {
+  return age === 1 ? t('common.year_one') : t('common.years', { age: formatted });
+}

@@ -5,7 +5,7 @@ import meta from '../api/generated/c3.meta.json';
 import { validateFamiliaDetailEnvelope } from '../api/generated/validators.gen.js';
 import { fichaBrecha } from '../test/fixtures';
 import { COPY_KEYS } from './catalog';
-import { benefitName, t } from './copy';
+import { benefitName, t, yearsLabel } from './copy';
 
 describe('i18n — t() y benefitName (§7.3)', () => {
   it('en pruebas (perfil local sin es.json) el copy resuelto es MOCK_LOCAL completo', () => {
@@ -19,6 +19,12 @@ describe('i18n — t() y benefitName (§7.3)', () => {
     render(<p>{t('family.title', { family_id: '<img src=x onerror=alert(1)>' })}</p>);
     expect(screen.getByText('Familia <img src=x onerror=alert(1)>')).toBeInTheDocument();
     expect(document.querySelector('img')).toBeNull();
+  });
+
+  it('edad con singular y plural (NIT-05)', () => {
+    expect(yearsLabel(1, '1')).toBe('1 año');
+    expect(yearsLabel(0, '0')).toBe('0 años');
+    expect(yearsLabel(4, '4')).toBe('4 años');
   });
 
   it('no reemplaza placeholders no declarados', () => {

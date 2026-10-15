@@ -21,7 +21,9 @@ export type UiIconName =
   | 'document'
   | 'coins'
   | 'chart'
-  | 'user-plus';
+  | 'user-plus'
+  | 'plus'
+  | 'pencil';
 
 const circle = (cx: number, cy: number, r: number): string =>
   `M${cx + r} ${cy}a${r} ${r} 0 1 1-${2 * r} 0a${r} ${r} 0 1 1 ${2 * r} 0`;
@@ -53,6 +55,8 @@ const PATHS: Readonly<Record<UiIconName, readonly string[]>> = {
   coins: [circle(12, 12, 9), 'M14.5 9h-3.5a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5', 'M12 7.5V9', 'M12 15v1.5'],
   chart: ['M4 20h16', 'M7 16v-5', 'M12 16V7', 'M17 16v-8'],
   'user-plus': [circle(10, 8, 4), 'M3 20.5a7 7 0 0 1 14 0', 'M19 8v6', 'M16 11h6'],
+  plus: ['M12 5v14', 'M5 12h14'],
+  pencil: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
 };
 
 export interface IconProps {

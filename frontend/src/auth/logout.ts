@@ -1,11 +1,12 @@
 // Logout local (FE-007, design.md §12.5 simplificado): aborta requests y vaciado en curso, borra la
-// memoria de Query, el snapshot y TODO lo persistido en el dispositivo (caché y cola Demo) y recarga
+// memoria de Query, el snapshot y TODO lo persistido en el dispositivo (caché, cola y nombres) y recarga
 // la app limpia. Con Cognito, además suelta el usuario y navega al logout del proveedor.
 // El diálogo que lo llama avisa antes si hay conversaciones sin enviar.
 import type { QueryClient } from '@tanstack/react-query';
 import { snapshotStore } from '../api/snapshot';
 import { clearQueueSummary } from '../offline/conversationQueue';
 import { clearDemoData } from '../offline/db';
+import { clearLocalNamesMemory } from '../offline/localNames';
 import { toastStore } from '../ui/toastStore';
 import { getSession } from './session';
 
@@ -16,8 +17,10 @@ export async function performLogout(queryClient: QueryClient, navigate: (url: st
   queryClient.clear();
   snapshotStore.reset();
   toastStore.clear();
+  // Borra la BD Demo completa: caché, cola y nombres de trato locales (DEC-038).
   await clearDemoData();
   clearQueueSummary();
+  clearLocalNamesMemory();
   if (session.authMode === 'cognito') {
     const logoutUrl = session.logoutUrl();
     await session.removeUser();

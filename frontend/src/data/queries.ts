@@ -1,7 +1,7 @@
 // Hooks de lectura C3 (design.md §6.4, §9). Las vistas solo usan estos hooks: muestran lo que
 // entrega C3 sin recalcular elegibilidad, acceso, U/B/V, posición ni porcentajes (FE-003).
 // Lecturas GET: red → snapshot → caché Demo; con red caída/timeout/sin sesión offline, caché Demo.
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
 import * as client from '../api/client';
 import { isApiError } from '../api/errors';
 import {
@@ -12,7 +12,7 @@ import {
   type ValidateFn,
 } from '../api/generated/validators.gen.js';
 import { snapshotIdOf, snapshotStore } from '../api/snapshot';
-import type { C3Ok, FamiliaListEnvelope, OpportunityOrder } from '../api/types';
+import type { C3Ok, FamiliaDetailEnvelope, FamiliaListEnvelope, OpportunityOrder } from '../api/types';
 import { readCache, writeCache, type CacheKey } from '../offline/demoCache';
 import { isOnline } from '../offline/network';
 import type { ReadResult } from './queryClient';
@@ -72,7 +72,10 @@ export function useJardines() {
   });
 }
 
-/** Familias del jardín en el orden de C3, con cursor opaco ("Cargar más"). Solo la 1.ª página se cachea. */
+/**
+ * Familias del jardín con cursor opaco. Inicio pide TODAS las páginas antes de mostrar la lista en
+ * orden neutro (DEC-037). Solo la 1.ª página se cachea.
+ */
 export function useFamilias(gardenId: string | undefined) {
   return useInfiniteQuery({
     queryKey: queryKeys.familias(gardenId ?? ''),
@@ -85,6 +88,16 @@ export function useFamilias(gardenId: string | undefined) {
       ),
     getNextPageParam: (last) => last.body.next_cursor ?? undefined,
   });
+}
+
+/**
+ * Ficha re-evaluada que devolvió la operación propuesta "Agregar información" (DEC-039): se registra
+ * igual que un GET (snapshot y caché Demo) y reemplaza la ficha en memoria sin otro request.
+ */
+export function primeFamilia(queryClient: QueryClient, familyId: string, ok: C3Ok<FamiliaDetailEnvelope>): void {
+  recordNetworkRead(ok, { key: `familia:${familyId}`, validate: validateFamiliaDetailEnvelope });
+  const read: ReadResult<FamiliaDetailEnvelope> = { source: 'network', body: ok.body, requestId: ok.requestId, receivedAt: ok.receivedAt };
+  queryClient.setQueryData(queryKeys.familia(familyId), read);
 }
 
 export function useFamilia(familyId: string) {

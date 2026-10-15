@@ -61,7 +61,16 @@ const restrictedGlobals = [
 export default tseslint.config(
   // NIT 5: el primer elemento ignora salidas de build/pruebas y los generados
   // (los generados siguen cubiertos por src/security.static.test.ts).
-  { ignores: ['dist/**', 'test-results/**', 'playwright-report/**', 'blob-report/**', 'src/api/generated/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'test-results/**',
+      'playwright-report/**',
+      'blob-report/**',
+      'src/api/generated/**',
+      'src/api/proposals/generated/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

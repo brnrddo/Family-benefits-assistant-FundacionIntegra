@@ -7,7 +7,9 @@ import { createSession, installSession, resetSessionForTests, type Session } fro
 import { configureRuntime, resetRuntimeForTests, resolveProfile, SYNTHETIC_CLASSIFICATION } from '../config/profile';
 import { TEST_API_BASE } from './mswServer';
 
-export function installTestRuntime(options: { persistence?: boolean; session?: Session } = {}): Session {
+export function installTestRuntime(
+  options: { persistence?: boolean; session?: Session; fetchImpl?: typeof fetch } = {},
+): Session {
   const result = resolveProfile(
     {
       VITE_PROFILE: 'local',
@@ -20,7 +22,8 @@ export function installTestRuntime(options: { persistence?: boolean; session?: S
   configureRuntime(result.config);
   const session = options.session ?? createSession(createNoneAdapter());
   installSession(session);
-  setTransport(createFetchTransport({ baseUrl: TEST_API_BASE, session }));
+  // `fetchImpl` permite registrar cada request real del transporte (p. ej. prueba de privacidad).
+  setTransport(createFetchTransport({ baseUrl: TEST_API_BASE, session, ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}) }));
   return session;
 }
 

@@ -4,11 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { runtimeConfig } from '../../config/profile';
 import { drainAndRefresh } from '../../data/sync';
+import { familyDisplayName } from '../../domain/familyName';
 import { formatInteger } from '../../domain/format';
 import type { Tone } from '../../domain/presentation';
 import { t, type PlainCopyKey } from '../../i18n/copy';
 import { discardEntry, useQueueSummary } from '../../offline/conversationQueue';
 import type { QueueStatus } from '../../offline/db';
+import { useLocalNames } from '../../offline/localNames';
 import { Button } from '../../ui/Button';
 import { CARD_CLASS } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
@@ -28,6 +30,7 @@ const DISCARDABLE: ReadonlySet<QueueStatus> = new Set(['CONFLICTO', 'REINTENTO_M
 export function QueuePanel() {
   const queueEnabled = runtimeConfig().capabilities.queue;
   const queue = useQueueSummary();
+  const names = useLocalNames();
   const queryClient = useQueryClient();
   const [sending, setSending] = useState(false);
   const titleId = useId();
@@ -51,7 +54,7 @@ export function QueuePanel() {
           const status = STATUS_PRESENTATION[entry.status];
           return (
             <li key={entry.idempotency_key} className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold">{t('home.family_item', { family_id: entry.family_id })}</span>
+              <span className="font-semibold">{familyDisplayName(entry.family_id, names)}</span>
               <Chip icon={status.icon} tone={status.tone} label={t(status.labelKey)} />
               {DISCARDABLE.has(entry.status) && (
                 <Button variant="ghost" size="sm" onClick={() => void discardEntry(entry.idempotency_key)}>

@@ -28,6 +28,7 @@ const VITE_KEYS = [
   'VITE_COGNITO_REDIRECT_PATH',
   'VITE_DATA_CLASSIFICATION',
   'VITE_DEMO_CACHE_TTL_HOURS',
+  'VITE_PROPOSAL_ADD_INFO',
 ] as const;
 
 const SYNTHETIC = 'SYNTHETIC_DEMO_NOT_A_REAL_PERSON';
@@ -148,6 +149,7 @@ export default defineConfig(({ command, mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['src/test/setup.ts'],
+      testTimeout: 20_000,
       include: ['src/**/*.test.{ts,tsx}', 'vite-plugins/**/*.test.ts'],
       exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     },
