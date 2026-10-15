@@ -371,6 +371,36 @@ def test_benefit_result_no_confirmado_asignado_rechazado():
         validar_benefit_result("NO", "CONFIRMADO", "ASIGNADO")
 
 
+# --- títulos mock alineados con content/ -------------------------------------
+
+
+def test_titulos_mock_iguales_a_content(client: TestClient):
+    """Los ``simple_title`` del mock son los de ``content/beneficios.yaml`` (Rol 4)."""
+    from app.api import mock_data
+
+    with (_REPO_DIR / "content" / "beneficios.yaml").open(encoding="utf-8") as fh:
+        titulos = {
+            b["benefit_id"]: b["simple_title"] for b in yaml.safe_load(fh)["beneficios"]
+        }
+
+    opps = [o for fam in mock_data.FAMILIAS.values() for o in fam["opportunities"]]
+    opps += mock_data.preevaluacion_resultado("FAM-SIM-PREEVAL")["opportunities"]
+    for opp in opps:
+        assert opp["simple_title"] == titulos[opp["benefit_id"]], opp["benefit_id"]
+
+    detalle = client.get("/api/v1/familias/FAM-SIM-0001")
+    assert detalle.status_code == 200
+    top = detalle.json()["data"]["top_opportunities"]
+    guion = client.post(
+        "/api/v1/familias/FAM-SIM-0001/guion",
+        json={"benefit_ids": [o["benefit_id"] for o in top]},
+    )
+    assert guion.status_code == 200
+    script = guion.json()["content"]["script"]
+    for opp in top:
+        assert opp["simple_title"] in script, opp["benefit_id"]
+
+
 # --- helper de validación de error -------------------------------------------
 
 

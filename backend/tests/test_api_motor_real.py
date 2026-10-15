@@ -33,7 +33,13 @@ from app.access.model import EstadoAcceso  # noqa: E402
 from app.access.service import AccesoService, evaluar_acceso_familia  # noqa: E402
 from app.api import motor_real, runtime  # noqa: E402
 from app.api.app import app  # noqa: E402
-from app.api.deps import DISCLAIMER, SNAPSHOT_ID  # noqa: E402
+from app.api.deps import (  # noqa: E402
+    CONTENT_BUNDLE_HASH,
+    CONTENT_VERSION,
+    DISCLAIMER,
+    ELIGIBILITY_BUNDLE_HASH,
+    SNAPSHOT_ID,
+)
 from app.api.models import validar_benefit_result, validar_opportunity  # noqa: E402
 from app.api.routers import tracking  # noqa: E402
 from app.api.serializers import familia_detail_data  # noqa: E402
@@ -584,6 +590,32 @@ def test_guion_y_mensaje_con_top_real_no_sustituyen_beneficios(ruta: str, schema
             assert titulo not in texto
 
 
+def test_meta_declara_procedencia_de_content(monkeypatch):
+    """DEC-062: ficha real y guion declaran el bundle ``content/``; el mock no."""
+    import yaml
+
+    manifest = yaml.safe_load(Path(content_c4.CONTENT_MANIFEST).read_text(encoding="utf-8"))
+    procedencia = (manifest["content_version"], manifest["content_bundle_hash"])
+    assert procedencia[0] == "0.2.1"
+
+    def _de(meta: dict) -> tuple[str, str]:
+        assert meta["snapshot_id"] == SNAPSHOT_ID
+        assert meta["eligibility_bundle_hash"] == ELIGIBILITY_BUNDLE_HASH
+        return meta["content_version"], meta["content_bundle_hash"]
+
+    ficha = _get(f"/familias/{_FAMILIA}")  # E3_MOCK=0: snapshot del motor real
+    validar("FamiliaDetailEnvelope", ficha)
+    assert _de(ficha["meta"]) == procedencia
+
+    monkeypatch.setenv("E3_MOCK", "1")
+    monkeypatch.setattr(runtime, "_provider", None)
+    r = client.post("/api/v1/familias/FAM-SIM-0001/guion", json={"benefit_ids": ["BEN-001"]})
+    assert r.status_code == 200
+    validar("ScriptGenerationEnvelope", r.json())
+    assert _de(r.json()["meta"]) == procedencia
+    assert _de(_get("/jardines")["meta"]) == (CONTENT_VERSION, CONTENT_BUNDLE_HASH)
+
+
 def test_antecedentes_real_404_y_503():
     import uuid
 
@@ -965,3 +997,33 @@ def test_cursor_de_un_build_anterior_responde_422(monkeypatch, tmp_path: Path, d
         nuevo = _get(p, limit=4)["next_cursor"]
         assert nuevo != cursor
         assert _get(p, limit=4, cursor=nuevo)["items"]
+
+
+def test_fallo_c4_se_recupera_al_corregir_un_archivo_de_content(
+    monkeypatch, tmp_path: Path, caplog
+):
+    """DEC-063: corregir un archivo de ``files[]`` reconstruye sin reiniciar."""
+    shutil.copytree(Path(content_c4.CONTENT_MANIFEST).parent, tmp_path / "content")
+    monkeypatch.setattr(content_c4, "CONTENT_MANIFEST", tmp_path / "content" / "manifest.yaml")
+    preguntas = tmp_path / "content" / "preguntas.yaml"
+    original = preguntas.read_bytes()
+    preguntas.write_bytes(original + b"#")  # sha256 roto; el manifest no cambia
+    cargas: list[int] = []
+    cargar = motor_real.cargar_contenido_c4
+
+    def contar(*args):
+        cargas.append(1)
+        return cargar(*args)
+
+    monkeypatch.setattr(motor_real, "cargar_contenido_c4", contar)
+    with caplog.at_level(logging.WARNING, logger="app.api"):
+        assert motor_real.obtener_snapshot() is None
+        assert motor_real.obtener_snapshot() is None
+    assert len(cargas) == 1
+    assert _avisos(caplog).count("motivo=C4_INVALIDO") == 1
+
+    preguntas.write_bytes(original)  # corregido, sin tocar el manifest
+    st = preguntas.stat()
+    os.utime(preguntas, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000_000))
+    assert motor_real.obtener_snapshot() is not None
+    assert len(cargas) == 2

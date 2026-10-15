@@ -12,6 +12,9 @@ Garantías de seguridad (API-008/API-009, PRIVACIDAD_DEMO):
 - El texto habla SOLO de los ``benefit_ids`` pedidos, en el orden pedido, con
   su nombre y descripción del catálogo C4; nunca sustituye un beneficio por
   otro. Un ID sin respaldo es un ``TemplateError`` (el servidor responde 422).
+- Guion y mensaje reciben el estado de acceso de cada ID (DEC-060): los
+  ofrecibles van en el marco del Rol 4 y los de seguimiento con la frase por
+  estado, fuera de ese marco; ASIGNADO o un estado ausente es ``TemplateError``.
 - ``PrintableCard`` transporta SOLO strings inertes y ``SourceCitation``
   tipadas; nunca HTML/CSS/handlers/atributos ni URLs libres. Todo texto se
   neutraliza (markup se vuelve texto plano) y se recorta a los límites C3.
@@ -27,7 +30,9 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +59,17 @@ _MAX_ASSISTANT_MATCHES = 3
 # neutralizados; nunca con ``str.format``.
 PH_TITULOS = "{{catalog_items[].title}}"
 PH_INSTITUCION = "{{catalog_items[].institution}}"
+
+# Estados de acceso del motor (``app.access.model.EstadoAcceso``) según cómo se
+# nombran en el texto (instrucción 5 de content/prompts, DEC-060):
+# - ofrecibles: van en el marco "podrían servirle" del Rol 4;
+# - seguimiento: se nombran con la frase por estado, fuera de ese marco;
+# - ASIGNADO: la familia ya lo tiene; el servidor lo omite antes de llegar aquí.
+ESTADOS_OFRECIBLES = frozenset({
+    "ELEGIBLE_SIN_ASIGNACION", "PENDIENTE_ANTECEDENTES", "INDETERMINADO",
+})
+ESTADOS_SEGUIMIENTO = ("GESTION_EN_CURSO", "GESTION_RECHAZADA", "SIN_CUPO")
+ESTADO_ASIGNADO = "ASIGNADO"
 
 # Patrones de markup/handler/URL que NUNCA deben transportarse como activos.
 _RE_TAG = re.compile(r"<[^>]*>")                 # <script>, <b>, etc.
@@ -84,10 +100,40 @@ def _inert(texto: object, limite: int) -> str:
     return s
 
 
+_RE_PRIMERA_FRASE = re.compile(r"^(.+?[.!?])(?=\s|$)")
+
+
+def primera_frase(texto: str) -> str:
+    """Primera oración de ``texto`` (hasta el primer '.', '!' o '?' seguido de espacio o fin).
+
+    El guion usa solo la primera frase de cada descripción para quedar dentro de
+    las 120 palabras de la instrucción 8 de ``content/prompts/guion.md`` (DEC-061).
+    Sin un cierre de oración, devuelve el texto completo.
+    """
+    s = (texto or "").strip()
+    m = _RE_PRIMERA_FRASE.match(s)
+    return m.group(1) if m else s
+
+
 def _con_aviso(cuerpo: str, limite: int) -> str:
     """Neutraliza ``cuerpo`` y agrega el aviso exacto (que lleva ';') al final."""
     texto = _inert(cuerpo, limite - len(DISCLAIMER) - 1)
     return f"{texto} {DISCLAIMER}".strip()
+
+
+_RE_FIN_ORACION = re.compile(r"[.!?]")
+
+
+def saludo_de(marco: str) -> str:
+    """Saludo de una frase marco: las oraciones anteriores a ``PH_TITULOS``.
+
+    Corta tras el último '.', '?' o '!' antes del placeholder ("Hola, ¿cómo
+    está?" en el guion, "Hola. Le escribimos desde el jardín." en el WhatsApp).
+    Devuelve ``""`` si no hay una oración completa antes del placeholder.
+    """
+    antes = (marco or "").split(PH_TITULOS, 1)[0]
+    fines = list(_RE_FIN_ORACION.finditer(antes))
+    return antes[: fines[-1].end()].strip() if fines else ""
 
 
 # --- Política de copy (DEC-054) -----------------------------------------------
@@ -162,7 +208,9 @@ class PlantillasTexto:
     """Frases marco del TemplateProvider (sin el aviso final).
 
     ``guion``, ``whatsapp`` y ``asistente_catalogo`` contienen ``PH_TITULOS``;
-    ``seccion_accion`` contiene ``PH_INSTITUCION``.
+    ``seccion_accion`` contiene ``PH_INSTITUCION``. ``frases_estado_guion`` y
+    ``frases_estado_mensaje`` llevan una frase por cada estado de
+    ``ESTADOS_SEGUIMIENTO``.
     """
     guion: str
     whatsapp: str
@@ -173,7 +221,16 @@ class PlantillasTexto:
     asistente_individual: str
     asistente_catalogo: str
     etiqueta_donde_ir: str
+    frases_estado_guion: Mapping[str, str]
+    frases_estado_mensaje: Mapping[str, str]
 
+
+# Frases neutras por estado de seguimiento (sin "podría" ni "vale la pena").
+_FRASES_ESTADO_NEUTRAS = MappingProxyType({
+    "GESTION_EN_CURSO": "El trámite ya está en curso. Espere la respuesta de la institución.",
+    "GESTION_RECHAZADA": "Consulte en la institución qué opciones hay.",
+    "SIN_CUPO": "Consulte en la institución qué opciones hay.",
+})
 
 # Marcos fijos neutros: sin "podría", sin "vale la pena" y sin promesas.
 PLANTILLAS_NEUTRAS = PlantillasTexto(
@@ -201,6 +258,8 @@ PLANTILLAS_NEUTRAS = PlantillasTexto(
         f"oficial de estos apoyos: {PH_TITULOS}."
     ),
     etiqueta_donde_ir="Dónde ir",
+    frases_estado_guion=_FRASES_ESTADO_NEUTRAS,
+    frases_estado_mensaje=_FRASES_ESTADO_NEUTRAS,
 )
 
 # Textos fijos cuando el catálogo C4 no está disponible (DEC-058): no nombran
@@ -268,10 +327,14 @@ class TemplateProvider:
     provider = PROVIDER
 
     def __init__(self, catalogo: dict[str, CatalogEntry],
-                 plantillas: PlantillasTexto | None = None):
+                 plantillas: PlantillasTexto | None = None, *,
+                 procedencia: tuple[str, str] | None = None):
         # Catálogo indexado por benefit_id (ya autorizado y validado por C4).
         self._catalogo = dict(catalogo)
         self._plantillas = plantillas or PLANTILLAS_NEUTRAS
+        # (content_version, content_bundle_hash) del bundle del catálogo, para
+        # ``meta`` (DEC-062); ``None`` si el catálogo no viene de ``content/``.
+        self.procedencia = procedencia
 
     # -- catálogo -----------------------------------------------------------
 
@@ -313,20 +376,61 @@ class TemplateProvider:
     def _titulos(self, entradas: list[CatalogEntry]) -> str:
         return ", ".join(self._titulo(e) for e in entradas)
 
+    # -- estado de acceso (DEC-060) ---------------------------------------
+
+    @staticmethod
+    def _validar_estados(benefit_ids: list[str], estados: Mapping[str, str]) -> None:
+        """Falla cerrada: cada ID trae un estado ofrecible o de seguimiento.
+
+        ASIGNADO, un estado desconocido o un ID sin estado son ``TemplateError``:
+        el servidor ya omitió los ASIGNADO y rechazó los ajenos a la familia.
+        """
+        for bid in benefit_ids:
+            estado = estados.get(bid)
+            if estado not in ESTADOS_OFRECIBLES and estado not in ESTADOS_SEGUIMIENTO:
+                raise TemplateError("benefit_id sin estado de acceso compatible")
+
+    @staticmethod
+    def _frase_estado(frases: Mapping[str, str], estado: str) -> str:
+        frase = frases.get(estado)
+        if not frase:
+            raise TemplateError("estado de seguimiento sin frase")
+        return frase
+
+    def _marco(self, plantilla: str, ofrecibles: list[CatalogEntry]) -> str:
+        """Marco del Rol 4 con SOLO los títulos ofrecibles; sin ellos, el saludo."""
+        if ofrecibles:
+            return plantilla.replace(PH_TITULOS, self._titulos(ofrecibles))
+        return saludo_de(plantilla)
+
     # -- guion --------------------------------------------------------------
 
-    def generar_guion(self, benefit_ids: list[str]) -> dict:
-        """``ScriptContent``: benefit_ids (1–3) + guion ≤1200 chars."""
+    def generar_guion(self, benefit_ids: list[str], *, estados: Mapping[str, str]) -> dict:
+        """``ScriptContent``: benefit_ids (1–3) + guion ≤1200 chars y ≤120 palabras.
+
+        Marco del Rol 4 con los títulos ofrecibles (o solo el saludo); luego,
+        en el orden pedido, ``Título: primera frase`` para cada ofrecible y
+        ``Título: frase por estado`` para cada seguimiento; al final, el aviso.
+        """
+        self._validar_estados(benefit_ids, estados)
         ids = self._normalizar_benefit_ids(benefit_ids)
         entradas = [self._entrada(bid) for bid in ids]
-        marco = _inert(
-            self._plantillas.guion.replace(PH_TITULOS, self._titulos(entradas)),
-            _MAX_SCRIPT,
-        )
-        detalle = [
-            f"{self._titulo(e)}: {_inert(e.description, _MAX_SCRIPT)}"
-            for e in entradas if _inert(e.description, _MAX_SCRIPT)
-        ]
+        ofrecibles = [e for e in entradas if estados[e.benefit_id] in ESTADOS_OFRECIBLES]
+        marco = _inert(self._marco(self._plantillas.guion, ofrecibles), _MAX_SCRIPT)
+        detalle: list[str] = []
+        for e in entradas:
+            estado = estados[e.benefit_id]
+            if estado in ESTADOS_OFRECIBLES:
+                # Solo la primera frase de la descripción: 120 palabras como
+                # máximo (DEC-061). Mensaje y asistente conservan la completa.
+                texto = _inert(primera_frase(e.description), _MAX_SCRIPT)
+            else:
+                texto = _inert(
+                    self._frase_estado(self._plantillas.frases_estado_guion, estado),
+                    _MAX_SCRIPT,
+                )
+            if texto:
+                detalle.append(f"{self._titulo(e)}: {texto}")
         # El cuerpo dinámico se neutraliza; el disclaimer exacto (con ';') se
         # añade después para no alterar su literal obligatorio.
         guion = _con_aviso(" ".join([marco, *detalle]), _MAX_SCRIPT)
@@ -334,16 +438,13 @@ class TemplateProvider:
 
     # -- mensaje ------------------------------------------------------------
 
-    def _seccion(self, entrada: CatalogEntry, cita: SourceCitation) -> dict:
+    def _seccion(self, entrada: CatalogEntry, cita: SourceCitation, razon: str) -> dict:
         institucion = _inert(entrada.institution, _MAX_SECTION_ACTION) or "la institución"
         where = _inert(entrada.where_to_go, _MAX_WHERE_TO_GO) if entrada.where_to_go else ""
         return {
             "benefit_id": entrada.benefit_id,
             "heading": self._titulo(entrada),
-            "reason": _inert(
-                f"{self._plantillas.seccion_razon} {entrada.description}",
-                _MAX_SECTION_REASON,
-            ),
+            "reason": _inert(f"{razon} {entrada.description}", _MAX_SECTION_REASON),
             "action": _inert(
                 self._plantillas.seccion_accion.replace(PH_INSTITUCION, institucion),
                 _MAX_SECTION_ACTION,
@@ -352,31 +453,52 @@ class TemplateProvider:
             "sources": [cita.to_dict()],
         }
 
-    def generar_mensaje(self, benefit_ids: list[str]) -> dict:
+    def generar_mensaje(self, benefit_ids: list[str], *, estados: Mapping[str, str]) -> dict:
         """``MessageContent``: preview WhatsApp + ``PrintableCard`` CARD_V1.
 
-        El preview nombra todos los beneficios pedidos. La tarjeta lleva una
-        sección solo por beneficio con cita HTTPS (C3 exige ≥1 fuente por
-        sección); si ninguno la tiene, ``TemplateError``.
+        El preview lleva el marco del Rol 4 con los títulos ofrecibles (o solo
+        el saludo) y ``Título: frase por estado`` por cada seguimiento. La
+        tarjeta lleva una sección solo por beneficio con cita HTTPS (C3 exige
+        ≥1 fuente por sección); si ninguno la tiene, ``TemplateError``. La
+        introducción del Rol 4 va solo si todas las secciones son ofrecibles.
         """
+        self._validar_estados(benefit_ids, estados)
         ids = self._normalizar_benefit_ids(benefit_ids)
         entradas = [self._entrada(bid) for bid in ids]
+        frases = self._plantillas.frases_estado_mensaje
         secciones: list[dict] = []
+        todas_ofrecibles = True
         for e in entradas:
             cita = self._cita(e)
-            if cita is not None:
-                secciones.append(self._seccion(e, cita))
+            if cita is None:
+                continue
+            estado = estados[e.benefit_id]
+            if estado in ESTADOS_OFRECIBLES:
+                razon = self._plantillas.seccion_razon
+            else:
+                razon = self._frase_estado(frases, estado)
+                todas_ofrecibles = False
+            secciones.append(self._seccion(e, cita, razon))
         if not secciones:
             raise TemplateError("ningún beneficio con cita HTTPS inventariada")
 
+        ofrecibles = [e for e in entradas if estados[e.benefit_id] in ESTADOS_OFRECIBLES]
+        seguimiento = [
+            f"{self._titulo(e)}: {self._frase_estado(frases, estados[e.benefit_id])}"
+            for e in entradas if estados[e.benefit_id] not in ESTADOS_OFRECIBLES
+        ]
         preview = _con_aviso(
-            self._plantillas.whatsapp.replace(PH_TITULOS, self._titulos(entradas)),
+            " ".join([self._marco(self._plantillas.whatsapp, ofrecibles), *seguimiento]),
             _MAX_WHATSAPP,
+        )
+        introduccion = (
+            self._plantillas.tarjeta_introduccion if todas_ofrecibles
+            else saludo_de(self._plantillas.whatsapp)
         )
         card = {
             "format_version": "CARD_V1",
             "title": _inert(self._plantillas.tarjeta_titulo, _MAX_CARD_TITLE),
-            "introduction": _inert(self._plantillas.tarjeta_introduccion, _MAX_CARD_INTRO),
+            "introduction": _inert(introduccion, _MAX_CARD_INTRO),
             "sections": secciones,
         }
         return {

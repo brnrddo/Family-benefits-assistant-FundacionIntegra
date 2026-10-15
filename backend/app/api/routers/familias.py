@@ -23,6 +23,11 @@ from app.priority.orden import ORDENES
 router = APIRouter(tags=["familias"])
 
 
+def _meta_real(request: Request, snap: motor_real.MotorSnapshot) -> dict:
+    """``meta`` con el bundle ``content/`` del snapshot (DEC-062)."""
+    return construir_meta(request.state.request_id, contenido=motor_real.procedencia(snap))
+
+
 # --- Preevaluación: declarada ANTES de /familias/{id} ------------------------
 
 
@@ -55,7 +60,7 @@ def get_familia(
             raise ApiError(status_code=404)
         vista = motor_real.vista_familia(snap, id, id in familias_conversadas())
         data = familia_detail_data(vista)
-        return {"meta": construir_meta(request.state.request_id), "data": data}
+        return {"meta": _meta_real(request, snap), "data": data}
 
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
@@ -78,7 +83,7 @@ def get_contexto_familia(
         if id not in snap.familias:
             raise ApiError(status_code=404)
         ctx = motor_real.contexto(snap, id)
-        return {"meta": construir_meta(request.state.request_id), "data": ctx}
+        return {"meta": _meta_real(request, snap), "data": ctx}
 
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
@@ -107,7 +112,7 @@ def list_oportunidades(
             snap, motor_real.oportunidades(snap, id, orden), limit, cursor
         )
         return {
-            "meta": construir_meta(request.state.request_id),
+            "meta": _meta_real(request, snap),
             "items": items,
             "next_cursor": siguiente,
         }
@@ -129,6 +134,18 @@ def list_oportunidades(
 # --- Generación de texto (tag genai, bajo /familias/{id}) --------------------
 
 
+def _estados_familia(id: str) -> dict[str, str]:
+    """Estados de acceso de las oportunidades de la familia, o 404 (DEC-060).
+
+    El snapshot se resuelve UNA vez: existencia y oportunidades salen de la
+    misma fuente (motor real o mock).
+    """
+    estados = motor_real.estados_oportunidades(motor_real.obtener_snapshot(), id)
+    if estados is None:
+        raise ApiError(status_code=404)
+    return estados
+
+
 @router.post("/familias/{id}/guion", tags=["genai"])
 def create_guion(
     request: Request,
@@ -136,9 +153,8 @@ def create_guion(
     body: FamilyGenerationPublicRequest,
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
-    if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
-        raise ApiError(status_code=404)
-    return generar_guion(body.benefit_ids, request.state.request_id)
+    estados = _estados_familia(id)
+    return generar_guion(body.benefit_ids, request.state.request_id, estados)
 
 
 @router.post("/familias/{id}/mensaje", tags=["genai"])
@@ -148,6 +164,5 @@ def create_mensaje(
     body: FamilyGenerationPublicRequest,
     _scope=Depends(require_scope("genai:write")),
 ) -> dict:
-    if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
-        raise ApiError(status_code=404)
-    return generar_mensaje(body.benefit_ids, request.state.request_id)
+    estados = _estados_familia(id)
+    return generar_mensaje(body.benefit_ids, request.state.request_id, estados)

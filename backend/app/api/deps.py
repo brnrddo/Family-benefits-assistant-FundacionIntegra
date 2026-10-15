@@ -63,14 +63,23 @@ def nuevo_request_id() -> str:
     return f"REQ-{uuid.uuid4().hex}"
 
 
-def construir_meta(request_id: str | None = None) -> dict:
-    """Construye el ``EnvelopeMetadata`` cerrado de C3."""
+def construir_meta(
+    request_id: str | None = None, *, contenido: tuple[str, str] | None = None
+) -> dict:
+    """Construye el ``EnvelopeMetadata`` cerrado de C3.
+
+    ``contenido`` = ``(content_version, content_bundle_hash)`` del bundle
+    ``content/`` que produjo la respuesta (propuesta DEC-062); ``None`` deja
+    los placeholders de demo. ``snapshot_id`` y ``eligibility_bundle_hash``
+    no cambian (el front compara ``snapshot_id``; PREG-066).
+    """
+    version, bundle_hash = contenido or (CONTENT_VERSION, CONTENT_BUNDLE_HASH)
     return {
         "request_id": request_id or nuevo_request_id(),
         "snapshot_id": SNAPSHOT_ID,
         "eligibility_bundle_hash": ELIGIBILITY_BUNDLE_HASH,
-        "content_bundle_hash": CONTENT_BUNDLE_HASH,
-        "content_version": CONTENT_VERSION,
+        "content_bundle_hash": bundle_hash,
+        "content_version": version,
     }
 
 

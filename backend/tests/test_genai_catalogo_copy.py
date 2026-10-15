@@ -11,6 +11,7 @@ Con el provider real (sin HTTP, para que sea rápido):
 from __future__ import annotations
 
 import itertools
+import re
 import sys
 from pathlib import Path
 
@@ -68,20 +69,40 @@ def _assert_copy(texto: str) -> None:
     assert "FALLBACK_TEMPLATE" not in texto
 
 
+def _elegibles(combo) -> dict[str, str]:
+    return {bid: "ELEGIBLE_SIN_ASIGNACION" for bid in combo}
+
+
+def _frases(texto: str) -> list[str]:
+    """Oraciones de una descripción de ``content/`` (separadas tras '.', '!' o '?')."""
+    return re.split(r"(?<=[.!?])\s+", texto.strip())
+
+
 def test_guion_todas_las_combinaciones(provider):
     for combo in itertools.combinations(IDS, 3):
-        script = provider.generar_guion(list(combo))["script"]
+        script = provider.generar_guion(list(combo), estados=_elegibles(combo))["script"]
         assert len(script) <= 1200
         assert script.endswith(DISCLAIMER)
         for bid in combo:
             assert BEN[bid]["simple_title"] in script
-            assert BEN[bid]["description"] in script
+            # DEC-061: el guion lleva solo la primera frase de la descripción.
+            frases = _frases(BEN[bid]["description"])
+            assert f"{BEN[bid]['simple_title']}: {frases[0]}" in script
+            for resto in frases[1:]:
+                assert resto not in script
         _assert_copy(script)
+
+
+def test_guion_maximo_120_palabras(provider):
+    """El guion más largo (141 palabras con la descripción completa) cabe en 120 (DEC-061)."""
+    combo = ["BEN-006", "BEN-019", "BEN-020"]
+    script = provider.generar_guion(combo, estados=_elegibles(combo))["script"]
+    assert len(script.split()) <= 120
 
 
 def test_mensaje_todas_las_combinaciones(provider):
     for combo in itertools.combinations(CITABLES, 3):
-        content = provider.generar_mensaje(list(combo))
+        content = provider.generar_mensaje(list(combo), estados=_elegibles(combo))
         preview = content["whatsapp_preview"]
         assert len(preview) <= 600 and preview.endswith(DISCLAIMER)
         _assert_copy(preview)
@@ -105,8 +126,9 @@ def test_muestra_valida_contra_c3(provider):
     combos = list(itertools.combinations(CITABLES, 3))[::34][:20]
     assert len(combos) == 20
     for combo in combos:
-        validar("ScriptContent", provider.generar_guion(list(combo)))
-        validar("MessageContent", provider.generar_mensaje(list(combo)))
+        validar("ScriptContent", provider.generar_guion(list(combo), estados=_elegibles(combo)))
+        validar("MessageContent",
+                provider.generar_mensaje(list(combo), estados=_elegibles(combo)))
 
 
 @pytest.mark.parametrize("pregunta", PREGUNTAS)

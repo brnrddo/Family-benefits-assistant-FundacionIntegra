@@ -21,8 +21,11 @@ Reglas (decisiones 2–10 del plan B1 y ajustes del usuario del 2026-10-15):
 - Degradación (decisión 4): ``obtener_snapshot()`` devuelve ``None`` y la ruta
   usa los mocks cuando ``E3_MOCK`` está activo o algo falla; en ese caso se
   loguea ``runtime_degradado_a_mock: motivo=<CODIGO>`` con un código fijo, sin
-  IDs ni valores. El fallo se cachea contra la misma clave (DB y manifest): se
-  registra una vez y se reintenta solo cuando cambia alguno de los dos.
+  IDs ni valores. El fallo se cachea contra la misma clave (DB, manifest y
+  cada archivo de su ``files[]``, DEC-063): se registra una vez y se reintenta
+  solo cuando cambia alguno.
+- ``meta`` de las rutas que sirven el snapshot declara ``content_version`` y
+  ``content_bundle_hash`` del bundle con que se armó (``procedencia``, DEC-062).
 """
 from __future__ import annotations
 
@@ -36,6 +39,8 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
+import yaml
 
 from app.access.model import SEMAFORO, EstadoAcceso
 from app.api import mock_data, runtime
@@ -175,8 +180,9 @@ class MotorSnapshot:
     # Familias del jardín por prioridad estática desc y family_id asc.
     familias_por_jardin: dict[str, tuple[str, ...]]
     content_version: str
+    content_bundle_hash: str
     segundos_build: float
-    # Huella de la clave de caché (DB + manifest). Va dentro del cursor para
+    # Huella de la clave de caché (DB, manifest y files[]). Va dentro del cursor para
     # que una página pedida tras regenerar la DB dé 422 (``snapshot_id`` sigue
     # siendo la constante de demo).
     huella: str
@@ -188,16 +194,21 @@ _LOCK = threading.Lock()
 # Último snapshot construido, con su clave.
 _CACHE: tuple[tuple, MotorSnapshot] | None = None
 # Clave del último fallo ya registrado: no se reintenta (ni se vuelve a loguear)
-# hasta que cambie la DB o el manifest.
+# hasta que cambie la DB, el manifest o un archivo de su ``files[]``.
 _FALLO: tuple | None = None
+# Rutas de ``files[]`` por (ruta, estado) del manifest: el YAML se parsea solo
+# cuando cambia el manifest; cada request hace un ``stat`` por archivo. Se
+# asigna como una tupla (atómica): una carrera solo repite el parseo.
+_RUTAS_MANIFEST: tuple[tuple, tuple[Path, ...]] | None = None
 
 
 def limpiar_cache() -> None:
-    """Olvida el snapshot y el último fallo (tests)."""
-    global _CACHE, _FALLO
+    """Olvida el snapshot, el último fallo y las rutas del manifest (tests)."""
+    global _CACHE, _FALLO, _RUTAS_MANIFEST
     with _LOCK:
         _CACHE = None
         _FALLO = None
+        _RUTAS_MANIFEST = None
 
 
 def _degradar(motivo: str) -> None:
@@ -208,9 +219,35 @@ def _estado_archivo(path: Path) -> tuple[int, int] | None:
     """(mtime_ns, tamaño) o ``None`` si el archivo no existe o no se puede leer."""
     try:
         st = path.stat()
-    except OSError:
+    except (OSError, ValueError):  # ValueError: ruta con caracteres inválidos
         return None
     return st.st_mtime_ns, st.st_size
+
+
+def _leer_rutas_files(manifest: Path) -> tuple[Path, ...]:
+    """``files[].path`` del manifest, sin validar; ``()`` si no se puede leer.
+
+    Solo dice qué archivos vigilar. La validación (schema, rutas bajo la raíz,
+    sha256) es de ``cargar_contenido_c4``; las rutas se resuelven igual que
+    allí, contra el padre del directorio del manifest.
+    """
+    try:
+        doc = yaml.safe_load(manifest.read_bytes().decode("utf-8"))
+        raiz = manifest.resolve().parent.parent
+        return tuple(raiz / str(e["path"]) for e in doc["files"])
+    except (OSError, UnicodeDecodeError, yaml.YAMLError, TypeError, KeyError):
+        return ()
+
+
+def _rutas_files(manifest: Path, estado: tuple[int, int] | None) -> tuple[Path, ...]:
+    global _RUTAS_MANIFEST
+    clave = (str(manifest.resolve()), estado)
+    cacheado = _RUTAS_MANIFEST
+    if cacheado is not None and cacheado[0] == clave:
+        return cacheado[1]
+    rutas = _leer_rutas_files(manifest) if estado is not None else ()
+    _RUTAS_MANIFEST = (clave, rutas)
+    return rutas
 
 
 def _huella(clave: tuple) -> str:
@@ -243,8 +280,9 @@ def obtener_snapshot() -> MotorSnapshot | None:
     """Snapshot del motor real, o ``None`` si hay que servir mocks.
 
     Lee ``runtime.DB_PATH`` y ``content_c4.CONTENT_MANIFEST`` en cada llamada.
-    La clave de caché es (ruta, mtime y tamaño) de la DB y del manifest C4: si
-    se regenera la DB con ``build_views``, el siguiente request la toma. Un
+    La clave de caché es (ruta, mtime y tamaño) de la DB, del manifest C4 y de
+    cada archivo de su ``files[]`` (DEC-063): si se regenera la DB con
+    ``build_views`` o se edita ``content/``, el siguiente request lo toma. Un
     fallo también se cachea contra su clave: se loguea una vez y no se
     reconstruye en cada request.
     """
@@ -253,9 +291,14 @@ def obtener_snapshot() -> MotorSnapshot | None:
         return None
     db = Path(runtime.DB_PATH)
     manifest = Path(content_c4.CONTENT_MANIFEST)
+    estado_manifest = _estado_archivo(manifest)
     clave = (
         str(db.resolve()), _estado_archivo(db),
-        str(manifest.resolve()), _estado_archivo(manifest),
+        str(manifest.resolve()), estado_manifest,
+        tuple(
+            (str(ruta), _estado_archivo(ruta))
+            for ruta in _rutas_files(manifest, estado_manifest)
+        ),
     )
     with _LOCK:
         if _CACHE is not None and _CACHE[0] == clave:
@@ -286,6 +329,23 @@ def garden_de(snap: MotorSnapshot | None, family_id: str) -> str | None:
     """Jardín de la familia (snapshot real o mock), o ``None`` si no existe."""
     fam = snap.familias.get(family_id) if snap is not None else mock_data.FAMILIAS.get(family_id)
     return None if fam is None else fam["garden_id"]
+
+
+def estados_oportunidades(snap: MotorSnapshot | None, family_id: str) -> dict[str, str] | None:
+    """``{benefit_id: access_state}`` de las oportunidades de la familia (DEC-060).
+
+    Del snapshot real o de ``mock_data``; ``None`` si la familia no existe. Guion
+    y mensaje solo aceptan estos IDs: lo demás responde 422.
+    """
+    fam = snap.familias.get(family_id) if snap is not None else mock_data.FAMILIAS.get(family_id)
+    if fam is None:
+        return None
+    return {o["benefit_id"]: o["access_state"] for o in fam["opportunities"]}
+
+
+def procedencia(snap: MotorSnapshot | None) -> tuple[str, str] | None:
+    """(content_version, content_bundle_hash) del snapshot, o ``None`` (mock)."""
+    return None if snap is None else (snap.content_version, snap.content_bundle_hash)
 
 
 def familia_existe(snap: MotorSnapshot | None, family_id: str) -> bool:
@@ -341,8 +401,9 @@ def paginar(
 ) -> tuple[list, str | None]:
     """Página por cursor opaco ``<snapshot_id>:<huella>:<offset>`` (DEC-051).
 
-    La huella identifica la DB y el manifest con que se armó el snapshot: un
-    cursor emitido antes de regenerar la DB no coincide y responde 422, en vez
+    La huella identifica la DB, el manifest y su ``files[]`` con que se armó el
+    snapshot: un cursor emitido antes de regenerar la DB (o editar ``content/``)
+    no coincide y responde 422, en vez
     de duplicar o saltar ítems. Un cursor malformado, de otro snapshot o fuera
     de rango también responde 422.
     """
@@ -759,6 +820,7 @@ def _construir(db: Path, contenido: ContenidoC4, huella: str) -> MotorSnapshot:
         orden_jardines=tuple(sorted(jardines)),
         familias_por_jardin=familias_por_jardin,
         content_version=contenido.content_version,
+        content_bundle_hash=contenido.content_bundle_hash,
         segundos_build=time.perf_counter() - inicio,
         huella=huella,
     )
