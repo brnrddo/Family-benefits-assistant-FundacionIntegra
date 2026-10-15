@@ -14,14 +14,22 @@ idénticos tipos, enums y límites: sin ``garden_id``, ``commune_id``,
 - clave AUSENTE  -> sin cambio (no se declara nada);
 - ``null``       -> "No sé" => hecho DESCONOCIDO (nunca ``false`` ni ``0``);
 - ``housing_type == "UNKNOWN"`` -> equivalente a ``null``.
+
+Única verificación adicional: ``last_child_health_control_date`` debe ser una
+fecha ``YYYY-MM-DD`` válida (``format: date`` del schema del Rol 3). El tipo y
+los límites del campo siguen siendo los de ``PreevaluationRequest``.
 """
 from __future__ import annotations
 
+import re
+from datetime import date
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.api.models import _Closed
+
+_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class AddFamilyInfoRequestV1(_Closed):
@@ -52,6 +60,23 @@ class AddFamilyInfoRequestV1(_Closed):
     household_formal_employment_or_pension: bool | None = None
     household_water_payment_difficulty: bool | None = None
     household_food_purchase_difficulty: bool | None = None
+
+    @field_validator("last_child_health_control_date")
+    @classmethod
+    def _fecha_iso(cls, valor: str | None) -> str | None:
+        """``format: date`` del schema del Rol 3, en el servidor.
+
+        El tipo y los límites son los mismos de ``PreevaluationRequest`` (la
+        anotación y el ``metadata`` del campo no cambian); el validador solo
+        exige ``YYYY-MM-DD`` válido, porque en esta ruta el valor resuelve un
+        ``missing_code`` y baja un nivel. El cliente del Rol 3 ya lo valida.
+        """
+        if valor is None:
+            return None
+        if not _FECHA_ISO.match(valor):
+            raise ValueError("formato de fecha inválido")
+        date.fromisoformat(valor)  # ValueError si la fecha no existe
+        return valor
 
 
 # Campo declarable -> ``missing_code`` de C3. Espeja exactamente (invertido) el

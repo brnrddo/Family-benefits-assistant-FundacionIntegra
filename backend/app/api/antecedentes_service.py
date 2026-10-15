@@ -13,13 +13,15 @@ del Rol 1, así que aquí NINGÚN ``result`` cambia, no se promueve
 (esos números vienen de C4). Lo que sí ocurre:
 
 1. un dato declarado con valor conocido resuelve su ``missing_code``;
-2. un dato declarado "No sé" conserva su ``missing_code`` donde ya figuraba y
-   lo agrega a los ``missing_codes`` de la vista de contexto (enum cerrado de
-   C3 pensado justamente para "no informado"); nunca se degrada a ``false``/``0``;
+2. un dato declarado "No sé" conserva (o gana) su ``missing_code`` en el
+   beneficio que lo sustenta, en la oportunidad de ese mismo beneficio y en los
+   ``missing_codes`` de la vista de contexto (enum cerrado de C3 pensado
+   justamente para "no informado"); nunca se degrada a ``false``/``0``;
 3. todo resultado u oportunidad sustentado en un hecho declarado baja a
    ``PRELIMINAR`` y nunca queda ``CONFIRMADO``;
-4. ``rsh_band`` e ``income_band`` se reflejan tal cual cuando se declaran: son
-   el mismo campo y el mismo enum de C3, no una inferencia.
+4. ``rsh_band`` e ``income_band`` se reflejan tal cual SOLO cuando se declaran
+   con valor conocido: son el mismo campo y el mismo enum de C3, no una
+   inferencia. Un "No sé" NO borra el valor que vino del motor.
 """
 from __future__ import annotations
 
@@ -56,6 +58,15 @@ def hechos_declarados(body: AddFamilyInfoRequestV1) -> list[dict]:
     return hechos
 
 
+def _codigos_desconocidos(item: dict, efectivos: dict[str, dict]) -> set[str]:
+    """``missing_code`` de los hechos "No sé" que sustentan a ese ítem."""
+    return {
+        h["missing_code"]
+        for h in efectivos.values()
+        if h["desconocido"] and _sustentado(item, {h["campo"], h["missing_code"]})
+    }
+
+
 def _sustentado(item: dict, campos: set[str]) -> bool:
     """``True`` si el resultado se apoya en alguno de esos campos/códigos.
 
@@ -85,37 +96,43 @@ def aplicar_declarados(fam: dict, hechos: list[dict]) -> dict:
 
     copia = copy.deepcopy(fam)
 
-    # Los beneficios sustentados en un hecho declarado. La oportunidad no lleva
-    # traza en C3: hereda el veredicto de su ``BenefitResult`` (mismo beneficio).
-    tocados = {
-        br["benefit_id"] for br in copia["benefit_results"] if _sustentado(br, alias)
+    # Los beneficios sustentados en un hecho declarado, con los códigos "No sé"
+    # que su ``BenefitResult`` resolvió por traza. La ``Opportunity`` no lleva
+    # traza en C3: hereda del ``BenefitResult`` del mismo beneficio tanto el
+    # veredicto como esos códigos, para que la misma respuesta no describa el
+    # mismo beneficio de dos maneras.
+    heredables: dict[str, set[str]] = {
+        br["benefit_id"]: _codigos_desconocidos(br, efectivos)
+        for br in copia["benefit_results"]
+        if _sustentado(br, alias)
     }
 
     for item in list(copia["benefit_results"]) + list(copia["opportunities"]):
-        if not (_sustentado(item, alias) or item["benefit_id"] in tocados):
+        heredados = heredables.get(item["benefit_id"])
+        if heredados is None and not _sustentado(item, alias):
             continue
         codigos = set(item["missing_codes"])
         codigos -= conocidos  # el dato declarado con valor conocido deja de faltar
-        # "No sé": el código sigue (o pasa a) faltar, pero solo donde el propio
-        # motor ya declaró la dependencia (missing_codes previo o traza).
-        codigos |= {
-            h["missing_code"]
-            for h in efectivos.values()
-            if h["desconocido"] and _sustentado(item, {h["campo"], h["missing_code"]})
-        }
+        # "No sé": el código sigue (o pasa a) faltar donde el motor ya declaró la
+        # dependencia (missing_codes previo o traza del beneficio).
+        codigos |= _codigos_desconocidos(item, efectivos) | (heredados or set())
         item["missing_codes"] = sorted(codigos)[:20]
         if item["result"] == "SI":
             # Sustentado en un dato declarado y no acreditado: nunca CONFIRMADO.
             item["level"] = "PRELIMINAR"
 
-    # Campos de la ficha y del contexto que son el MISMO campo declarado.
-    if "rsh_band" in efectivos:
-        h = efectivos["rsh_band"]
-        copia["rsh_band"] = None if h["desconocido"] else h["valor"]
+    # Campos de la ficha y del contexto que son el MISMO campo declarado. Solo
+    # con valor CONOCIDO: una declaración de ignorancia no borra un dato de
+    # C1/C2 (dejaría la vista de contexto contradictoria con sus propios
+    # ``*_score``, que son del motor). El "No sé" se expresa como missing_code.
+    if "rsh_band" in efectivos and not efectivos["rsh_band"]["desconocido"]:
+        copia["rsh_band"] = efectivos["rsh_band"]["valor"]
         copia["context"]["rsh_band"] = copia["rsh_band"]
-    if "household_income_band" in efectivos:
-        h = efectivos["household_income_band"]
-        copia["context"]["income_band"] = None if h["desconocido"] else h["valor"]
+    if (
+        "household_income_band" in efectivos
+        and not efectivos["household_income_band"]["desconocido"]
+    ):
+        copia["context"]["income_band"] = efectivos["household_income_band"]["valor"]
 
     # "No informado" a nivel de familia: enum cerrado de FamilyContextView.
     ctx_codes = set(copia["context"]["missing_codes"])

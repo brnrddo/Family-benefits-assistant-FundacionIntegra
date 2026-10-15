@@ -20,14 +20,24 @@ _IDEMPOTENCIA: dict[str, tuple[str, dict]] = {}
 _DECLARADOS: dict[str, list[dict]] = {}
 
 
-def body_hash(payload: dict) -> str:
-    """Hash canónico del cuerpo declarado.
+def body_hash(family_id: str, payload: dict) -> str:
+    """Hash canónico del recurso + el cuerpo declarado.
 
     ``payload`` debe venir de ``model_dump(exclude_unset=True)``: sin eso,
     ``{"child_age": null}`` y ``{}`` colisionarían y la idempotencia no podría
     distinguir "No sé" de "sin cambio".
+
+    ``family_id`` entra al hash porque la respuesta ES el recurso del path: sin
+    él, reusar una clave con el mismo cuerpo contra otra familia devolvería la
+    ficha de la primera y descartaría en silencio los hechos de la segunda.
+    Incluyéndolo, ese reuso es un conflicto explícito (409).
     """
-    canonico = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    canonico = json.dumps(
+        {"family_id": family_id, "body": payload},
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
     return hashlib.sha256(canonico.encode("utf-8")).hexdigest()
 
 

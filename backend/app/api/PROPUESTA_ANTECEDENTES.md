@@ -37,16 +37,20 @@ La respuesta usa el **mismo serializador** que `GET /familias/{id}` (`app/api/se
 | `null` | "No sé" | hecho **DESCONOCIDO**; el `missing_code` sigue faltando. **Nunca** se degrada a `false` ni `0` |
 | `housing_type: "UNKNOWN"` | "No sé" | igual que `null` |
 
-Los `missing_code` son el enum cerrado de `FamilyContextView.missing_codes` (C3) y espejan exactamente el mapa `MISSING_CODE_FIELD` del cliente del Rol 3 (`frontend/src/api/proposals/addInfo.ts`).
+Los `missing_code` son el enum cerrado de `FamilyContextView.missing_codes` (C3) y espejan exactamente el mapa `MISSING_CODE_FIELD` del cliente del Rol 3 (`frontend/src/api/proposals/addInfo.ts`). `last_child_health_control_date` además se valida como fecha `YYYY-MM-DD` real (el `format: date` del schema del Rol 3), sin cambiar el tipo del campo.
 
-Todo resultado u oportunidad sustentado en un hecho declarado baja a `level = "PRELIMINAR"` y **nunca** queda `CONFIRMADO`: lo declara la tía, no una institución. Un dato declarado "No sé" también aparece como "no informado" en `GET /familias/{id}/contexto`, que es el campo que C3 tiene para eso.
+Todo resultado u oportunidad sustentado en un hecho declarado baja a `level = "PRELIMINAR"` y **nunca** queda `CONFIRMADO`: lo declara la tía, no una institución. Un dato declarado "No sé" queda "no informado" en tres lugares coherentes entre sí: el `BenefitResult` que lo sustenta, la `Opportunity` de ese mismo beneficio (hereda los códigos del `BenefitResult`, porque C3 no le da `trace`) y `GET /familias/{id}/contexto`.
+
+Un "No sé" **no borra** el dato que vino del motor: si la familia traía `rsh_band: 40` de C1/C2, declarar `rsh_band: null` deja la banda en `40` y solo agrega el código a "no informado". Borrarla dejaría la vista de contexto contradictoria con sus propios `*_score`, que son del motor. `rsh_band` y `household_income_band` se reflejan en la ficha y el contexto **solo** cuando se declaran con valor conocido.
+
+Si el mismo campo se declara dos veces, gana el último hecho: la tía puede corregirse (declarar "No sé" y después la banda, o al revés).
 
 ## Códigos de estado
 
 | Status | Cuándo |
 |---|---|
 | `200` | reevaluada, o repetición idempotente (misma clave + mismo cuerpo canónico) |
-| `409` | misma clave con cuerpo distinto |
+| `409` | misma clave con cuerpo distinto, o la misma clave reusada contra otra familia |
 | `422` | cuerpo inválido, `Idempotency-Key` ausente o no-UUID, o familia sin datos que declarar |
 | `401` | credencial de demo sin scopes |
 | `404` | familia inexistente o fuera de scope |
@@ -58,18 +62,22 @@ Nunca `201`: la operación no crea un recurso visible. El `404` **no está en la
 
 Con `E3_MOCK=1` (modo de la demo) la reevaluación es **simulada, determinista y acotada**:
 
-- **sí**: resuelve o conserva `missing_codes`, baja el nivel a `PRELIMINAR` y refleja `rsh_band` / `income_band` declarados (mismo campo y mismo enum de C3, no una inferencia);
-- **no**: no cambia ningún `result`, no promueve `INDETERMINADO → SI`, no recalcula U/B/V, `score` ni `position`. Esos números son del motor determinista (Rol 1) y del bundle C4; inventarlos sería decidir elegibilidad.
+- **sí**: resuelve o conserva `missing_codes` (en el `BenefitResult`, en la `Opportunity` del mismo beneficio y en el contexto), baja el nivel a `PRELIMINAR` y refleja `rsh_band` / `income_band` declarados **con valor conocido** (mismo campo y mismo enum de C3, no una inferencia);
+- **no**: no cambia ningún `result`, no promueve `INDETERMINADO → SI`, no recalcula U/B/V, `score`, `position` ni los `*_score` del contexto, y no borra datos de C1/C2. Esos números son del motor determinista (Rol 1) y del bundle C4; inventarlos sería decidir elegibilidad.
 
 Con `E3_MOCK=0` la ruta responde `503 UNAVAILABLE` (`retryable: true`, que es el reintento manual que espera el Rol 3) en vez de devolver una simulación como si fuera reevaluación real: `FamiliaDetailEnvelope` es cerrado y no tiene dónde avisar que el dato es simulado. El enganche del motor real está en un único punto de `app/api/routers/antecedentes.py`.
 
 ## Idempotencia, persistencia y logs
 
-Misma clave + mismo cuerpo canónico devuelve la **misma** respuesta sin efectos nuevos; misma clave con cuerpo distinto es `409`. El cuerpo canónico se hashea con `exclude_unset=True`, de modo que `{"has_rsh": null}` y un cuerpo sin `has_rsh` **no** colisionan. No hay cola offline: la operación solo funciona en línea.
+Misma clave + mismo cuerpo canónico devuelve la **misma** respuesta sin efectos nuevos; misma clave con cuerpo distinto es `409`. El cuerpo canónico incluye el `family_id` del path y se hashea con `exclude_unset=True`: `{"has_rsh": null}` y un cuerpo sin `has_rsh` **no** colisionan, y reusar una clave contra **otra** familia es `409` en vez de devolver la ficha de la primera. No hay cola offline: la operación solo funciona en línea.
+
+La repetición idempotente sirve la respuesta **guardada en el primer POST**. Si entremedio se declararon otros hechos, ese `data` ya no coincide con `GET /familias/{id}`: es la semántica de idempotencia pedida, pero conviene no mostrar las dos vistas juntas en la demo.
 
 Los hechos declarados viven en memoria **por proceso** (mismo criterio que la idempotencia de `conversaciones`): no sobreviven a un reinicio ni se comparten entre workers. Alcanza para la demo y evita que la ficha "vuelva atrás" al refrescar, porque `GET /familias/{id}`, `/contexto` y `/oportunidades` aplican los mismos hechos.
 
-Logs (API-013): solo `request_id`, la ruta normalizada `/familias/{id}/antecedentes`, el status y la latencia. Nunca el cuerpo, los valores declarados, el nombre de los campos ni identificadores.
+**Retención (limitación de demo, explícita).** Los dos registros en memoria (`app/api/antecedentes_store.py`) no tienen tope de tamaño ni expiración y son del proceso, no del cliente: un hecho declarado cambia la respuesta de las tres rutas GET para cualquier consumidor de ese proceso, y la única forma de vaciarlos es reiniciar el backend (o `reset()` en los tests). Son datos 100 % sintéticos. Una integración real exige store por sesión/familia con TTL, lo que queda fuera de esta tarea.
+
+Logs (API-013): la línea del router lleva solo `request_id`, la ruta normalizada `/familias/{id}/antecedentes`, el status y la latencia. Nunca el cuerpo, los valores declarados ni el nombre de los campos. El middleware preexistente de `app/api/app.py` sí registra el path crudo, que incluye el ID **seudónimo sintético** de la familia; eso es anterior a esta operación y no se modificó aquí (normalizar el path del middleware es una tarea aparte).
 
 ## Activación en el frontend (Rol 3)
 

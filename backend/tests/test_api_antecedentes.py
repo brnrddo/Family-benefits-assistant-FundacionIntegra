@@ -196,6 +196,74 @@ def test_housing_type_unknown_equivale_a_no_se():
     assert hechos[0]["missing_code"] == "housing_type"
 
 
+def test_no_se_no_borra_la_banda_del_motor(client: TestClient, c3: dict):
+    """Declarar ignorancia NO destruye un dato de C1/C2: solo suma el código."""
+    antes = client.get("/api/v1/familias/FAM-SIM-0001").json()["data"]
+    ctx_antes = client.get("/api/v1/familias/FAM-SIM-0001/contexto").json()["data"]
+    assert antes["rsh_band"] == 40
+
+    r = _post(client, {"data_classification": _ROTULO, "rsh_band": None})
+    assert r.status_code == 200
+    _validar(c3, "FamiliaDetailEnvelope", r.json())
+    assert r.json()["data"]["rsh_band"] == antes["rsh_band"]
+
+    ctx = client.get("/api/v1/familias/FAM-SIM-0001/contexto").json()
+    _validar(c3, "FamiliaContextEnvelope", ctx)
+    # El contexto no se contradice consigo mismo: la banda y su score siguen.
+    assert ctx["data"]["rsh_band"] == ctx_antes["rsh_band"]
+    assert ctx["data"]["vulnerability_signals"] == ctx_antes["vulnerability_signals"]
+    # El "No sé" se expresa como no informado, que es el campo de C3 para eso.
+    assert "rsh_band" in ctx["data"]["missing_codes"]
+
+
+def test_no_se_no_borra_la_banda_de_ingreso(client: TestClient, c3: dict):
+    ctx_antes = client.get("/api/v1/familias/FAM-SIM-0001/contexto").json()["data"]
+    assert ctx_antes["income_band"] == "UNDER_110K"
+
+    r = _post(client, {"data_classification": _ROTULO, "household_income_band": None})
+    assert r.status_code == 200
+    ctx = client.get("/api/v1/familias/FAM-SIM-0001/contexto").json()
+    _validar(c3, "FamiliaContextEnvelope", ctx)
+    assert ctx["data"]["income_band"] == ctx_antes["income_band"]
+    assert ctx["data"]["vulnerability_signals"] == ctx_antes["vulnerability_signals"]
+    assert "income_band" in ctx["data"]["missing_codes"]
+
+
+def test_no_se_llega_a_la_oportunidad_del_mismo_beneficio(client: TestClient, c3: dict):
+    """La UI arma las preguntas desde la oportunidad: el código debe estar ahí."""
+    r = _post(client, {"data_classification": _ROTULO, "rsh_band": None})
+    assert r.status_code == 200
+    data = r.json()["data"]
+    _validar(c3, "FamiliaDetailEnvelope", r.json())
+
+    ben = _por_id(data["benefit_results"], "BEN-001")
+    opp = _por_id(data["top_opportunities"], "BEN-001")
+    assert "rsh_band" in ben["missing_codes"]
+    # Mismo beneficio, misma respuesta: no puede faltar y no faltar a la vez.
+    assert "rsh_band" in opp["missing_codes"]
+    assert opp["level"] == "PRELIMINAR"
+
+    # Y la lista de oportunidades dice lo mismo que la ficha.
+    items = client.get("/api/v1/familias/FAM-SIM-0001/oportunidades").json()["items"]
+    assert "rsh_band" in _por_id(items, "BEN-001")["missing_codes"]
+
+
+def test_declaracion_posterior_corrige_la_anterior(client: TestClient, c3: dict):
+    """El último hecho declarado de un campo gana (la tía puede corregirse)."""
+    r1 = _post(client, {"data_classification": _ROTULO, "rsh_band": None})
+    assert r1.status_code == 200
+    assert "rsh_band" in _por_id(r1.json()["data"]["benefit_results"], "BEN-001")["missing_codes"]
+
+    r2 = _post(client, {"data_classification": _ROTULO, "rsh_band": 50})
+    assert r2.status_code == 200
+    data = r2.json()["data"]
+    _validar(c3, "FamiliaDetailEnvelope", r2.json())
+    assert "rsh_band" not in _por_id(data["benefit_results"], "BEN-001")["missing_codes"]
+    assert "rsh_band" not in _por_id(data["top_opportunities"], "BEN-001")["missing_codes"]
+    assert data["rsh_band"] == 50
+    assert _por_id(data["benefit_results"], "BEN-001")["level"] == "PRELIMINAR"
+
+
 def test_valor_conocido_resuelve_su_missing_code(client: TestClient, c3: dict):
     r = _post(
         client,
@@ -260,6 +328,10 @@ def test_indeterminado_no_se_promueve(client: TestClient):
         {"data_classification": _ROTULO, "rsh_band": 45},              # fuera del enum
         {"data_classification": _ROTULO, "housing_type": "CASA"},      # fuera del enum
         {"data_classification": _ROTULO, "child_age": 121},            # fuera de rango
+        {"data_classification": _ROTULO,
+         "last_child_health_control_date": "xxxxxxxxxx"},              # no es fecha
+        {"data_classification": _ROTULO,
+         "last_child_health_control_date": "2026-13-01"},              # fecha inexistente
     ],
 )
 def test_cuerpo_invalido_422(client: TestClient, c3: dict, cuerpo: dict):
@@ -321,6 +393,31 @@ def test_null_y_ausente_no_colisionan_en_la_clave(client: TestClient):
     assert r1.status_code == 200
     r2 = _post(client, {"data_classification": _ROTULO, "child_age": 4}, key=key)
     assert r2.status_code == 409
+
+
+def test_misma_clave_otra_familia_409(client: TestClient, c3: dict):
+    """La clave está acotada al recurso: nunca devuelve la ficha de otra familia."""
+    key = _uuid()
+    cuerpo = {"data_classification": _ROTULO, "has_rsh": True}
+    r1 = _post(client, cuerpo, key=key)
+    assert r1.status_code == 200
+    assert r1.json()["data"]["family_id"] == "FAM-SIM-0001"
+
+    r2 = _post(
+        client, cuerpo, key=key, ruta="/api/v1/familias/FAM-SIM-0002/antecedentes"
+    )
+    assert r2.status_code == 409
+    _validar_error(c3, r2.json())
+    # Y no se sirvió la ficha equivocada ni se perdieron hechos en silencio.
+    assert store.declarados_get("FAM-SIM-0002") == []
+
+    # Con su propia clave, la segunda familia se procesa normalmente.
+    r3 = _post(
+        client, cuerpo, key=_uuid(), ruta="/api/v1/familias/FAM-SIM-0002/antecedentes"
+    )
+    assert r3.status_code == 200
+    assert r3.json()["data"]["family_id"] == "FAM-SIM-0002"
+    assert len(store.declarados_get("FAM-SIM-0002")) == 1
 
 
 # --- scopes y motor ----------------------------------------------------------

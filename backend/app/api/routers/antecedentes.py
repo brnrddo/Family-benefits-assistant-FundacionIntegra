@@ -99,7 +99,9 @@ def _procesar(
         # no tiene dónde avisar que la reevaluación sería simulada.
         raise ApiError(status_code=503)
 
-    bhash = store.body_hash(body.model_dump(exclude_unset=True))
+    # El hash incluye la familia del path: la misma clave contra otro recurso es
+    # un conflicto (409), nunca la ficha de la familia anterior.
+    bhash = store.body_hash(id, body.model_dump(exclude_unset=True))
     cacheado = store.idem_get(idempotency_key)
     if cacheado is not None:
         prev_hash, data = cacheado
