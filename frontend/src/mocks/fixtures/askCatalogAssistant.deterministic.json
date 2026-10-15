@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "askCatalogAssistant",
+  "status": 200,
+  "payload": {
+    "request_id": "REQ-SIM-0802",
+    "intent": "REQUIRES_DETERMINISTIC_EVALUATION",
+    "answer": "Para saber si una familia accede a un apoyo, revise su ficha en Mi jardín.",
+    "citations": [],
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución.",
+    "provider": "PLANTILLA",
+    "warnings": ["INDIVIDUAL_ELIGIBILITY_REDIRECT"]
+  }
+}

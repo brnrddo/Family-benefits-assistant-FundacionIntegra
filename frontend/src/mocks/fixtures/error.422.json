@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 422,
+  "payload": {
+    "error": {
+      "code": "UNPROCESSABLE",
+      "message": "Solicitud con semantica o schema invalido.",
+      "request_id": "REQ-SIM-ERR-422",
+      "retryable": false,
+      "details": []
+    }
+  }
+}
