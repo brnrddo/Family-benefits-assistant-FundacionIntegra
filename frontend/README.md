@@ -33,6 +33,11 @@ Para ver la app como celular, use el modo dispositivo del navegador a 360 px. Si
 
 Vistas: Mi jardín (`/`, familias en orden neutro con sus acciones prioritarias, DEC-037), Ficha (`/familias/:id`, con nombre de trato local DEC-038, solo los beneficios relevantes en dos grupos DEC-070 y, con `VITE_PROPOSAL_TERRITORIAL`, chip "Disponible en su comuna" y rótulo "Solo demo" desde la operación propuesta `GET /catalogo/alcance`, fuera de C3, texto provisional en `src/api/proposals/territorial.ts`; DEC-072, PREG-070), Guion, Mensaje e impresión, Marcar conversado (`/familias/:id/conversacion`, 3 toques), Agregar información (`/familias/:id/agregar-informacion`, operación propuesta fuera de C3, solo con mocks salvo `VITE_PROPOSAL_ADD_INFO=true`; ver `docs/PROPUESTA_C3_agregar_informacion.md`, DEC-039), Familia nueva (`/familia-nueva`, no existe en `escala`), Avance (`/avance`) y Preguntar (`/preguntar`). Los mocks aceptan escenarios con `?mock=` al cargar (p. ej. `conv503`, `kpiSuppressed`, `assistantDeterministic`; lista en `src/mocks/scenarios.ts`).
 
+"Ya le informé" (propuesta DEC-080, B3): un toque en la tarjeta de Inicio o en la ficha envía un `ConversationRequest` de C3 1.0.2 sin cambiar el contrato, con estos valores por defecto que pone el front (`src/features/conversation/QuickInform.tsx`):
+- `benefit_ids`: los beneficios recién mostrados (`top_benefit_ids` de la tarjeta o `top_opportunities` de la ficha); `next_step`: `NONE` ("Por ahora nada", DEC-036).
+- `channel`: `IN_PERSON`; `origin`: `REAL_DEMO` (SUP-033); misma mutación, Idempotency-Key y cola offline que "Marcar conversado" (3 toques, que sigue igual).
+- No aparece si la familia ya está conversada o en cola; el texto del botón es provisional en el componente (no hay clave en `es.json`; Rol 4 debe agregarla).
+
 | Script | Para qué |
 |---|---|
 | `dev`, `dev:mock`, `dev:api` | Vite dev con variables del entorno, con mocks, o contra la API local de Rol 2 |

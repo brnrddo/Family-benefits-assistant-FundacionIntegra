@@ -22,6 +22,7 @@ import { Icon } from '../../ui/icons';
 import { PageTitle } from '../../ui/PageTitle';
 import { EmptyState, ErrorState, Skeleton } from '../../ui/states';
 import { QueuePanel } from '../conversation/QueuePanel';
+import { QuickInformButton } from '../conversation/QuickInform';
 import { useSelectedGarden } from '../system/useSelectedGarden';
 
 const familyPath = (familyId: string) => generatePath('/familias/:familyId', { familyId });
@@ -50,10 +51,18 @@ function ProgressCard({ garden }: { readonly garden: JardinSummary }) {
   );
 }
 
-function FamilyRow({ family, name, pendingLocal }: { readonly family: FamilySummary; readonly name: string; readonly pendingLocal: boolean }) {
+interface FamilyRowProps {
+  readonly family: FamilySummary;
+  readonly name: string;
+  readonly pendingLocal: boolean;
+  readonly gardenId: string;
+  readonly snapshotId: string | undefined;
+}
+
+function FamilyRow({ family, name, pendingLocal, gardenId, snapshotId }: FamilyRowProps) {
   const light = TRAFFIC_LIGHT_PRESENTATION[family.traffic_light];
   return (
-    <li>
+    <li className="space-y-2">
       <Link to={familyPath(family.family_id)} data-family-row className={`${CARD_CLASS} flex items-center gap-3 hover:border-primary`}>
         <div className="min-w-0 flex-1 space-y-2">
           <p className="font-bold">{name}</p>
@@ -80,6 +89,16 @@ function FamilyRow({ family, name, pendingLocal }: { readonly family: FamilySumm
         </div>
         <Icon name="chevron-left" className="size-6 rotate-180 text-ink-muted" />
       </Link>
+      {/* B3: un toque, fuera del enlace (sin controles anidados). Sin cola local pendiente. */}
+      {snapshotId !== undefined && !pendingLocal && (
+        <QuickInformButton
+          familyId={family.family_id}
+          gardenId={gardenId}
+          benefitIds={family.top_benefit_ids}
+          snapshotId={snapshotId}
+          informed={family.conversation_status === 'CONVERSADA'}
+        />
+      )}
     </li>
   );
 }
@@ -119,6 +138,8 @@ function FamilyList({ garden }: { readonly garden: JardinSummary }) {
               family={family}
               name={familyDisplayName(family.family_id, names)}
               pendingLocal={queue.pendingFamilyIds.has(family.family_id)}
+              gardenId={garden.garden_id}
+              snapshotId={familias.data?.pages[0]?.body.meta.snapshot_id}
             />
           ))}
         </ul>
