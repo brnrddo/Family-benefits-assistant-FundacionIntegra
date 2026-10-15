@@ -13,6 +13,10 @@
 > 3. **§8 Priorización reescrita** con tres ejes visibles para la tía: Urgencia · Beneficio para la familia · Vulnerabilidad del hogar.
 > 4. Nueva sección **§18 Roles del equipo** (4 integrantes, uno sin código), con contratos entre roles para trabajar en paralelo.
 > 5. **§15 Plan de trabajo** y **§17 Definición de terminado** ahora tienen dueño por tarea.
+>
+> **Convención de rutas:** todas las rutas de este documento se interpretan desde la raíz del repositorio, aunque este archivo viva en `docs/especificacion/`.
+>
+> Navegación: [roles y responsabilidades](../equipo/ROLES_Y_RESPONSABILIDADES.md) · [estructura del repositorio](../arquitectura/ESTRUCTURA_REPOSITORIO.md) · [flujo de la ficha](../producto/FLUJO_DE_FICHA.md)
 
 ---
 
@@ -168,7 +172,7 @@ La **Ficha de Inscripción y Matrícula** de Integra (formato 2019, `Ficha_Inscr
 ```
 
 #### 2.7.3 Qué recibe el LLM
-Solo: `composicion` (roles y edades), `rsh.tramo`, `ingreso_per_capita_rango`, `formato_preferido`, `idioma_mensaje` y la salida del motor. **Nunca**: nombres, RUT, folio RSH, teléfono, nacionalidad, diagnósticos, salud, derivaciones judiciales. El filtro vive en un único lugar (`genai/context_filter.py`) con test que falla si aparece un campo prohibido.
+Solo: `composicion` (roles y edades), `rsh.tramo`, `ingreso_per_capita_rango`, `formato_preferido`, `idioma_mensaje` y la salida del motor. **Nunca**: nombres, RUT, folio RSH, teléfono, nacionalidad, diagnósticos, salud, derivaciones judiciales. El único filtro previo al envío al modelo vive en `ia/context_filter.py`, con un test que falla si aparece un campo prohibido.
 
 > **Consentimiento:** la autorización de la ficha (Ley N.º 19.628) cubre estudios y transferencia a organismos públicos. Para el piloto real habría que agregar un consentimiento explícito para este uso; en la demo se muestra un aviso.
 
@@ -177,15 +181,15 @@ Solo: `composicion` (roles y edades), `rsh.tramo`, `ingreso_per_capita_rango`, `
 ## 3. Alcance del MVP (3 días)
 
 ### MUST (sin esto no hay demo)
-- **M1. Base de datos:** carga del dataset E-3 a DuckDB con vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`). *(Rol 1)*
-- **M2. Motor de elegibilidad** que evalúe las 20 prestaciones para las 500 familias en la fecha de corte, con resultado `SI | NO | INDETERMINADO`, nivel `CONFIRMADO | PRELIMINAR` y traza por regla. *(Rol 1)*
-- **M3. Estado de acceso** combinando elegibilidad + gestiones existentes (¿ya lo recibe?, ¿está postulando?, ¿le rechazaron?, ¿califica pero nunca lo pidió? ← la brecha). *(Rol 1)*
-- **M3b. Ventana de contexto:** ficha sintética por familia + objeto `contexto_familia` + filtro hacia el LLM (§2.7). *(Rol 1 construye · Rol 4 define el mapeo)*
-- **M3c. Priorización de tres ejes** (Urgencia · Beneficio · Vulnerabilidad), con el "por qué está primero" visible (§8). *(Rol 2 · pesos definidos por Rol 4)*
-- **M4. Panel del jardín:** lista de familias con semáforo y prioridad, % de familias informadas. *(Rol 3)*
-- **M5. Ficha de familia:** beneficios priorizados, explicación simple generada por IA, "qué falta" y "dónde ir", **guion de conversación** para la tía. *(Rol 3 vista · Rol 2 IA)*
-- **M6. Registro de conversación** ("Conversado" + beneficios mencionados + siguiente paso + fecha) → alimenta KPI. *(Rol 2 API · Rol 3 vista)*
-- **M7. Panel KPI** (jardín / comuna / región): % informadas, % nuevas informadas, top brechas. *(Rol 3)*
+- **M1. Base de datos:** carga del dataset E-3 a DuckDB con vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`). *(Mecánica)*
+- **M2. Motor de elegibilidad** que evalúe las 20 prestaciones para las 500 familias en la fecha de corte, con resultado `SI | NO | INDETERMINADO`, nivel `CONFIRMADO | PRELIMINAR` y traza por regla. *(Computación)*
+- **M3. Estado de acceso** combinando elegibilidad + gestiones existentes (¿ya lo recibe?, ¿está postulando?, ¿le rechazaron?, ¿califica pero nunca lo pidió? ← la brecha). *(Mecánica, integrado por Computación)*
+- **M3b. Ventana de contexto:** ficha sintética por familia + objeto `contexto_familia` + filtro hacia el LLM (§2.7). *(Mecánica calcula · Recursos Naturales define el mapeo · Computación implementa el filtro)*
+- **M3c. Priorización de tres ejes** (Urgencia · Beneficio · Vulnerabilidad), con el "por qué está primero" visible (§8). *(Mecánica · pesos definidos por Recursos Naturales)*
+- **M4. Panel del jardín:** lista de familias con semáforo y prioridad, % de familias informadas. *(Eléctrica)*
+- **M5. Ficha de familia:** beneficios priorizados, explicación simple generada por IA, "qué falta" y "dónde ir", **guion de conversación** para la tía. *(Eléctrica implementa la vista · Computación integra Bedrock · Recursos Naturales revisa el lenguaje)*
+- **M6. Registro de conversación** ("Conversado" + beneficios mencionados + siguiente paso + fecha) → alimenta KPI. *(Computación API · Eléctrica vista)*
+- **M7. Panel KPI** (jardín / comuna / región): % informadas, % nuevas informadas, top brechas. *(Eléctrica, con API de Computación)*
 
 ### SHOULD
 - **S1. Mensaje para la familia:** tarjeta imprimible (PDF/HTML) y texto para WhatsApp, generado por IA, en lenguaje simple.
@@ -220,9 +224,13 @@ Hackatón de AWS → usar **Amazon Bedrock (Claude)** para la capa generativa. M
 │  ├─ engine/        motor de reglas determinista (sin LLM)                    │
 │  ├─ access/        estado de acceso (elegibilidad + gestiones)               │
 │  ├─ priority/      ranking de qué conversar con cada familia                 │
-│  ├─ genai/         Bedrock: explicaciones, guion, mensaje, asistente, OCR    │
 │  ├─ tracking/      registro de conversaciones (KPI)                          │
-│  └─ api/           endpoints                                                 │
+│  └─ api/           endpoints; entrega contexto mínimo a ia/                  │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │ contrato interno
+┌───────────────────────────────▼──────────────────────────────────────────────┐
+│ IA generativa (`ia/`) · única integración Bedrock                           │
+│ filtro de contexto → prompts técnicos → explicaciones, guion y mensajes      │
 └──────────────────────────────────────────────────────────────────────────────┘
 Despliegue sugerido: backend en AWS App Runner o Lambda (Mangum); front en Amplify/S3+CloudFront;
 persistencia de conversaciones en DynamoDB (o SQLite local para la demo).
@@ -230,29 +238,30 @@ persistencia de conversaciones en DynamoDB (o SQLite local para la demo).
 
 ### 4.1 Estructura de repo sugerida
 ```
-/data/participantes_e3/            # zip descomprimido (no versionar si es pesado)
-/backend
+/data/participantes_e3/            # zip descomprimido (no versionar si es pesado) · Mecánica
+/backend                          # Computación lidera integración técnica
   /app
     main.py
-    config.py                      # FECHA_EVALUACION, rutas, proveedor LLM
-    /loader      load.py
-    /db          schema.sql  views.sql                     # Rol 1
-    /engine      model.py  facts.py  operators.py  evaluator.py  roles.py   # Rol 1
-    /access      access_state.py                           # Rol 1
-    /context     ficha_sintetica.py  contexto_familia.py   # Rol 1
-    /priority    ranking.py                                # Rol 2
-    /genai       provider.py  context_filter.py  prompts.py  explain.py  script.py  message.py  assistant.py  ingest_flyer.py   # Rol 2
-    /tracking    conversations.py
-    /api         routes_jardin.py routes_familia.py routes_kpi.py routes_genai.py
-  /tests         test_operators.py test_evaluator.py test_access.py test_fixtures.py
-/frontend                          # Rol 3
+    config.py                      # FECHA_EVALUACION y rutas
+    /loader      load.py                                       # Mecánica
+    /db          schema.sql  views.sql                         # Mecánica
+    /engine      model.py  facts.py  operators.py  evaluator.py  roles.py   # Computación
+    /access      access_state.py                               # Mecánica
+    /context     ficha_sintetica.py  contexto_familia.py       # Mecánica
+    /priority    ranking.py                                    # Mecánica
+    /tracking    conversations.py                              # Computación
+    /api         routes_jardin.py routes_familia.py routes_kpi.py routes_genai.py   # Computación
+  /tests         test_operators.py test_evaluator.py test_access.py test_fixtures.py   # QA Mecánica; motor Computación
+/ia                               # Computación · única integración Bedrock
+  provider.py  context_filter.py  prompts.py  explain.py  script.py  message.py  assistant.py  ingest_flyer.py
+/frontend                          # Eléctrica
   /src  pages/ components/ api/ mocks/ i18n/es.ts
-/content                           # Rol 4 (sin código: texto, tablas y YAML simples)
-  mapeo_ficha.csv                  # §2.7.1, lo leen Rol 1 y Rol 2
-  pesos_priorizacion.yaml          # §8, lo lee priority/ranking.py
-  preguntas.yaml                   # §9.3, dato_faltante → pregunta humana
+/content                           # Recursos Naturales (artefactos futuros de producto, sin código)
+  mapeo_ficha.csv                  # lo consumen Mecánica y Computación
+  pesos_priorizacion.yaml          # lo consume priority/ranking.py
+  preguntas.yaml                   # dato_faltante → pregunta humana
   beneficios_simple.yaml           # nombre simple, dónde ir, qué llevar, URL oficial
-  prompts/*.md                     # texto de los prompts; Rol 2 los conecta
+  prompts/*.md                     # Recursos Naturales redacta; Computación conecta
   demo/familias_demo.md  pitch.md
 README.md
 ```
@@ -530,7 +539,7 @@ peso_estado: ELEGIBLE_SIN_ASIGNACION 10 · GESTION_RECHAZADA 7 · PENDIENTE_ANTE
 bonus_accion: +1 si requiere_accion_familia = true (si es automático, la familia no tiene que hacer nada)
 pesos por defecto: w_U = 0.4 · w_B = 0.4 · w_V = 0.2
 ```
-Todos los números viven en `content/pesos_priorizacion.yaml` (dueño: Rol 4). `ranking.py` no tiene ningún número escrito a mano.
+Todos los números viven en `content/pesos_priorizacion.yaml` (dueño funcional: Ingeniería en Recursos Naturales; implementación: Ingeniería Mecánica). `ranking.py` no tiene ningún número escrito a mano.
 
 ### 8.3 Prioridad de la familia en la lista del jardín
 ```
@@ -559,7 +568,7 @@ En el detalle técnico se muestran U, B, V, peso_estado y el puntaje final, para
 ### 9.1 Reglas para todos los prompts
 - Entrada = **solo** el JSON de salida del motor + puntajes de §8 + `contexto_familia` filtrado (§2.7.3) + catálogo + fuentes. Nada de RUT ni nombres.
 - Si `formato_preferido = VISUAL/AUDIO`, el mensaje usa frases aún más cortas, íconos y una versión para que la tía lo lea en voz alta.
-- El texto de cada prompt vive en `content/prompts/*.md` (lo escribe y revisa Rol 4); el código solo lo carga y le inyecta los datos.
+- Ingeniería en Recursos Naturales define y revisa el contenido en `docs/producto/`; las plantillas técnicas viven en `ia/`, donde Ingeniería en Computación las conecta e inyecta los datos filtrados.
 - Prohibido inventar beneficios, montos, requisitos o lugares que no estén en la entrada.
 - Prohibido afirmar que la familia "tiene derecho" o "recibirá". Usar "podría", "vale la pena consultar".
 - Español de Chile, trato de usted, frases ≤ 20 palabras, sin siglas sin explicar (RSH → "Registro Social de Hogares").
@@ -657,17 +666,17 @@ Copy siempre en español simple. Nada de jerga técnica en la vista principal (l
 
 Roles detallados en §18. Hay **tres puntos de integración diarios**: 🔗 10:00 (acuerdos del día) · 🔗 14:00 (integrar lo que hay) · 🔗 19:00 (demo interna de 5 minutos, aunque sea fea).
 
-| | **Rol 1 · Datos y motor** | **Rol 2 · API, priorización e IA** | **Rol 3 · Frontend** | **Rol 4 · Producto, contenido y pitch (sin código)** |
+| | **Computación · liderazgo, motor, API y Bedrock** | **Mecánica · datos, acceso, prioridad y QA** | **Eléctrica · PWA, integración y AWS** | **Recursos Naturales · producto y pitch (sin código)** |
 |---|---|---|---|---|
-| **Día 1 mañana** | Repo, loader DuckDB, `schema.sql`, vistas básicas | Esqueleto FastAPI con **endpoints mock** (JSON fijos) y `/docs` | Esqueleto PWA, rutas, consume los mocks | `mapeo_ficha.csv` (§2.7.1) y primera versión de `pesos_priorizacion.yaml` |
-| **Día 1 tarde** | Operadores + evaluador (AND/OR/bindings/3 valores/versiones); **stub de 5 familias** de evaluación a las 14:00 | `ranking.py` con los 3 ejes leyendo el YAML; conexión a Bedrock probada | Lista del jardín con semáforo + barra de avance | `preguntas.yaml` + `beneficios_simple.yaml` (nombre simple, dónde ir, qué llevar, URL oficial) |
-| **Día 1 noche** | 10.000 evaluaciones + tests obligatorios (§6.7) | `/oportunidades` real (motor + estado + ranking) | Ficha de familia con tarjetas y chips U/B/V | Elegir 3 familias demo (brecha, discapacidad, sin RSH) revisando la salida |
-| **Día 2 mañana** | Estado de acceso (§7) + cupo BEN-018 + ficha sintética y `contexto_familia` | `context_filter.py` + test; prompts de explicación y guion con caché | "Marcar conversado" (3 toques) + guion | Textos de los prompts en `content/prompts/`; revisar 10 salidas reales y corregir lenguaje |
-| **Día 2 tarde** | Ficha digital → hechos DECLARADO → reevaluación | Mensaje WhatsApp/tarjeta; conversaciones + KPIs; **deploy AWS** | Panel KPI + ficha digital (familia nueva) | Prueba de usabilidad haciendo de "tía" en un celular real; lista de arreglos para Rol 3 |
-| **Día 2 noche** | Sembrar conversaciones simuladas; README de supuestos de datos | Asistente RAG (S3) | Pulido móvil 360 px, modo poca conexión | Primer borrador de slides y guion de pitch; cronometrar |
-| **Día 3** | Soporte + arreglos; congelar datos a las 12:00 | (COULD) ingesta de afiche; congelar a las 12:00 | Pulido final, datos sembrados visibles | **Ensayo del pitch ×3**, video de respaldo de la demo, respuestas a preguntas del jurado |
+| **Día 1 mañana** | Acordar arquitectura; FastAPI con endpoints mock y `/docs` | Loader DuckDB, `schema.sql`, vistas y perfil de calidad | Esqueleto PWA, rutas y consumo de mocks | Mapeo de ficha y primera propuesta de pesos de prioridad |
+| **Día 1 tarde** | Operadores + evaluador; publicar stub de 5 familias; probar Bedrock | Características calculadas, casos QA y ranking U/B/V parametrizado | Lista del jardín con semáforo y barra de avance | Banco de preguntas y contenido simple de beneficios |
+| **Día 1 noche** | Motor y API de oportunidades integrados | Carga de 10.000 pares, estado de acceso y pruebas de datos | Ficha familiar con tarjetas y chips U/B/V | Elegir 3 familias demo revisando la salida |
+| **Día 2 mañana** | Filtro de contexto + test; explicación y guion con caché | Cupo BEN-018, ficha sintética, `contexto_familia` y ranking final | “Marcar conversado” en 3 toques + guion | Revisar 10 salidas reales, privacidad y lenguaje |
+| **Día 2 tarde** | Mensaje, conversaciones, KPI y API real | Ficha digital → hechos DECLARADO → reevaluación; QA extremo a extremo | Panel KPI, ficha nueva y primer despliegue AWS | Prueba de usabilidad como “tía” en un celular real |
+| **Día 2 noche** | Asistente RAG (S3) y plan B sin Bedrock | Sembrar conversaciones simuladas y documentar supuestos | Pulido móvil 360 px y modo poca conexión | Primer borrador de slides y guion de pitch |
+| **Día 3** | Soporte de integración; congelar motor/API a las 12:00 | Pruebas finales y congelar datos a las 12:00 | Pulido y despliegue final; respaldo local | **Ensayo del pitch ×3**, video de respaldo y respuestas al jurado |
 
-**Regla de oro:** nadie espera a nadie. Rol 3 trabaja contra mocks hasta que Rol 2 publica lo real; Rol 2 trabaja contra el stub de 5 familias hasta que Rol 1 tiene las 10.000.
+**Regla de oro:** nadie espera a nadie. Eléctrica trabaja contra mocks hasta que Computación publica el API real; Computación trabaja contra el contrato pequeño hasta que Mecánica entrega la carga completa. Recursos Naturales prueba cada integración visible.
 
 ---
 
@@ -685,81 +694,108 @@ Roles detallados en §18. Hay **tres puntos de integración diarios**: 🔗 10:0
 ---
 
 ## 17. Definición de terminado (checklist con dueño)
-- [ ] `make setup && make run` (o equivalente) levanta backend + front con los datos cargados. *(Rol 2)*
-- [ ] Base DuckDB con vistas de cruce; 10.000 evaluaciones precalculadas en < 30 s, con traza por regla. *(Rol 1)*
-- [ ] Tests de operadores, bindings, OR, versiones, nulos e INDETERMINADO pasando. *(Rol 1)*
-- [ ] `contexto_familia` generado para las 500 familias; test del filtro de campos prohibidos pasando. *(Rol 1 + Rol 2)*
-- [ ] Priorización con U/B/V leyendo `pesos_priorizacion.yaml`, sin números en el código. *(Rol 2)*
-- [ ] Ninguna decisión de elegibilidad pasa por el LLM. *(Rol 2)*
-- [ ] Ficha de familia con top 3 + chips U/B/V + "¿por qué está primero?" + preguntas + guion + mensaje + marcar conversado. *(Rol 3)*
-- [ ] Panel KPI con % informadas y % nuevas informadas. *(Rol 3)*
-- [ ] Aviso "orientación referencial; no determina derechos" visible en ficha, guion y mensaje. *(Rol 3 + Rol 4 revisa)*
-- [ ] Todos los textos visibles revisados en lenguaje simple. *(Rol 4)*
-- [ ] README con arquitectura, supuestos sobre datos faltantes (incluida la ventana de acceso, §8.1) y cómo correr. *(Rol 1 + Rol 2; Rol 4 revisa que se entienda)*
-- [ ] Funciona bien en un celular (viewport 360 px). *(Rol 3; Rol 4 lo prueba)*
-- [ ] Pitch ensayado en ≤ 4 minutos + video de respaldo. *(Rol 4)*
+- [ ] `make setup && make run` (o equivalente) levanta backend + front con los datos cargados. *(Computación + Eléctrica)*
+- [ ] Base DuckDB con vistas de cruce; 10.000 evaluaciones precalculadas en < 30 s, con traza por regla. *(Mecánica carga · Computación motor)*
+- [ ] Tests de operadores, bindings, OR, versiones, nulos e INDETERMINADO pasando. *(Computación; QA Mecánica)*
+- [ ] `contexto_familia` generado para las 500 familias; test del filtro de campos prohibidos pasando. *(Mecánica genera · Computación filtra)*
+- [ ] Priorización con U/B/V leyendo `pesos_priorizacion.yaml`, sin números en el código. *(Mecánica; Recursos Naturales valida pesos)*
+- [ ] Ninguna decisión de elegibilidad pasa por el LLM. *(Computación)*
+- [ ] Ficha de familia con top 3 + chips U/B/V + "¿por qué está primero?" + preguntas + guion + mensaje + marcar conversado. *(Eléctrica)*
+- [ ] Panel KPI con % informadas y % nuevas informadas. *(Eléctrica + API de Computación)*
+- [ ] Aviso "orientación referencial; no determina derechos" visible en ficha, guion y mensaje. *(Eléctrica; Recursos Naturales revisa)*
+- [ ] Todos los textos visibles revisados en lenguaje simple. *(Recursos Naturales)*
+- [ ] README con arquitectura, supuestos sobre datos faltantes (incluida la ventana de acceso, §8.1) y cómo correr. *(Computación + Mecánica; Recursos Naturales revisa que se entienda)*
+- [ ] Funciona bien en un celular (viewport 360 px). *(Eléctrica; Recursos Naturales lo prueba)*
+- [ ] Pitch ensayado en ≤ 4 minutos + video de respaldo. *(Recursos Naturales)*
 
 ---
 
 ## 18. Roles del equipo (4 integrantes)
 
-Cada rol es **dueño** de una parte del repo y de un entregable. Ser dueño significa decidir y responder por eso, no trabajar solo: cualquiera puede ayudar, pero el dueño aprueba los cambios en su carpeta.
+El repositorio se organiza por componentes, no por carpetas personales. Ser dueño significa decidir y responder por un entregable; cualquier integrante puede ayudar, pero el dueño aprueba los cambios y coordina sus contratos.
 
-### 🗄️ Rol 1 · Datos y motor de elegibilidad
-**Perfil:** el más fuerte en Python/SQL y lógica.
-**Dueño de:** `backend/app/{loader,db,engine,access,context}`, `backend/tests`.
-**Responsable de:**
-- Cargar el zip a DuckDB y crear las vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`).
-- Motor de reglas completo (§6): versiones, operadores, bindings, OR/AND, tres valores, CONFIRMADO/PRELIMINAR, traza.
-- Estado de acceso (§7), incluido el cupo de BEN-018.
-- Ficha sintética y objeto `contexto_familia` (§2.7), según el mapeo de Rol 4.
-- Tests obligatorios (§6.7) y la parte de datos del README.
-**Entrega a otros:** el contrato C1 (salida del motor, §6.6) y C2 (`contexto_familia`).
+### 💻 Ingeniería en Computación · liderazgo técnico, motor, backend/API y Bedrock
 
-### ⚙️ Rol 2 · API, priorización e IA generativa
-**Perfil:** backend + nube; cómodo integrando servicios.
-**Dueño de:** `backend/app/{api,priority,genai,tracking}`, despliegue en AWS, `Makefile`.
-**Responsable de:**
-- FastAPI con endpoints mock desde la primera hora (para destrabar a Rol 3).
-- Priorización de tres ejes (§8), leyendo los pesos de `content/`.
-- Bedrock: explicación, guion, mensaje, asistente; filtro de contexto (§2.7.3); caché; temperatura baja.
-- Registro de conversaciones y cálculo de KPIs (§11).
-- Deploy (App Runner/Lambda + Amplify) y plan B local si Bedrock falla.
-**Entrega a otros:** el contrato C3 (API documentada en `/docs`).
+**Perfil:** integrante con mayor experiencia en programación, arquitectura y servicios.
 
-### 📱 Rol 3 · Frontend (PWA mobile-first)
-**Perfil:** React/TypeScript, ojo para la usabilidad.
-**Dueño de:** `frontend/`.
-**Responsable de:**
-- Las 6 pantallas de §14, pensadas para celular de gama baja y poca conexión.
-- Tarjetas de beneficio con chips U/B/V, selector de orden y "¿por qué está primero?".
-- Flujo "Marcar conversado" en 3 toques; ficha digital de familia nueva; panel KPI.
-- Mostrar el aviso de orientación referencial en todas las vistas que corresponde.
-- Todo el texto visible sale de `i18n/es.ts`, para que Rol 4 lo pueda corregir sin tocar componentes.
+**Dueño de:** liderazgo técnico y `backend/` —en especial futuras áreas `engine` y `api`—; también de `ia/`, ubicación única de la integración Bedrock y del filtro de contexto previo al envío.
 
-### 🎯 Rol 4 · Producto, contenido y pitch (**sin código**)
-**Perfil:** buena comunicación, criterio, orden. No necesita programar: trabaja en planillas, YAML simples (listas de "clave: valor"), Markdown y en el celular probando la app.
-**Dueño de:** `content/`, `i18n/es.ts` (solo textos), slides y pitch.
 **Responsable de:**
-- **Mapeo de la ficha** (`content/mapeo_ficha.csv`): revisar campo por campo la ficha de Integra y decidir qué entra al motor, qué es solo contexto y qué se excluye (§2.7.1). Es la base de la "ventana de contexto".
-- **Pesos de priorización** (`pesos_priorizacion.yaml`): definir qué cuenta como urgente y los valores equivalentes de beneficios en especie, con argumentos que se puedan defender ante el jurado.
-- **Contenido de beneficios** (`beneficios_simple.yaml`): nombre en lenguaje simple, dónde ir, qué llevar y URL oficial (VUS, ChileAtiende, JUNAEB, Chile Crece Contigo, IPS) para los 20 beneficios.
-- **Banco de preguntas** (`preguntas.yaml`): cada dato faltante → una pregunta amable que la tía pueda hacer en la puerta.
-- **Texto de los prompts** (`content/prompts/*.md`) y revisión de salidas de la IA: que nunca prometan, que usen "usted", frases cortas, sin siglas.
-- **Usuario de prueba:** hace de "tía" con el celular, cronometra el flujo y entrega una lista priorizada de arreglos a Rol 3.
-- **Ética y privacidad:** revisa que ningún dato prohibido aparezca en pantallas, mensajes o prompts (checklist de §13 y §2.7.3).
-- **Demo y pitch:** elige las familias de demo, escribe el guion (§16), arma las slides, graba el video de respaldo y lidera el ensayo.
+- Acordar arquitectura y contratos, integrar los componentes y destrabar decisiones técnicas.
+- Implementar el motor de reglas (§6): versiones, operadores, bindings, OR/AND, tres valores, CONFIRMADO/PRELIMINAR y traza.
+- Publicar endpoints mock desde la primera hora y luego el API real de §4.2.
+- Integrar Bedrock para explicación, guion y mensaje, con filtro de contexto (§2.7.3), caché y temperatura baja.
+- Garantizar que Bedrock nunca decida elegibilidad, acceso o prioridad y mantener un plan B por plantillas.
+- Implementar registro de conversaciones y endpoints de KPI (§11).
+
+**Entrega a otros:** contrato de evaluación determinista y API documentada, primero con un stub pequeño y luego con la carga completa.
+
+### ⚙️ Ingeniería Mecánica · datos, características, acceso, prioridad y QA
+
+**Perfil:** programación básica; trabajo guiado por contratos, SQL/Python acotado y pruebas reproducibles.
+
+**Dueño de:** `data/`, `database/` y futuras áreas `loader`, `features`, `access`, `priority` y QA, aunque esas carpetas todavía no se creen.
+
+**Responsable de:**
+- Cargar los 23 CSV canónicos y crear el esquema y las vistas de cruce (`v_familia_beneficio`, `v_oportunidades`, `v_brechas`).
+- Construir características calculadas sin confundir dato ausente, `false` y cero.
+- Combinar la evaluación con gestiones para producir estado de acceso (§7), incluido el cupo de BEN-018.
+- Generar ficha sintética y `contexto_familia` (§2.7) según el mapeo validado por Recursos Naturales.
+- Implementar la priorización U/B/V (§8) a partir de parámetros revisados por Recursos Naturales.
+- Preparar casos QA, verificar bindings, nulos, cambios de versión y consistencia extremo a extremo.
+
+**Entrega a otros:** base tipada, características, estado de acceso, prioridad con explicación y evidencia de QA.
+
+### 📱 Ingeniería Eléctrica · PWA, integración y despliegue AWS
+
+**Perfil:** programación básica; trabajo apoyado en componentes visuales, mocks y contratos de API.
+
+**Dueño de:** `frontend/`, integración visible y despliegue AWS.
+
+**Responsable de:**
+- Implementar las seis pantallas de §14 para celular de gama baja y poca conexión.
+- Mostrar tarjetas con U/B/V, orden, “¿por qué está primero?”, preguntas y separación de beneficios personalizados y generales.
+- Implementar “Marcar conversado” en tres toques, ficha de familia nueva y panel KPI.
+- Consumir primero mocks y luego el API real sin duplicar reglas de elegibilidad o prioridad en el navegador.
+- Mostrar el aviso referencial donde corresponda y mantener secretos fuera del frontend.
+- Desplegar la PWA y servicios acordados en AWS, con respaldo local para la demo.
+
+**Entrega a otros:** PWA integrada, URL o ejecución local reproducible y recorrido de demo.
+
+### 🌿 Ingeniería en Recursos Naturales · producto, dominio y pitch (**sin programar**)
+
+**Perfil:** conocimiento de contexto, comunicación y criterio. Trabaja en documentos, planillas y pruebas en celular; no necesita programar.
+
+**Dueño de:** `docs/producto/`, lenguaje, privacidad, pruebas manuales, demo y pitch.
+
+**Responsable de:**
+- Revisar campo por campo la ficha de Integra y decidir qué entra al motor, qué es contexto y qué se excluye (§2.7.1).
+- Definir y justificar señales y pesos de prioridad junto con Mecánica.
+- Validar nombre simple, dónde consultar, qué llevar y fuente oficial de los 20 beneficios.
+- Convertir cada dato faltante en una pregunta amable que la educadora pueda hacer.
+- Escribir y revisar el contenido de prompts y salidas: sin promesas, trato de usted, frases cortas y sin siglas.
+- Probar el flujo como “tía” en un celular, cronometrarlo y entregar hallazgos priorizados a Eléctrica.
+- Revisar que ningún dato prohibido aparezca en pantallas, mensajes o prompts (§13 y §2.7.3).
+- Elegir familias de demo, escribir el guion (§16), preparar slides, grabar respaldo y liderar ensayos.
+
+**Entrega a otros:** criterios verificables de producto, textos aprobados, checklist de privacidad, resultados de pruebas manuales y pitch.
 
 ### Contratos entre roles (para trabajar en paralelo)
+
 | Contrato | De → Para | Qué es | Plazo |
 |---|---|---|---|
-| C0 · Mapeo ficha | Rol 4 → Rol 1, Rol 2 | `content/mapeo_ficha.csv` | Día 1, 14:00 |
-| C1 · Salida del motor | Rol 1 → Rol 2 | JSON de §6.6 (stub de 5 familias primero) | stub Día 1 14:00 · completo Día 1 noche |
-| C2 · `contexto_familia` | Rol 1 → Rol 2 | JSON de §2.7.2 | Día 2, 12:00 |
-| C3 · API | Rol 2 → Rol 3 | endpoints de §4.2, primero con mocks | mocks Día 1, 11:00 |
-| C4 · Contenido | Rol 4 → Rol 2, Rol 3 | pesos, preguntas, beneficios simples, prompts, textos | v1 Día 1 noche · final Día 2, 18:00 |
+| C0 · Mapeo de ficha | Recursos Naturales → Mecánica y Computación | Campos de motor, contexto y exclusión | Día 1, 14:00 |
+| C1 · Datos tipados | Mecánica → Computación | Base, características y significado de nulos | stub Día 1, 14:00 · completo Día 1 noche |
+| C2 · Salida del motor | Computación → Mecánica y Eléctrica | JSON de §6.6, con traza y datos faltantes | stub de 5 familias primero |
+| C3 · Acceso y prioridad | Mecánica → Computación y Eléctrica | Estado, U/B/V, puntaje y razón del orden | Día 2, 12:00 |
+| C4 · API | Computación → Eléctrica | Endpoints de §4.2, primero con mocks | mocks Día 1, 11:00 |
+| C5 · Producto y lenguaje | Recursos Naturales → Computación y Eléctrica | Preguntas, textos, privacidad y hallazgos | v1 Día 1 noche · final Día 2, 18:00 |
+| C6 · PWA y despliegue | Eléctrica → equipo | Flujo integrado y plan de respaldo | Día 2, 18:00 |
 
 ### Forma de trabajo
-- Una rama por rol (`datos`, `api`, `front`, `contenido`); se integra a `main` en cada 🔗 punto de integración.
-- Si algo bloquea a otro rol por más de 30 minutos, se avisa en el chat del equipo y se acuerda un mock.
-- Rol 4 corre la demo interna de las 19:00: si no se puede mostrar, no está terminado.
+
+- Una rama por tarea y componente, no por persona (por ejemplo, `datos/loader`, `backend/motor`, `front/ficha`, `docs/privacidad`). Se integra en cada punto diario acordado.
+- Si algo bloquea a otra persona por más de 30 minutos, se avisa en el chat y se acuerda un mock que preserve el contrato.
+- Computación y Mecánica hacen revisión cruzada de motor/datos; Eléctrica y Recursos Naturales revisan juntas la experiencia visible.
+- Recursos Naturales conduce la demo interna de las 19:00: si el flujo no se puede mostrar, aún no está terminado.
+- El detalle operativo y ownership por componente está en [Roles y responsabilidades](../equipo/ROLES_Y_RESPONSABILIDADES.md).
