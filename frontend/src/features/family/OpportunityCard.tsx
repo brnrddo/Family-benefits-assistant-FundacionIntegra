@@ -2,17 +2,15 @@
 // está primero?” siempre visible; detalle expandible con dónde ir, faltantes, fuentes y detalle técnico.
 // Los chips solo traducen enums/valores de C3 a ícono + texto (SUP-036); no cambian el orden.
 import { useId } from 'react';
-import type { BenefitResult, MissingCode, Opportunity } from '../../api/types';
+import type { BenefitResult, Opportunity } from '../../api/types';
 import { formatClp, formatInteger } from '../../domain/format';
-import { accessPresentation, ACCESS_STATE_KEY, ACTION_TYPE_KEY, MISSING_CODE_KEY, urgencyChip } from '../../domain/presentation';
+import { accessPresentation, ACCESS_STATE_KEY, ACTION_TYPE_KEY, missingCodeLabels, urgencyChip } from '../../domain/presentation';
 import { t } from '../../i18n/copy';
 import { CARD_CLASS } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
 import { Expandable } from '../../ui/Expandable';
 import { SourceLink } from '../../ui/SourceLink';
 import { TechnicalDetail } from './TechnicalDetail';
-
-const isMissingCode = (code: string): code is MissingCode => Object.prototype.hasOwnProperty.call(MISSING_CODE_KEY, code);
 
 function amountLabel(opportunity: Opportunity): string {
   if (opportunity.estimated_annual_amount === null) return t('chip.benefit.no_amount');
@@ -29,7 +27,7 @@ export function OpportunityCard({ opportunity, result }: OpportunityCardProps) {
   const headingId = useId();
   const group = accessPresentation(opportunity.access_state);
   const urgency = urgencyChip(opportunity.urgency);
-  const missing = opportunity.missing_codes.filter(isMissingCode);
+  const missing = missingCodeLabels(opportunity.missing_codes);
   return (
     <article aria-labelledby={headingId} className={`${CARD_CLASS} space-y-3`}>
       <p className="text-[0.9rem] text-ink-muted">{t('card.position', { position: formatInteger(opportunity.position) })}</p>
@@ -73,8 +71,8 @@ export function OpportunityCard({ opportunity, result }: OpportunityCardProps) {
           <div>
             <h4 className="font-semibold">{t('card.missing_label')}</h4>
             <ul className="list-disc pl-6">
-              {missing.map((code) => (
-                <li key={code}>{t(MISSING_CODE_KEY[code])}</li>
+              {missing.map((label) => (
+                <li key={label}>{label}</li>
               ))}
             </ul>
           </div>

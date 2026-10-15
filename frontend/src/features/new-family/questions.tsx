@@ -1,11 +1,12 @@
 // Preguntas CERRADAS de la ficha (design.md §9.6), compartidas por Familia nueva y por "Agregar
 // información" (DEC-039). Cada pregunta corresponde a un campo cerrado de PreevaluationRequest de C3
-// y admite "No sé" (→ null; vivienda → UNKNOWN, SUP-034). Sin nombres, identificadores, contacto ni
+// (o, solo en "Agregar información", a un booleano de la propuesta fuera de C3) y admite "No sé" (→ null; vivienda → UNKNOWN, SUP-034). Sin nombres, identificadores, contacto ni
 // texto libre.
 import { useId } from 'react';
 import { isApiError, isInvalidResponse } from '../../api/errors';
-import type { AddInfoField } from '../../api/proposals/types';
-import type { HousingType, IncomeBand, PreevaluationRequest } from '../../api/types';
+import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
+import type { AddFamilyInfoRequestV1, AddInfoExtraField, AddInfoField, C3AddInfoField } from '../../api/proposals/types';
+import type { HousingType, IncomeBand } from '../../api/types';
 import { formatDate, formatInteger } from '../../domain/format';
 import { HOUSING_KEY, INCOME_BAND_KEY } from '../../domain/presentation';
 import { t, type PlainCopyKey } from '../../i18n/copy';
@@ -13,16 +14,19 @@ import { todayLocalIso } from '../../lib/now';
 import { Button } from '../../ui/Button';
 import { ChoiceChips, type ChoiceOption } from '../../ui/ChoiceChips';
 
-export type QuestionKey = AddInfoField;
+/** Campo de C3 (Familia nueva y Agregar información). */
+export type QuestionKey = C3AddInfoField;
+/** Cualquier campo de Agregar información (C3 + booleanos de la propuesta fuera de C3). */
+export type AddInfoQuestionKey = AddInfoField;
 /** Respuesta cruda por pregunta: '' = sin responder; 'unknown' = "No sé". */
-export type Answers = Readonly<Record<QuestionKey, string>>;
+export type Answers = Readonly<Record<AddInfoQuestionKey, string>>;
 
 export const UNKNOWN = 'unknown';
 export const RSH_BANDS = [40, 50, 60, 70, 80, 90, 100] as const;
 export const INCOME_BANDS: readonly IncomeBand[] = ['UNDER_110K', '110K_250K', '250K_400K', 'OVER_400K'];
 export const HOUSING: readonly Exclude<HousingType, 'UNKNOWN'>[] = ['ADEQUATE', 'CAMP_OR_OCCUPATION', 'ROOM_IN_OTHER_HOME', 'OTHER'];
 
-export const LABEL: Readonly<Record<QuestionKey, PlainCopyKey>> = {
+export const LABEL: Readonly<Record<C3AddInfoField, PlainCopyKey>> = {
   child_age: 'new_family.q.child_age',
   siblings_under_6: 'new_family.q.siblings_under_6',
   siblings_6_14: 'new_family.q.siblings_6_14',
@@ -43,14 +47,25 @@ export const LABEL: Readonly<Record<QuestionKey, PlainCopyKey>> = {
   household_food_purchase_difficulty: 'new_family.q.household_food_purchase_difficulty',
 };
 
-export type Question =
-  | { readonly kind: 'count'; readonly key: QuestionKey; readonly max: number }
-  | { readonly kind: 'bool'; readonly key: QuestionKey }
-  | { readonly kind: 'choice'; readonly key: QuestionKey; readonly options: () => ChoiceOption[] }
-  | { readonly kind: 'date'; readonly key: QuestionKey };
+/** Preguntas de los booleanos fuera de C3 ("Agregar información"; textos provisionales, PREG-070). */
+const EXTRA_LABEL: Readonly<Record<AddInfoExtraField, string>> = {
+  pregnancy_weeks_at_least_threshold: ADD_INFO_COPY.pregnancyWeeksMin,
+  ...ADD_INFO_COPY.questions,
+};
 
-const count = (key: QuestionKey, max: number): Question => ({ kind: 'count', key, max });
-const bool = (key: QuestionKey): Question => ({ kind: 'bool', key });
+const isC3Field = (key: AddInfoQuestionKey): key is QuestionKey => Object.prototype.hasOwnProperty.call(LABEL, key);
+
+/** Texto de la pregunta de un campo. */
+export const questionLabel = (key: AddInfoQuestionKey): string => (isC3Field(key) ? t(LABEL[key]) : EXTRA_LABEL[key]);
+
+export type Question<K extends AddInfoQuestionKey = QuestionKey> =
+  | { readonly kind: 'count'; readonly key: K; readonly max: number }
+  | { readonly kind: 'bool'; readonly key: K }
+  | { readonly kind: 'choice'; readonly key: K; readonly options: () => ChoiceOption[] }
+  | { readonly kind: 'date'; readonly key: K };
+
+const count = <K extends AddInfoQuestionKey>(key: K, max: number): Question<K> => ({ kind: 'count', key, max });
+const bool = <K extends AddInfoQuestionKey>(key: K): Question<K> => ({ kind: 'bool', key });
 
 /** Una definición por campo cerrado (orden de la ficha). */
 export const QUESTIONS: Readonly<Record<QuestionKey, Question>> = {
@@ -82,7 +97,20 @@ export const QUESTIONS: Readonly<Record<QuestionKey, Question>> = {
   household_food_purchase_difficulty: bool('household_food_purchase_difficulty'),
 };
 
-export const QUESTION_ORDER = Object.keys(LABEL) as QuestionKey[];
+/** Booleanos fuera de C3: solo en "Agregar información" (nunca en Familia nueva). */
+const EXTRA_QUESTIONS: Readonly<Record<AddInfoExtraField, Question<AddInfoExtraField>>> = {
+  pregnancy_weeks_at_least_threshold: bool('pregnancy_weeks_at_least_threshold'),
+  has_incompatible_coverage: bool('has_incompatible_coverage'),
+  pregnancy_public_network_delivery: bool('pregnancy_public_network_delivery'),
+  pregnancy_public_prenatal_control: bool('pregnancy_public_prenatal_control'),
+  residence_requirement_met: bool('residence_requirement_met'),
+  age_record_current: bool('age_record_current'),
+};
+
+/** Todas las preguntas de "Agregar información", en el orden de la ficha. */
+export const ADD_INFO_QUESTIONS: Readonly<Record<AddInfoQuestionKey, Question<AddInfoQuestionKey>>> = { ...QUESTIONS, ...EXTRA_QUESTIONS };
+
+export const QUESTION_ORDER = Object.keys(ADD_INFO_QUESTIONS) as AddInfoQuestionKey[];
 
 export const EMPTY_ANSWERS = Object.fromEntries(QUESTION_ORDER.map((key) => [key, ''])) as Answers;
 
@@ -98,8 +126,8 @@ export const isFutureDate = (value: string): boolean => value !== '' && value > 
  * Valor C3 de una respuesta cruda (sin lógica de negocio): "No sé" → null, salvo vivienda → UNKNOWN.
  * '' (sin responder) también da null; quien arma el cuerpo decide si omite la clave.
  */
-export function answerValue<K extends QuestionKey>(key: K, raw: string): PreevaluationRequest[K] {
-  const question = QUESTIONS[key];
+export function answerValue<K extends AddInfoQuestionKey>(key: K, raw: string): AddFamilyInfoRequestV1[K] {
+  const question = ADD_INFO_QUESTIONS[key];
   let value: unknown = null;
   if (raw !== '' && raw !== UNKNOWN) {
     if (question.kind === 'count') value = Number(raw);
@@ -111,11 +139,11 @@ export function answerValue<K extends QuestionKey>(key: K, raw: string): Preeval
   } else if (raw === UNKNOWN && key === 'housing_type') {
     value = 'UNKNOWN';
   }
-  return value as PreevaluationRequest[K];
+  return value as AddFamilyInfoRequestV1[K];
 }
 
 /** Texto de una respuesta para la revisión (solo etiquetas del catálogo). */
-export function answerLabel(question: Question, value: string): string {
+export function answerLabel(question: Question<AddInfoQuestionKey>, value: string): string {
   if (value === '') return t('common.unanswered');
   if (value === UNKNOWN) return t('common.dont_know');
   switch (question.kind) {
@@ -142,13 +170,16 @@ export function QuestionField({
   question,
   value,
   onChange,
+  label: labelOverride,
 }: {
-  readonly question: Question;
+  readonly question: Question<AddInfoQuestionKey>;
   readonly value: string;
   readonly onChange: (value: string) => void;
+  /** Texto que reemplaza la pregunta por defecto (p. ej. semanas con el umbral del motor). */
+  readonly label?: string;
 }) {
   const id = useId();
-  const label = t(LABEL[question.key]);
+  const label = labelOverride ?? questionLabel(question.key);
   if (question.kind === 'count') {
     return (
       <div className="space-y-2">

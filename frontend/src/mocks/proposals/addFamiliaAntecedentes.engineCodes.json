@@ -1,0 +1,146 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "addFamiliaAntecedentes",
+  "proposal": "DEC-039 / PREG-039: POST /familias/{id}/antecedentes (fuera de C3 v1.0.2). Ficha con codigos del motor (semanas_gestacion, tramo_rsh, ...) y respuesta con pregnancy_weeks_threshold (fuera de C3).",
+  "status": 200,
+  "ficha": {
+    "meta": {
+      "request_id": "REQ-SIM-0402",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00002",
+      "garden_id": "JAR-SIM-E3-00001",
+      "composition": [
+        { "role": "ADULT_REFERENCE", "age": 29 },
+        { "role": "CHILD", "age": 3 }
+      ],
+      "rsh_band": null,
+      "informed": false,
+      "top_opportunities": [
+        {
+          "benefit_id": "BEN-003",
+          "simple_title": "Control de salud infantil",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "urgency": 0.7,
+          "benefit": 0.5,
+          "vulnerability": 0.6,
+          "score": 0.72,
+          "position": 1,
+          "estimated_annual_amount": null,
+          "benefit_estimated": false,
+          "action_type": "ASK_FIRST",
+          "why_first": "Faltan antecedentes del embarazo y del tramo del hogar.",
+          "missing_codes": ["semanas_gestacion", "cobertura_incompatible", "tramo_rsh"],
+          "suggested_questions": ["¿Hay alguien embarazada en el hogar?", "¿Cuál es el tramo del Registro Social de Hogares?"],
+          "where_to_go": null,
+          "sources": [{ "source_id": "SRC-SIM-003", "url": "https://fuentes.brujula-demo.example/ben-003" }]
+        },
+        {
+          "benefit_id": "BEN-009",
+          "simple_title": "Apoyo al nacimiento",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "urgency": 0.6,
+          "benefit": 0.5,
+          "vulnerability": 0.6,
+          "score": 0.6,
+          "position": 2,
+          "estimated_annual_amount": null,
+          "benefit_estimated": false,
+          "action_type": "ASK_FIRST",
+          "why_first": "Falta saber si hay un embarazo en el hogar.",
+          "missing_codes": ["semanas_gestacion", "parto_red_publica"],
+          "suggested_questions": ["¿hay alguien embarazada en el hogar", "¿Hay alguien embarazada en el hogar?"],
+          "where_to_go": null,
+          "sources": [{ "source_id": "SRC-SIM-009", "url": "https://fuentes.brujula-demo.example/ben-009" }]
+        },
+        {
+          "benefit_id": "BEN-006",
+          "simple_title": "Apoyo de alimentación",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "urgency": 0.5,
+          "benefit": 0.4,
+          "vulnerability": 0.6,
+          "score": 0.5,
+          "position": 3,
+          "estimated_annual_amount": null,
+          "benefit_estimated": false,
+          "action_type": "ASK_FIRST",
+          "why_first": "Falta un documento de la terapia.",
+          "missing_codes": ["documento_terapia_dias"],
+          "suggested_questions": ["¿Tiene al día el documento de la terapia?", "¿tiene al día el documento de la terapia"],
+          "where_to_go": null,
+          "sources": [{ "source_id": "SRC-SIM-006", "url": "https://fuentes.brujula-demo.example/ben-006" }]
+        }
+      ],
+      "benefit_results": [
+        {
+          "benefit_id": "BEN-003",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "missing_codes": ["semanas_gestacion", "cobertura_incompatible", "tramo_rsh"],
+          "trace": [{ "rule_id": "R-BEN-003-02", "field": "semanas_gestacion", "operator": "GTE", "result": "INDETERMINADO" }]
+        },
+        {
+          "benefit_id": "BEN-009",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "missing_codes": ["semanas_gestacion", "parto_red_publica"],
+          "trace": [{ "rule_id": "R-BEN-009-01", "field": "parto_red_publica", "operator": "EQ", "result": "INDETERMINADO" }]
+        },
+        {
+          "benefit_id": "BEN-006",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "missing_codes": ["documento_terapia_dias"],
+          "trace": [{ "rule_id": "R-BEN-006-02", "field": "documento_terapia_dias", "operator": "LTE", "result": "INDETERMINADO" }]
+        }
+      ],
+      "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+    }
+  },
+  "response": {
+    "meta": {
+      "request_id": "REQ-SIM-0403",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00002",
+      "garden_id": "JAR-SIM-E3-00001",
+      "composition": [
+        { "role": "ADULT_REFERENCE", "age": 29 },
+        { "role": "CHILD", "age": 3 }
+      ],
+      "rsh_band": null,
+      "informed": false,
+      "top_opportunities": [],
+      "benefit_results": [
+        {
+          "benefit_id": "BEN-006",
+          "result": "INDETERMINADO",
+          "level": null,
+          "access_state": "INDETERMINADO",
+          "missing_codes": ["documento_terapia_dias"],
+          "trace": [{ "rule_id": "R-BEN-006-02", "field": "documento_terapia_dias", "operator": "LTE", "result": "INDETERMINADO" }]
+        }
+      ],
+      "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+    },
+    "pregnancy_weeks_threshold": 20
+  }
+}

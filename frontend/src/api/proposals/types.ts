@@ -4,11 +4,26 @@
 import type { EnvelopeMetadata, PreevaluationRequest } from '../types';
 
 /** Campos cerrados de PreevaluationRequest que se pueden declarar para una familia existente. */
-export type AddInfoField = Exclude<keyof PreevaluationRequest, 'data_classification' | 'garden_id' | 'commune_id' | 'demo_notice_accepted'>;
+export type C3AddInfoField = Exclude<keyof PreevaluationRequest, 'data_classification' | 'garden_id' | 'commune_id' | 'demo_notice_accepted'>;
+
+/** Booleanos de la propuesta FUERA de C3, para códigos del motor sin campo en PreevaluationRequest. */
+export const ADD_INFO_EXTRA_FIELDS = [
+  'pregnancy_weeks_at_least_threshold',
+  'has_incompatible_coverage',
+  'pregnancy_public_network_delivery',
+  'pregnancy_public_prenatal_control',
+  'residence_requirement_met',
+  'age_record_current',
+] as const;
+export type AddInfoExtraField = (typeof ADD_INFO_EXTRA_FIELDS)[number];
+
+export type AddInfoField = C3AddInfoField | AddInfoExtraField;
 
 /** Ausente = sin cambio; null = "No sé" (housing_type usa UNKNOWN). */
 export type AddFamilyInfoRequestV1 = { readonly data_classification: 'SYNTHETIC_DEMO_NOT_A_REAL_PERSON' } & {
-  readonly [K in AddInfoField]?: PreevaluationRequest[K];
+  readonly [K in C3AddInfoField]?: PreevaluationRequest[K];
+} & {
+  readonly [K in AddInfoExtraField]?: boolean | null;
 };
 
 /** DEC-072: LOCAL = la regla vigente restringe la comuna de residencia; si no, NACIONAL. */
