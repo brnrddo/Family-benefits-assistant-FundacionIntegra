@@ -241,6 +241,53 @@ solo_llm = filtrar_para_llm(ctx)               # lo único que puede ver el mode
 
 ---
 
+## API `/api/v1` (Rol 2) — arranque para el Rol 3
+
+La capa API vive en `app/api/` y publica los **12 flujos C3** bajo `/api/v1`
+como mocks sintéticos válidos (contrato C3 = fuente de verdad del OpenAPI).
+
+### Arranque local (sin AWS ni DB)
+
+```bash
+# Desde backend/ (interprete py -3.11):
+py -3.11 -m uvicorn app.api.app:app --port 8080 --reload
+```
+
+- **App:** `app.api.app:app` (FastAPI construida en `app/api/app.py`).
+- **URL base:** `/api/v1`.
+- **Healthcheck:** `GET /healthz` → `{"status": "ok"}`.
+- **Docs / OpenAPI:** `GET /docs` (Swagger) y el contrato C3 servido tal cual en
+  `GET /api/v1/openapi.yaml` y `GET /api/v1/openapi.json`.
+- **Ejemplos:** `GET /api/v1/jardines`, `GET /api/v1/familias/FAM-SIM-0001`,
+  `POST /api/v1/asistente`.
+
+Por defecto **`E3_MOCK=1`**: todas las rutas responden mocks sintéticos
+deterministas, **sin necesidad de DB (`e3.db`) ni de AWS/Bedrock**. El texto de
+guion/mensaje/asistente lo genera el `TemplateProvider` (provider `PLANTILLA`),
+nunca un LLM; una pregunta de elegibilidad individual al asistente devuelve
+`REQUIRES_DETERMINISTIC_EVALUATION` sin invocar Bedrock.
+
+### Integración opcional del motor (`E3_MOCK=0`)
+
+Con `E3_MOCK=0` el servidor intenta usar el motor real (priorización FEAT-001 +
+filtro GenAI FEAT-002). Si falta la DB (`E3_DB_PATH`/`e3.db` inexistente) o el
+bundle C4 es inválido, **degrada a mocks con un warning sanitizado y nunca
+lanza 500**. Genera la DB con `python -m app.loader.load` + `python -m
+app.db.build_views` antes de usar este modo.
+
+El bundle C4 que carga la priorización es el **mock de desarrollo del Rol 2** en
+`backend/fixtures/c4_mock/` (ver su `README.md` y `DEC-022`); **la autoridad de
+C4 es el bundle del Rol 4 en `content/`** (YAML/CSV/MD, `content/manifest.yaml`)
+y queda pendiente el adaptador JSON→YAML. La ruta del manifest se reapunta con
+`E3_CONTENT_MANIFEST`.
+
+> Estado AWS: `NO_VERIFICADO`. No hay Cognito real; la autorización por scope es
+> un stub de demo por header (`X-Demo-Scopes`). Los logs registran solo
+> `request_id`, método, ruta, status y latencia: nunca cuerpos, prompts,
+> preguntas, respuestas, identificadores completos ni tokens.
+
+---
+
 ## Supuestos sobre datos ausentes (IMPORTANTE)
 
 El dataset E-3 es sintético y no trae algunos datos que ciertas reglas piden.

@@ -1,0 +1,12 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "note": "Bundle C4 PROVISIONAL. Preguntas sugeridas por codigo de dato faltante.",
+  "questions": [
+    {"missing_code": "rsh_band", "question_key": "q.rsh_band"},
+    {"missing_code": "income_band", "question_key": "q.income_band"},
+    {"missing_code": "last_health_control_date", "question_key": "q.last_health_control_date"},
+    {"missing_code": "possible_disability", "question_key": "q.possible_disability"},
+    {"missing_code": "therapy", "question_key": "q.therapy"},
+    {"missing_code": "housing_type", "question_key": "q.housing_type"}
+  ]
+}
