@@ -1,0 +1,12 @@
+# Backend — Apoyo Inteligente para Familias (Desafío 3 Integra)
+# M1 (loader), motor (M2), acceso (M3), contexto (M3b) usan solo la stdlib
+# (csv, sqlite3, json, re, datetime).
+# FastAPI/uvicorn se dejan declarados para las capas siguientes (API, pantallas HTML).
+fastapi==0.115.6
+uvicorn==0.34.0
+
+# Capa de IA generativa (Rol 2): SDK de AWS para invocar Amazon Bedrock
+# (Claude vía Converse API). El backend funciona sin esto usando el proveedor
+# "stub" local (app/genai/provider.py); boto3 solo se importa cuando se usa el
+# BedrockProvider real, de forma perezosa, para no romper entornos sin AWS.
+boto3==1.35.90

@@ -1,0 +1,33 @@
+# Normalización de finales de línea para todo el equipo.
+# Evita diffs fantasma por CRLF/LF entre Windows, Mac y Linux.
+
+# Por defecto: git decide si un archivo es texto y lo normaliza a LF en el repo.
+* text=auto
+
+# Archivos de texto que SIEMPRE deben usar LF en el repositorio
+# (aunque se editen en Windows). El working copy en Windows puede verlos como
+# CRLF, pero lo versionado queda consistente en LF.
+*.py      text eol=lf
+*.md      text eol=lf
+*.sql     text eol=lf
+*.txt     text eol=lf
+*.json    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.csv     text eol=lf
+*.sh      text eol=lf
+
+# Scripts de Windows: mantener CRLF.
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# Binarios: nunca tocar finales de línea.
+*.db      binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.pdf     binary
+*.zip     binary
