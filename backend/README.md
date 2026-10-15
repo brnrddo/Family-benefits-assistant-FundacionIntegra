@@ -317,25 +317,56 @@ funciona en SQLite y migrar a mitad de hackatón es riesgo sin ganancia para la
 demo; SQLite soporta las vistas de cruce que pide la spec. Desviación respecto
 de la spec (que sugiere DuckDB), documentada aquí a propósito.
 
-El artefacto `e3.db` **no se versiona**: se genera en el build. Flujo para la
-nube del equipo (App Runner / Lambda), de modo que la base y el precálculo
-corran igual que en local:
+El artefacto `e3.db` **no se versiona**: se genera en el build. El empaquetado
+está en `backend/`: `Makefile` (target `data`), `make.ps1` (equivalente para
+Windows) y `Dockerfile` + `.dockerignore` (en la raíz del repo).
+
+### 1) Regenerar la base localmente (`make data`)
 
 ```bash
-# 1) construir la base desde los CSV públicos
-python -m app.loader.load --force
-# 2) precalcular evaluaciones+accesos y crear las vistas
-python -m app.db.build_views
-# 3) empaquetar e3.db dentro de la imagen del contenedor (solo lectura)
+# Linux/mac (desde backend/):
+make data           # loader M1 + precálculo + vistas, en un comando
+
+# Windows (desde backend/, sin `make`):
+.\make.ps1 data
 ```
 
+Equivale a:
+```bash
+python -m app.loader.load --force   # CSV públicos -> e3.db
+python -m app.db.build_views        # 10.000 evaluaciones + vistas de cruce
+```
+
+### 2) Construir la imagen con `e3.db` embebida
+
+El contexto de build es la **raíz del repo** (el loader lee `../data/publico`),
+así que se usa `-f backend/Dockerfile`:
+
+```bash
+# desde la raíz del repo:
+docker build -f backend/Dockerfile -t e3-backend .
+
+# smoke test: la base embebida debe tener 10.000 evaluaciones
+docker run --rm e3-backend
+# -> evaluaciones: 10000 / accesos: 10000 / vistas listas: ...
+```
+
+El `Dockerfile` corre el pipeline en build-time y verifica el conteo (falla el
+build si `evaluaciones != 10000`), de modo que la imagen nunca sale con una base
+incompleta.
+
 - El backend (FastAPI, Rol 2) lee `e3.db` de **solo lectura** desde la imagen.
-- Para contenedor: añadir los pasos 1–2 al `Dockerfile` (o a un `make data`)
-  para que cualquiera reproduzca la base en la nube. Documentar el comando de
-  regeneración junto al despliegue.
+  El `CMD` por defecto es un placeholder (imprime el resumen de la base); Rol 2
+  lo reemplaza por el server, p. ej.
+  `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
+- Despliegue en App Runner / Lambda: publicar la imagen (ECR) y apuntar el
+  servicio a ella. No hace falta un servicio de datos aparte: la base viaja
+  dentro de la imagen.
 - Nada de datos personales en logs ni en lo que viaje al LLM (lo garantiza
-  `context_filter.py`, §2.7.3).
-- Rutas y fecha configurables por entorno: `E3_DB_PATH`, `E3_FECHA_EVALUACION`.
+  `context_filter.py`, §2.7.3). El `.dockerignore` excluye `.env`, credenciales,
+  `.venv`, cachés y las bases locales.
+- Rutas y fecha configurables por entorno: `E3_DB_PATH`, `E3_FECHA_EVALUACION`
+  (declaradas con default en el `Dockerfile`; Rol 2 las puede sobrescribir).
 
 ---
 
