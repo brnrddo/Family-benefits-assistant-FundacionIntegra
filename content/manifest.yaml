@@ -1,30 +1,30 @@
-# Manifiesto C4 del bundle de contenido (Rol 4), 0.2.0. No publicable (DEC-040): falta API-T14 y revisión humana.
+# Manifiesto C4 del bundle de contenido (Rol 4), 0.2.1. No publicable (DEC-040): falta API-T14 y revisión humana.
 # Los valores que §8 no fija se decidieron en DEC-041..DEC-044 o se calcularon desde E-3 (CALC); ver content/VALORES_RANKING.md.
 # No contiene datos de personas. `ranking` y `accessibility` son copia idéntica de sus archivos (SUP-040).
 # files[].sha256 = SHA-256 de los bytes; content_bundle_hash = SHA-256 de las líneas '<sha256>  <path>' de files[] ordenadas (SUP-041).
 # Cualquier edición de un archivo listado obliga a recalcular su sha256 y el content_bundle_hash.
 schema_version: "1.0.0"
-content_version: "0.2.0"
-content_bundle_hash: "d997b43633e9743850571162dc7773dfc31cd984482e575906059996d9695a0c"
+content_version: "0.2.1"
+content_bundle_hash: "aa1fbe0526001fb42e61d170822bbae15a34ead9286e29f296a6288a97b44b69"
 canonical_i18n: content/i18n/es.json
 files:
   - path: content/accessibility.yaml
-    sha256: "a98db545016dd5a833d169c32059dc232d7766dd7d42172bd1bdbdf3cc50df05"
+    sha256: "f3a020f6514eb37bc47fbe5bae887c89986aff26533bd9de30449e7538dcf1e5"
     kind: ACCESSIBILITY
   - path: content/beneficios.yaml
-    sha256: "1e90ea8c5b13223aa211d8b96654e1b3ccd8f1f8d4141565154233b083348a05"
+    sha256: "9512d16c1f433b6efc97868121dc003e49fad345113c51072e991b6703547277"
     kind: BENEFITS
   - path: content/demo/inventario_activos.yaml
-    sha256: "6cd18ad1e6632eb7b1bb2875b1dab9fa1984da42a2ce6a7097e29ebac3fde303"
+    sha256: "6aa8653be77be9e3e3bd7b70f0cd9a6ab98433bb96fd14cc64ab75fb7212e632"
     kind: SYNTHETIC_ASSET_MANIFEST
   - path: content/i18n/es.json
-    sha256: "8645b05f4e1fbda1d52b0839cb38c25243cb36c0a6ef9d762f423e8eee12d3ed"
+    sha256: "d2cffd8dec67c16f816bb695cf5eef620d0f27971f6434799494c384f0bc2044"
     kind: I18N
   - path: content/pesos_priorizacion.yaml
-    sha256: "8f424cf247999c3355e27691e9f697b31101a372c7ddb8981f88785c635f5dbf"
+    sha256: "ea7be77170db34a7090f5072c83c5bf63a4a736f76e62baf488880cfa58563d6"
     kind: WEIGHTS
   - path: content/preguntas.yaml
-    sha256: "c74c72cb04adc1c4777e1f2d71a317e026b6e28d01181915011260359581eb06"
+    sha256: "0e3f21ca6610a59a2b4a363822f0127539098b667f28d69d9ca3429466bd1818"
     kind: QUESTIONS
   - path: content/prompts/asistente_catalogo.md
     sha256: "a50ecc5a57f1fbbdfe7c87f266f8798f7db53b7475c5914f7a87853b25d25cbc"

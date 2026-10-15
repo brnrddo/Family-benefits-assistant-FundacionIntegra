@@ -4,7 +4,7 @@
 # La respuesta se guarda como dato declarado y el motor reevalúa: la pregunta no decide elegibilidad.
 # Sin diagnósticos ni números de documentos. sin_pregunta: DATO_ADMINISTRATIVO (lo resuelve el registro
 # o la institución), SE_RESUELVE_CON_OTRA_PREGUNTA (ver: indica cuál) o NO_SE_PREGUNTA_A_LA_FAMILIA.
-content_version: "0.2.0"
+content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 fuente_vocabulario: data/publico/reglas_elegibilidad.csv#campo_dato
 preguntas:
