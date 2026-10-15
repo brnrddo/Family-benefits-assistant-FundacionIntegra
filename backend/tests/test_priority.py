@@ -35,8 +35,6 @@ from app.priority.scoring import (  # noqa: E402
     score_opportunities,
 )
 
-REPO_DIR = BACKEND_DIR.parent
-
 
 # --- Fixtures sintéticos -----------------------------------------------------
 

@@ -35,8 +35,9 @@ def _cargar_catalogo() -> dict:
 
     from app.priority.config import _DEFAULT_MANIFEST  # ruta por defecto validada
 
-    # Las rutas se resuelven contra el directorio del manifest, así que siguen
-    # siendo correctas si E3_CONTENT_MANIFEST apunta a otro bundle.
+    # Las rutas del catálogo se resuelven contra el directorio del manifest por
+    # defecto, no contra la raíz del repo: el bundle es relocalizable (DEC-022).
+    # El catálogo NO sigue E3_CONTENT_MANIFEST: siempre lee el mock del Rol 2.
     bundle_dir = Path(_DEFAULT_MANIFEST).resolve().parent
     benefits_path = bundle_dir / "benefits.json"
     i18n_path = bundle_dir / "i18n" / "es.json"
