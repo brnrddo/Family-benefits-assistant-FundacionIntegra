@@ -37,6 +37,7 @@ import type { AddFamilyInfoRequestV1 } from '../api/proposals/types';
 import { isValidId } from '../domain/ids';
 import { hasFixture, payloadOf } from './fixtureStore';
 import addInfoFixture from './proposals/addFamiliaAntecedentes.FAM-SIM-E3-00002.json';
+import alcanceFixture from './proposals/getCatalogoAlcance.json';
 import type { ScenarioId } from './scenarios';
 import { messageWithHttpCitation } from './variants';
 
@@ -53,6 +54,12 @@ const BASE_FAMILY: Readonly<Record<TrafficLight, string>> = {
   AZUL: 'FAM-SIM-E3-00003',
   SIN_OPORTUNIDADES: 'FAM-SIM-E3-00004',
 };
+/**
+ * Ficha propia (solo GET /familias/{id}; contexto y oportunidades siguen con la base): FAM-00005 trae
+ * el ejemplo SOLO DEMO BEN-DEMO-LOCAL-01 (vive en la comuna del ejemplo); FAM-00001, del mismo
+ * jardín, no (DEC-072).
+ */
+const DETAIL_OVERRIDE: Readonly<Record<string, string>> = { 'FAM-SIM-E3-00005': 'FAM-SIM-E3-00005' };
 const NEW_FAMILY_BASE = 'FAM-SIM-E3-00002';
 const FAMILY_PAGES: Readonly<Record<string, readonly string[]>> = {
   'JAR-SIM-E3-00001': ['listFamiliasByJardin.JAR-SIM-E3-00001.p1', 'listFamiliasByJardin.JAR-SIM-E3-00001.p2'],
@@ -232,7 +239,7 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
 
   /** Ficha del servidor: la re-evaluada si existe; si no, el fixture base con IDs y estado actuales. */
   const detailEnvelope = (record: FamilyRecord): FamiliaDetailEnvelope => {
-    const body = payloadOf<FamiliaDetailEnvelope>(`getFamilia.${record.base}`);
+    const body = payloadOf<FamiliaDetailEnvelope>(`getFamilia.${DETAIL_OVERRIDE[record.familyId] ?? record.base}`);
     const stored = state.details.get(record.familyId);
     if (stored !== undefined) body.data = structuredClone(stored);
     body.data.family_id = record.familyId;
@@ -519,6 +526,9 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
       }
       return ok(body);
     }),
+
+    // Operación PROPUESTA (DEC-072, fuera de C3): alcance NACIONAL/LOCAL por beneficio, nivel catálogo.
+    http.get(`${API}/catalogo/alcance`, () => ok(structuredClone(alcanceFixture.payload))),
 
     http.post(`${API}/catalogo/ingesta-afiche`, async ({ request }) => {
       const parsed = await readJson(request);

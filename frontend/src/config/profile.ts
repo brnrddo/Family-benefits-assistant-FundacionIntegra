@@ -24,6 +24,8 @@ export interface RawEnv {
   readonly VITE_DEMO_CACHE_TTL_HOURS?: string;
   /** Operación PROPUESTA "Agregar información" (fuera de C3, DEC-039): '' | 'true' | 'false'. */
   readonly VITE_PROPOSAL_ADD_INFO?: string;
+  /** Operación PROPUESTA "alcance territorial" (fuera de C3, DEC-072): '' | 'true' | 'false'. */
+  readonly VITE_PROPOSAL_TERRITORIAL?: string;
 }
 
 export interface Capabilities {
@@ -44,6 +46,12 @@ export interface Capabilities {
    * defecto solo con mocks; con API real solo si VITE_PROPOSAL_ADD_INFO=true. Nunca en `escala`.
    */
   readonly addInfo: boolean;
+  /**
+   * DEC-072: chip "Disponible en su comuna" y rótulo "Solo demo" en la ficha (operación propuesta
+   * GET /catalogo/alcance, aún no está en C3). Activo por defecto solo con mocks; con API real solo
+   * si VITE_PROPOSAL_TERRITORIAL=true. Nunca en `escala`.
+   */
+  readonly territorial: boolean;
   readonly syntheticBanner: boolean;
   readonly cacheTtlHours: number;
 }
@@ -87,7 +95,11 @@ export type ConfigIssue =
   | 'cognito_insecure_context'
   | 'insecure_context';
 
-export type ConfigWarning = 'cache_ttl_invalid' | 'persistence_disabled_not_synthetic' | 'add_info_flag_invalid';
+export type ConfigWarning =
+  | 'cache_ttl_invalid'
+  | 'persistence_disabled_not_synthetic'
+  | 'add_info_flag_invalid'
+  | 'territorial_flag_invalid';
 
 export type ProfileResult =
   | { readonly ok: true; readonly config: ResolvedConfig }
@@ -240,6 +252,16 @@ export function resolveProfile(env: RawEnv, options: ResolveOptions): ProfileRes
     warnings.push('add_info_flag_invalid');
   }
 
+  // DEC-072: misma semántica que VITE_PROPOSAL_ADD_INFO.
+  const territorialRaw = blank(env.VITE_PROPOSAL_TERRITORIAL) ? '' : (env.VITE_PROPOSAL_TERRITORIAL as string).trim();
+  let territorialFlag = mocks;
+  if (territorialRaw === 'true') territorialFlag = true;
+  else if (territorialRaw === 'false') territorialFlag = false;
+  else if (territorialRaw !== '') {
+    territorialFlag = false;
+    warnings.push('territorial_flag_invalid');
+  }
+
   if (issues.length > 0) return { ok: false, issues: [...new Set(issues)] };
 
   return {
@@ -254,6 +276,7 @@ export function resolveProfile(env: RawEnv, options: ResolveOptions): ProfileRes
         newFamily: profile !== 'escala',
         localNames: persistence,
         addInfo: profile !== 'escala' && addInfoFlag,
+        territorial: profile !== 'escala' && territorialFlag,
         syntheticBanner: profile !== 'escala',
         cacheTtlHours,
       },
@@ -280,6 +303,7 @@ export function readViteEnv(): RawEnv {
     VITE_DATA_CLASSIFICATION: import.meta.env.VITE_DATA_CLASSIFICATION,
     VITE_DEMO_CACHE_TTL_HOURS: import.meta.env.VITE_DEMO_CACHE_TTL_HOURS,
     VITE_PROPOSAL_ADD_INFO: import.meta.env.VITE_PROPOSAL_ADD_INFO,
+    VITE_PROPOSAL_TERRITORIAL: import.meta.env.VITE_PROPOSAL_TERRITORIAL,
   };
 }
 

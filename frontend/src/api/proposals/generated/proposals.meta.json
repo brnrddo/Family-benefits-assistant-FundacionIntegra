@@ -1,9 +1,11 @@
 {
   "generator": "scripts/gen-proposals.mjs",
   "files": {
-    "AddFamilyInfoRequestV1.schema.json": "6de224e4e2703090194904d70ed47c322204a2150b8c70832e15977d32eb0335"
+    "AddFamilyInfoRequestV1.schema.json": "6de224e4e2703090194904d70ed47c322204a2150b8c70832e15977d32eb0335",
+    "CatalogScopeEnvelopeV1.schema.json": "c169dbfe10a64b324dd1d5ff6985f1831d8386753297daa4731899c67058cfe0"
   },
   "validators": {
-    "validateAddFamilyInfoRequestV1": "urn:brujula:proposal:add-family-info-request:v1"
+    "validateAddFamilyInfoRequestV1": "urn:brujula:proposal:add-family-info-request:v1",
+    "validateCatalogScopeEnvelopeV1": "urn:brujula:proposal:catalog-scope-envelope:v1"
   }
 }
