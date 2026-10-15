@@ -91,7 +91,13 @@ configuración de despliegue y el documento de evidencia AWS.
 
 Prioridad en este orden. Cada una es un PR propio.
 
-### B1. Conectar el motor real (el de mayor valor para la demo)
+**Estado al 2026-10-15:** B1, B2, B3 y B4 hechos (ver cada tarea). Las
+decisiones quedaron en el registro compartido (DEC-064 a DEC-080, PREG-064 a
+PREG-072). **Pendiente del Rol 1:** antecedentes en modo real. Con
+`E3_MOCK=0`, `POST /familias/{id}/antecedentes` responde 503 hasta que el motor
+acepte los campos declarados que envía la PWA (DEC-074, PREG-069).
+
+### B1. Conectar el motor real (el de mayor valor para la demo) — HECHO (PR #15; catálogo PR #14; arreglos PR #21)
 Hoy la API responde con datos sintéticos de demostración (`E3_MOCK=1`). La tarea
 es que con `E3_MOCK=0` sirva datos reales de las 500 familias usando lo que ya
 existe: `engine/service.py`, `access/`, `context/` y `priority/`.
@@ -104,7 +110,7 @@ Criterio de término: `GET /familias/{id}` y `GET /familias/{id}/oportunidades`
 devuelven resultados calculados por el motor, con su traza, y la suite sigue en
 verde.
 
-### B2. Filtrado territorial de beneficios
+### B2. Filtrado territorial de beneficios — HECHO (PR #22, ejemplo solo demo)
 Lo pidió explícitamente la contraparte de Integra: *"no todos los beneficios son
 globales a nivel nacional; también hay beneficios particulares de ciertas zonas o
 sectores. La idea es que sea lo más aterrizado posible al lugar donde está esa
@@ -123,7 +129,7 @@ familia y el jardín"*.
 Criterio de término: para una comuna dada, la respuesta distingue ambos alcances
 y el frontend lo muestra.
 
-### B3. Marcar "familia informada" con un toque
+### B3. Marcar "familia informada" con un toque — HECHO (PR #23)
 La contraparte confirmó que **sí** le sirve que la tía marque de un gesto que ya
 informó a la familia, para medir el KPI, **sin perseguir el trámite después**.
 
@@ -135,7 +141,14 @@ informó a la familia, para medir el KPI, **sin perseguir el trámite después**
 Criterio de término: un solo gesto en la PWA registra la conversación y el
 indicador de familias informadas sube.
 
-### B4. Cierre de alcance y registro de decisiones
+### B4. Cierre de alcance y registro de decisiones — HECHO (este PR)
+
+Registrado en `.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md`: DEC-047
+(front), DEC-064 a DEC-080, PREG-064 a PREG-072 y la tabla de equivalencias de
+la numeración provisional. La reclasificación de los campos de puntaje en
+`content/mapeo_ficha.csv` queda para el Rol 4 (PREG-072). La numeración
+sugerida abajo quedó superada.
+
 - Reclasificar los campos de **puntaje de la ficha** como no relevantes para
   beneficios, citando la respuesta de la contraparte.
 - Registrar la decisión con las respuestas del 2026-10-15. Use **`DEC-046`** o
