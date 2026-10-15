@@ -56,8 +56,16 @@ def _runtime_sin_db_local(monkeypatch, tmp_path_factory):
     Con ``E3_MOCK=0`` y sin una DB propia del test, la API degrada a mocks como
     en un entorno limpio. Los tests que necesitan DB apuntan
     ``runtime.DB_PATH`` a la suya.
+
+    La API (Rol 2) depende de ``yaml``/``httpx`` (catálogo C4, TestClient). Los
+    tests puros del motor (Rol 1) no los necesitan; si esas dependencias no
+    están instaladas, este aislamiento no aplica y se omite en silencio en vez
+    de romper la colección de TODA la suite.
     """
-    from app.api import runtime
+    try:
+        from app.api import runtime
+    except ImportError:
+        return
 
     monkeypatch.setattr(
         runtime, "DB_PATH", tmp_path_factory.getbasetemp() / "sin-db-local" / "e3.db"

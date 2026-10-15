@@ -125,3 +125,53 @@ def test_idempotencia_sin_force(conn, db_path):
     construir_db(db_path=db_path, force=False)  # no debe tocar nada
     despues = conn.execute("SELECT COUNT(*) FROM familias").fetchone()[0]
     assert antes == despues == 500
+
+
+# --- resiliencia / falla cerrada ante CSV corrupto --------------------------
+
+def test_csv_vacio_sin_encabezados_falla(tmp_path):
+    """Un CSV totalmente vacío (sin encabezados) debe fallar explícito, no cargar."""
+    import pytest
+
+    from app.loader.load import _crear_tabla_desde_csv
+    import sqlite3
+
+    vacio = tmp_path / "tabla_vacia.csv"
+    vacio.write_text("", encoding="utf-8")
+    conn = sqlite3.connect(":memory:")
+    try:
+        with pytest.raises(ValueError):
+            _crear_tabla_desde_csv(conn, vacio)
+    finally:
+        conn.close()
+
+
+def test_filas_corta_y_larga_se_normalizan(tmp_path):
+    """Fila con menos columnas -> se rellena con NULL; con más -> se trunca.
+
+    El loader no debe caerse ni descartar la fila: debe normalizar su longitud
+    al número de encabezados (comportamiento documentado en load.py).
+    """
+    import sqlite3
+
+    from app.loader.load import _crear_tabla_desde_csv
+
+    csv_path = tmp_path / "demo.csv"
+    csv_path.write_text(
+        "a,b,c\n"
+        "1,2,3\n"       # exacta
+        "4,5\n"          # corta -> c debe quedar NULL
+        "6,7,8,9\n",     # larga -> se trunca a 3
+        encoding="utf-8",
+    )
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        filas = _crear_tabla_desde_csv(conn, csv_path)
+        assert filas == 3
+        rows = conn.execute('SELECT a, b, c FROM "demo" ORDER BY a').fetchall()
+        assert rows[1]["a"] == "4" and rows[1]["b"] == "5" and rows[1]["c"] is None
+        larga = conn.execute('SELECT a, b, c FROM "demo" WHERE a = ?', ("6",)).fetchone()
+        assert larga["b"] == "7" and larga["c"] == "8"  # el 9 se descartó
+    finally:
+        conn.close()

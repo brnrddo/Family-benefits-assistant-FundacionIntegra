@@ -162,8 +162,23 @@ def op_active_on_date(hecho: Hecho) -> Tri:
     estados_activos = {"ACTIVA", "EN_CURSO", "VIGENTE", "APROBADA"}
     if s in estados_activos:
         return Tri.SI
-    # Presente, sin estado reconocible: se considera activo por existir vigente.
-    return Tri.SI
+    estados_inactivos = {"INACTIVA", "FINALIZADA", "TERMINADA", "RECHAZADA",
+                         "SUSPENDIDA", "ANULADA", "VENCIDA"}
+    if s in estados_inactivos:
+        return Tri.NO
+    # Algunos campos de "vigencia" apuntan a una columna que NO guarda un estado
+    # sino una categoría cuya mera presencia vigente certifica actividad (p. ej.
+    # ``discapacidad_vigencia`` resuelve sobre DISCAPACIDAD.SEVERIDAD, cuyo valor
+    # es LEVE/MODERADA/SEVERA). Para esos valores conocidos, existir vigente =
+    # activo -> SI.
+    severidades_vigentes = {"LEVE", "MODERADA", "SEVERA"}
+    if s in severidades_vigentes:
+        return Tri.SI
+    # Presente pero con un valor NO reconocido: no se infiere actividad. Antes
+    # se asumía SI ("activo por existir vigente"), lo que inventaba un SI ante un
+    # dato ambiguo; ahora se devuelve INDETERMINADO para no afirmar lo que no se
+    # sabe (coherente con el principio del motor: sin dato claro -> IND).
+    return Tri.INDETERMINADO
 
 
 def op_count_rel_gte(cantidad: int | None, minimo) -> Tri:

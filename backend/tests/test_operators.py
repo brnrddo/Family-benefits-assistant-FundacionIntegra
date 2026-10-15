@@ -58,6 +58,27 @@ def test_active_on_date():
     assert ops.op_active_on_date(Hecho("x", presente=False)) == Tri.INDETERMINADO
 
 
+def test_active_on_date_estado_inactivo_da_no():
+    assert ops.op_active_on_date(Hecho("x", "FINALIZADA", presente=True)) == Tri.NO
+    assert ops.op_active_on_date(Hecho("x", "RECHAZADA", presente=True)) == Tri.NO
+    assert ops.op_active_on_date(Hecho("x", "VENCIDA", presente=True)) == Tri.NO
+
+
+def test_active_on_date_severidad_vigente_da_si():
+    # discapacidad_vigencia resuelve sobre DISCAPACIDAD.SEVERIDAD: presente y
+    # vigente = activo.
+    assert ops.op_active_on_date(Hecho("x", "SEVERA", presente=True)) == Tri.SI
+    assert ops.op_active_on_date(Hecho("x", "MODERADA", presente=True)) == Tri.SI
+    assert ops.op_active_on_date(Hecho("x", "LEVE", presente=True)) == Tri.SI
+
+
+def test_active_on_date_estado_desconocido_da_indeterminado():
+    # Antes se asumía SI ante un estado no reconocido ("activo por existir").
+    # Ahora, un valor ambiguo no afirma actividad -> INDETERMINADO (no inventa SI).
+    assert ops.op_active_on_date(Hecho("x", "???", presente=True)) == Tri.INDETERMINADO
+    assert ops.op_active_on_date(Hecho("x", "PENDIENTE_REVISION", presente=True)) == Tri.INDETERMINADO
+
+
 def test_count_rel_y_not_exists():
     assert ops.op_count_rel_gte(1, 1) == Tri.SI
     assert ops.op_count_rel_gte(0, 1) == Tri.NO

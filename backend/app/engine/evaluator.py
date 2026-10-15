@@ -201,14 +201,17 @@ class Evaluator:
         resultados_grupo: list[Tri] = []
         faltantes: set[str] = set()
         acreditacion_ok = True  # para nivel CONFIRMADO/PRELIMINAR
+        monto_tramo = None  # monto por tramo (RANGE_LOOKUP) del grupo ganador
 
         for _, reglas_grupo in sorted(grupos.items()):
-            tri_grupo, ganadores, trazas_g, falt_g, acred_g = self._eval_grupo(reglas_grupo, ctx)
+            tri_grupo, ganadores, trazas_g, falt_g, acred_g, monto_g = self._eval_grupo(reglas_grupo, ctx)
             resultados_grupo.append(tri_grupo)
             res.traza.extend(trazas_g)
             if tri_grupo == Tri.SI:
                 res.entidad_ganadora.update(ganadores)
                 acreditacion_ok = acreditacion_ok and acred_g
+                if monto_g is not None:
+                    monto_tramo = monto_g
             faltantes.update(falt_g)
 
         final = _or_tri(resultados_grupo)
@@ -218,7 +221,10 @@ class Evaluator:
             res.motivos.append(MOTIVO_CRITERIOS_CUMPLEN)
             if any(t.nota == "declarado" and t.resultado == Tri.SI for t in res.traza):
                 res.motivos.append(MOTIVO_EVIDENCIA_DECLARADA)
-            res.monto_estimado = _num(version["monto_referencial_sintetico"])
+            # El monto del tramo (RANGE_LOOKUP) manda cuando existe; si no, se usa
+            # el monto referencial de la versión.
+            res.monto_estimado = (monto_tramo if monto_tramo is not None
+                                  else _num(version["monto_referencial_sintetico"]))
         elif final == Tri.INDETERMINADO:
             res.datos_faltantes = sorted(faltantes)
             if "tramo_rsh" in faltantes:
@@ -241,6 +247,7 @@ class Evaluator:
         faltantes: set[str] = set()
         ganadores: dict[str, str] = {}
         acred_ok = True
+        monto_grupo = None  # monto por tramo (RANGE_LOOKUP) de un binding que cumple
 
         # Orden de evaluación: los bindings PADRE antes que sus hijos, para que
         # REF_EQ (p. ej. CAUSANTE_1 carga_de BENEFICIARIO_1) pueda resolverse
@@ -258,13 +265,15 @@ class Evaluator:
             rol = reglas_b[0]["rol_causante"]
 
             if cuant == "HOUSEHOLD" or binding == "HOGAR":
-                tri_b, trz, falt, acred = self._eval_binding_hogar(reglas_b, ctx)
+                tri_b, trz, falt, acred, monto_b = self._eval_binding_hogar(reglas_b, ctx)
                 tris.append(tri_b)
                 trazas.extend(trz)
                 faltantes.update(falt)
                 acred_ok = acred_ok and acred
+                if tri_b == Tri.SI and monto_b is not None:
+                    monto_grupo = monto_b
             elif cuant in ("EXISTS", "COUNT"):
-                tri_b, ganador, trz, falt, acred = self._eval_binding_exists(
+                tri_b, ganador, trz, falt, acred, monto_b = self._eval_binding_exists(
                     reglas_b, ctx, rol, ganadores)
                 tris.append(tri_b)
                 trazas.extend(trz)
@@ -272,21 +281,26 @@ class Evaluator:
                 if tri_b == Tri.SI and ganador:
                     ganadores[binding] = ganador
                     acred_ok = acred_ok and acred
+                    if monto_b is not None:
+                        monto_grupo = monto_b
             else:
                 # ACCESO u otros: no soportado en M2 -> IND (se verá en M3).
                 tris.append(Tri.INDETERMINADO)
                 faltantes.add(reglas_b[0]["campo_dato"])
 
-        return _and_tri(tris), ganadores, trazas, faltantes, acred_ok
+        return _and_tri(tris), ganadores, trazas, faltantes, acred_ok, monto_grupo
 
     def _eval_binding_hogar(self, reglas_b, ctx: FamiliaCtx):
         tris, trazas, faltantes = [], [], set()
         acred_ok = True
+        monto_tramo = None  # monto del tramo RANGE_LOOKUP que cumple (si lo hay)
         for r in reglas_b:
             campo = r["campo_dato"]
             hecho = resolver_hogar(campo, ctx)
             cantidad = pago = None
-            tri, esperado, _monto = self._eval_regla(r, hecho, cantidad, pago)
+            tri, esperado, monto = self._eval_regla(r, hecho, cantidad, pago)
+            if monto is not None and tri == Tri.SI:
+                monto_tramo = monto
             tris.append(tri)
             if tri == Tri.INDETERMINADO:
                 faltantes.add(campo)
@@ -297,7 +311,7 @@ class Evaluator:
                 esperado=esperado, observado=(hecho.valor if hecho.presente else None),
                 resultado=tri, binding_grupo=r["binding_grupo"], id_hecho=hecho.id_origen,
                 nota=("declarado" if hecho.estado_dato == "DECLARADO" and hecho.presente else None)))
-        return _and_tri(tris), trazas, faltantes, acred_ok
+        return _and_tri(tris), trazas, faltantes, acred_ok, monto_tramo
 
     def _eval_binding_exists(self, reglas_b, ctx: FamiliaCtx, rol: str,
                              ganadores_previos: dict[str, str] | None = None):
@@ -315,13 +329,14 @@ class Evaluator:
                 id_regla=r["id_regla"], campo=r["campo_dato"], operador=r["operador"],
                 esperado=self._esperado(r), observado=None, resultado=Tri.INDETERMINADO,
                 binding_grupo=r["binding_grupo"], nota="sin candidatos") for r in reglas_b]
-            return Tri.INDETERMINADO, None, trazas, campos, True
+            return Tri.INDETERMINADO, None, trazas, campos, True, None
 
         mejor = None
         rank = {Tri.NO: 0, Tri.INDETERMINADO: 1, Tri.SI: 2}
         for cand in candidatos:
             tris, trazas, faltantes = [], [], set()
             acred_ok = True
+            monto_tramo = None  # monto del tramo RANGE_LOOKUP que cumple (si lo hay)
             for r in reglas_b:
                 campo = r["campo_dato"]
                 hecho = resolver_integrante(campo, ctx, cand)
@@ -334,7 +349,9 @@ class Evaluator:
                     id_destino = ganadores_previos.get(padre)
                     ref_eq = self._carga_acreditada_de(cand["id_integrante"], id_destino)
                     esperado_ref = f"carga_de:{padre}={id_destino or '?'}"
-                tri, esperado, _ = self._eval_regla(r, hecho, cantidad, None, ref_eq)
+                tri, esperado, monto = self._eval_regla(r, hecho, cantidad, None, ref_eq)
+                if monto is not None and tri == Tri.SI:
+                    monto_tramo = monto
                 if esperado_ref is not None:
                     esperado = esperado_ref
                 tris.append(tri)
@@ -349,7 +366,7 @@ class Evaluator:
                     id_integrante_evaluado=cand["id_integrante"], id_hecho=hecho.id_origen,
                     nota=("declarado" if hecho.estado_dato == "DECLARADO" and hecho.presente else None)))
             tri_cand = _and_tri(tris)
-            cur = (tri_cand, cand["id_integrante"], trazas, faltantes, acred_ok)
+            cur = (tri_cand, cand["id_integrante"], trazas, faltantes, acred_ok, monto_tramo)
             if mejor is None or rank[tri_cand] > rank[mejor[0]]:
                 mejor = cur
             if tri_cand == Tri.SI:
