@@ -86,6 +86,12 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.shared.json
 
-# Datos internos o raw locales; no excluye PDFs ni data/publico
+# ============================================================
+#  Herramientas, agentes y datos locales
+# ============================================================
+# Artefactos locales de agentes; nunca se versionan
+.agents/
+
+# Datos internos o raw locales; no excluye PDFs ni data/publico/
 /data/interno_no_distribuir/
 /data/raw/

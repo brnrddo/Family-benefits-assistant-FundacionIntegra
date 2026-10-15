@@ -2,21 +2,23 @@
 
 ## Autoridades
 
-1. [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../PROYECTO_3_ESPECIFICACION_v2.md) es la fuente funcional original e inmutable.
+1. [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md) es la fuente funcional original e inmutable.
 2. El [spec maestro](../apoyo-inteligente-familias/requirements.md) interpreta la fuente con requisitos `PROD-*`.
 3. Los contratos de [`contracts/`](./contracts/) son la única autoridad de interfaces C0–C4.
 4. Cada `design.md` decide cómo satisfacer requisitos; cada `tasks.md` descompone trabajo futuro sin ampliar alcance.
 5. C4 gobierna ranking/contenido; el bundle público E-3 gobierna elegibilidad; `CONTROL/ACTIVE` será la única autoridad runtime de activación.
 
-## Mapa por rol
+## Mapa por workstream contractual
 
-| Rol / rama | Ownership futuro | Produce | Consume | Dependencias de entrada |
+Los rótulos Rol 1–4 y sus ramas identifican workstreams de las Specs, no una equivalencia uno-a-uno con disciplinas. El ownership humano por componente y la traducción de handoffs históricos se fijan en [DEC-022](./DECISIONES_SUPUESTOS_PREGUNTAS.md#decisiones).
+
+| Workstream / rama | Alcance contractual | Produce | Consume | Dependencias de entrada |
 |---|---|---|---|---|
 | Producto / coordinación | Specs y gates | `PROD-*` | C0–C4 | fuente funcional |
-| Rol 1 / `datos` | `backend/app/{loader,db,engine,access,context}`, `backend/tests` | C1, C2 | C0 | E-3 público, C0 |
-| Rol 2 / `api` | `backend/app/{api,auth,priority,genai,tracking}`, `infrastructure/` | C3, snapshots, tracking | C0, C1, C2, C4 | stubs C1/C2 y C4 |
-| Rol 3 / `front` | `frontend/` | PWA y evidencia UX | C3, C4 | mocks C3 |
-| Rol 4 / `contenido` | `content/`, demo, pitch | C0, C4 | requisitos funcionales | fuente, privacidad |
+| Rol 1 / `datos` | datos, motor y contexto | C1, C2 | C0 | E-3 público, C0 |
+| Rol 2 / `api` | API, ranking, GenAI, tracking y coordinación AWS | C3, snapshots, tracking | C0, C1, C2, C4 | stubs C1/C2 y C4 |
+| Rol 3 / `front` | PWA | PWA y evidencia UX | C3, C4 | mocks C3 |
+| Rol 4 / `contenido` | contenido, demo y pitch | C0, C4 | requisitos funcionales | fuente, privacidad |
 
 ## Plazos contractuales
 

@@ -25,16 +25,18 @@ Implementa únicamente API-T01. No cambies C3; valida contra OpenAPI.
 Audita FE-T02 contra el código. Devuelve CONFORME/PARCIAL/DIVERGE/NO_VERIFICADO sin editar.
 ```
 
-## 2. Rama y ownership
+## 2. Ramas de workstream y ownership por componente
 
-| Rol | Rama | Spec | Ownership futuro |
+Los rótulos Rol 1–4 identifican workstreams de las Specs; no reemplazan el ownership humano por componente. La correspondencia autoritativa está en [DEC-022](../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#decisiones).
+
+| Workstream | Rama | Spec | Componentes y aprobación |
 |---|---|---|---|
-| Rol 1 Datos | `datos` | [triada](../.kiro/specs/datos-motor-elegibilidad/requirements.md) | `backend/app/{loader,db,engine,access,context}`, `backend/tests` |
-| Rol 2 API/AWS | `api` | [triada](../.kiro/specs/api-priorizacion-genai/requirements.md) | `backend/app/{api,auth,priority,genai,tracking}`, `infrastructure/` |
-| Rol 3 Front | `front` | [triada](../.kiro/specs/frontend-pwa/requirements.md) | `frontend/` |
-| Rol 4 Contenido | `contenido` | [triada](../.kiro/specs/producto-contenido-demo/requirements.md) | `content/`, demo y pitch; sin Python/TypeScript |
+| Rol 1 Datos/motor | `datos` | [triada](../.kiro/specs/datos-motor-elegibilidad/requirements.md) | Mecánica: `data/`, `database/`, loader/features/access/priority/context/QA; Computación: motor `backend/` |
+| Rol 2 API/AWS | `api` | [triada](../.kiro/specs/api-priorizacion-genai/requirements.md) | Computación: `backend/`, `ia/` y arquitectura; Mecánica: priority; Eléctrica: infraestructura/despliegue |
+| Rol 3 Front | `front` | [triada](../.kiro/specs/frontend-pwa/requirements.md) | Eléctrica: `frontend/` e integración visible |
+| Rol 4 Contenido | `contenido` | [triada](../.kiro/specs/producto-contenido-demo/requirements.md) | Recursos Naturales: `docs/producto/`, `content/`, demo y pitch; sin Python/TypeScript |
 
-El dueño aprueba cambios de su área. Ayudar no transfiere ownership. Los contratos [C0–C4](../.kiro/specs/_shared/contracts/) se cambian coordinadamente, no desde una sola rama.
+El dueño del componente aprueba sus cambios. Ayudar desde otro workstream no transfiere ownership. Los contratos [C0–C4](../.kiro/specs/_shared/contracts/) se cambian coordinadamente, no desde una sola rama.
 
 ## 3. Rutina diaria para personas nuevas
 
@@ -79,7 +81,7 @@ Orden: privacidad/fixtures → C0–C4 → motor/datos → API/auth/snapshot →
 - **Snapshot:** `CONTROL/ACTIVE` es única autoridad y sus seis campos se actualizan juntos.
 - **AWS:** estado cambia solo con smoke test fechado/sanitizado; fallback seguro disponible.
 
-Si algo contradice la [fuente inmutable](../PROYECTO_3_ESPECIFICACION_v2.md), deténgase. Registre la decisión en [`DECISIONES_SUPUESTOS_PREGUNTAS.md`](../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md), corrija maestro/contrato y luego consumidores.
+Si algo contradice la [fuente inmutable](./especificacion/PROYECTO_3_ESPECIFICACION_v2.md), deténgase. Registre la decisión en [`DECISIONES_SUPUESTOS_PREGUNTAS.md`](../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md), corrija maestro/contrato y luego consumidores.
 
 ## 6. Prompts seguros copiables
 

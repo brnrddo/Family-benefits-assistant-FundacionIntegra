@@ -62,17 +62,17 @@ El repositorio se organiza por componentes, no por personas. Cada componente tie
 
 ## Handoffs y contratos
 
-| Contrato | De → Para | Contenido | Momento objetivo |
-|---|---|---|---|
-| C0 · Criterios de ficha | Recursos Naturales → Mecánica y Computación | Campos útiles, excluidos y preguntas | Día 1, 14:00 |
-| C1 · Base tipada y características | Mecánica → Computación | Tablas cargadas, valores calculados y nulos explícitos | Stub Día 1, 14:00; completo Día 1 noche |
-| C2 · Evaluación | Computación → Mecánica y Eléctrica | Resultado, nivel, traza y datos faltantes | Stub de 5 familias primero |
-| C3 · Acceso y prioridad | Mecánica → Computación y Eléctrica | Estado, puntajes, razones y orden estable | Día 2, 12:00 |
-| C4 · API | Computación → Eléctrica | Endpoints y ejemplos JSON, primero con mocks | Día 1, 11:00 |
-| C5 · Lenguaje y validación | Recursos Naturales → Computación y Eléctrica | Textos aprobados, privacidad y hallazgos manuales | Revisión diaria |
-| C6 · PWA desplegada | Eléctrica → equipo | URL o plan local y guion técnico de respaldo | Día 2, 18:00 |
+Las disciplinas son dueñas de componentes; los rótulos Rol 1–4 de las Specs son workstreams contractuales. [DEC-022](../../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#decisiones) fija esta correspondencia y traduce los handoffs históricos de la fuente funcional sin crear contratos paralelos.
 
-Los contratos se cambian por acuerdo entre quien entrega y quien consume. Si falta una implementación, se conserva el contrato con un mock marcado como sintético.
+| Contrato único | Producción por componente → consumo | Contenido | Momento objetivo |
+|---|---|---|---|
+| C0 · Mapeo de ficha | Recursos Naturales → Mecánica y Computación | Campos útiles, excluidos y preguntas | Día 1, 14:00 |
+| C1 · Salida de motor y acceso | Computación y Mecánica → Computación/API | Resultado, nivel, acceso, traza y datos faltantes | Stub Día 1, 14:00; completo Día 1 noche |
+| C2 · Contexto familiar | Mecánica → Computación/API | Composición y señales autorizadas, con nulos explícitos | Día 2, 12:00 |
+| C3 · API | Computación → Eléctrica | Endpoints y ejemplos JSON, primero con mocks | Día 1, 11:00 |
+| C4 · Contenido y configuración | Recursos Naturales → Computación y Eléctrica | Pesos U/B/V, preguntas, textos, privacidad y fuentes | V1 Día 1 noche; final Día 2, 18:00 |
+
+La base tipada alimenta C1/C2 sin crear otro contrato; la prioridad consume C1/C2/C4 y se publica por C3; la PWA desplegada es un entregable. Los contratos se cambian por acuerdo entre quien entrega y quien consume. Si falta una implementación, se conserva el contrato con un mock completamente sintético y rotulado.
 
 ## Rutina de los tres días
 

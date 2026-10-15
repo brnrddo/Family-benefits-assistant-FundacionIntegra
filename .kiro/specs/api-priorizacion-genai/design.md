@@ -1,6 +1,6 @@
 # Diseño — Rol 2 API, priorización, GenAI y AWS
 
-**Owner futuro:** `backend/app/{api,auth,priority,genai,tracking}` e `infrastructure/`; rama `api`. Arquitectura transversal: [`ARQUITECTURA_AWS.md`](../../../docs/ARQUITECTURA_AWS.md). Privacidad: [`PRIVACIDAD_DEMO.md`](../../../docs/PRIVACIDAD_DEMO.md).
+**Workstream contractual:** rama `api`; coordina C3, ranking, GenAI, tracking y arquitectura AWS. Según [DEC-022](../_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#decisiones), Computación aprueba `backend/` e `ia/`, Mecánica la futura área `priority` y Eléctrica infraestructura/despliegue. Arquitectura transversal: [`ARQUITECTURA_AWS.md`](../../../docs/ARQUITECTURA_AWS.md). Privacidad: [`PRIVACIDAD_DEMO.md`](../../../docs/PRIVACIDAD_DEMO.md).
 
 ## Primer paso exacto
 

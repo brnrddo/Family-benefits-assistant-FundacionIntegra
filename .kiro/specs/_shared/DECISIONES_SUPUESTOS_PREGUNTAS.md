@@ -1,6 +1,6 @@
 # Decisiones, supuestos y preguntas
 
-Fuente: [diseño aprobado](../../../.agents/tasks/Aws-breaking-barriers---10--api-2026-10-13/design.md). Los tipos se mantienen separados. Responsable de registrar evidencia: dueño indicado; coordinación aprueba cambios.
+Origen: diseño aprobado de coordinación, cuyo artefacto de trabajo permanece local y no se enlaza desde el repositorio. Los tipos se mantienen separados. Responsable de registrar evidencia: dueño indicado; coordinación aprueba cambios.
 
 ## Decisiones
 
@@ -27,6 +27,7 @@ Fuente: [diseño aprobado](../../../.agents/tasks/Aws-breaking-barriers---10--ap
 | DEC-019 | Polly/Translate SHOULD recuperables; Transcribe/AgentCore COULD con decisión y contrato nuevos. | Roles 2 y 4 | APROBADA; no verificados. |
 | DEC-020 | S3 Tables solo analítica; Macie solo detecta; agentes AWS solo apoyan revisión/operación. | Rol 2 | APROBADA; fuera del núcleo Demo. |
 | DEC-021 | Las rutas físicas del pedido son el contrato de navegación y prevalecen. Los nombres del árbol original son solo etiquetas conceptuales: `producto-brujula-familiar` → `apoyo-inteligente-familias/`; `rol-1-datos-motor` → `datos-motor-elegibilidad/`; `rol-2-api-priorizacion-genai` → `api-priorizacion-genai/`; `rol-3-frontend-pwa` → `frontend-pwa/`; `rol-4-producto-contenido-demo` → `producto-contenido-demo/`. Existe una sola tríada autoritativa por área, sin aliases ni duplicados. | Coordinación | APROBADA por decisión explícita de revisión; comprobar enlaces desde `INDICE.md`. |
+| DEC-022 | Los rótulos Rol 1–4 y las ramas de las Specs son workstreams contractuales, no equivalencias uno-a-uno con las disciplinas. El ownership humano se resuelve por componente: Computación aprueba `backend/` (motor/API/tracking) e `ia/`; Mecánica, `data/`, `database/` y futuras áreas loader/features/access/priority/QA; Eléctrica, `frontend/` y despliegue; Recursos Naturales, `docs/producto/`, contenido, privacidad, pruebas manuales y pitch. C0–C4 conservan un significado único: C0 mapeo de ficha, C1 salida de motor/acceso, C2 contexto familiar, C3 API y C4 contenido/configuración. Los handoffs históricos rotulados C1–C6 en la fuente funcional se traducen así: datos tipados alimentan C1/C2 sin contrato adicional; salida del motor y acceso forman C1; prioridad consume C1/C2/C4 y se publica por C3; API es C3; producto/lenguaje es C4; PWA/despliegue es un entregable, no otro contrato. | Coordinación y dueños de componente | APROBADA para reconciliar la reorganización por componentes con DEC-021 sin duplicar tríadas ni contratos. |
 
 ## Supuestos
 

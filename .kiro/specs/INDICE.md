@@ -4,7 +4,7 @@ Punto único de entrada al **baseline documental**. No afirma que aplicación, i
 
 ## Orden de lectura
 
-- **Equipo:** este índice → [fuente funcional](../../PROYECTO_3_ESPECIFICACION_v2.md) → [spec maestro](./apoyo-inteligente-familias/requirements.md) → [privacidad](../../docs/PRIVACIDAD_DEMO.md) → [arquitectura](../../docs/ARQUITECTURA_AWS.md) → rol.
+- **Equipo:** este índice → [fuente funcional](../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md) → [spec maestro](./apoyo-inteligente-familias/requirements.md) → [privacidad](../../docs/PRIVACIDAD_DEMO.md) → [arquitectura](../../docs/ARQUITECTURA_AWS.md) → rol.
 - **Rol 1:** [requirements](./datos-motor-elegibilidad/requirements.md) → [design](./datos-motor-elegibilidad/design.md) → [tasks](./datos-motor-elegibilidad/tasks.md) → C0/C1/C2.
 - **Rol 2 (`api`):** [requirements](./api-priorizacion-genai/requirements.md) → [design](./api-priorizacion-genai/design.md) → [tasks](./api-priorizacion-genai/tasks.md) → C0–C4.
 - **Rol 3:** [requirements](./frontend-pwa/requirements.md) → [design](./frontend-pwa/design.md) → [tasks](./frontend-pwa/tasks.md) → C3/C4.
@@ -40,7 +40,7 @@ Guía para novatos: [`GUIA_KIRO_EQUIPO.md`](../../docs/GUIA_KIRO_EQUIPO.md). Glo
 
 ## Mapa de autoridad
 
-1. [Fuente funcional original](../../PROYECTO_3_ESPECIFICACION_v2.md), inmutable.
+1. [Fuente funcional original](../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), inmutable.
 2. [Requirements maestro](./apoyo-inteligente-familias/requirements.md), interpretación con `PROD-*`.
 3. C0–C4, única autoridad entre roles.
 4. `design.md` satisface requisitos; `tasks.md` descompone sin agregar alcance.
