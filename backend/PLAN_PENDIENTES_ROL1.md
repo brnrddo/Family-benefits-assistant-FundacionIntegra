@@ -36,7 +36,7 @@ enganchar lo nuevo.
 | **P1** | Ficha digital → hechos DECLARADO → **reevaluación** | Día 2, punto 4 | ✅ **Hecho** (ver §2) — `tests/test_reevaluacion.py` | **Alta** |
 | **P2** | Empaquetado AWS (`e3.db` embebido, `make data`, despliegue) | §0 "Soporte a AWS" + §6 | ✅ **Hecho** (ver §3) — `Dockerfile`, `Makefile`, `make.ps1`, `.dockerignore` | **Alta** |
 | **P3** | Sembrar 3 familias demo verificadas (brecha, discapacidad, sin RSH) | Día 2, punto 8 | No verificado: no hay script/test que fije las 3 familias de demo | Media |
-| **P4** | README de datos: cerrar "cómo desplegar en AWS" con artefactos reales | Día 2, punto 7 + §6 | Parcial: el README describe el flujo pero apunta a artefactos que no existen (depende de P2) | Media (sigue a P2) |
+| **P4** | README de datos: cerrar "cómo desplegar en AWS" con artefactos reales | Día 2, punto 7 + §6 | ✅ **Hecho** (ver §5) — sección "Cómo desplegar en AWS" con `docker build` verificado + publicación en ECR | Media (sigue a P2) |
 | **C2** | Emitir el **contrato C2 formal** (schema `urn:brujula:c2:v1`), no solo el objeto interno §2.7.2 | Contrato Rol 1→Rol 2 (INDICE.md, Día 2 12:00) | ✅ **Hecho** (ver §C2) — `app/context/contrato_c2.py`, `tests/test_contrato_c2.py` | **Alta** |
 
 > Fuera de alcance de los 2 días (quedan como gancho, **no** en este plan):
@@ -196,12 +196,15 @@ artefacto reproducible con `e3.db` ya generado, listo para que el backend
 > evaluaciones o falla el build) y `.dockerignore` en la raíz del repo (excluye
 > secretos, `.venv`, cachés, bases locales y carpetas de otros roles). Sección
 > "Cómo desplegar en AWS" del README reescrita con los comandos reales
-> (`make data`, `docker build -f backend/Dockerfile`, smoke test). Verificado en
-> local: `make.ps1 data` regenera `e3.db` (28.585 filas, precálculo 10.000 en
-> ~19 s) y la suite completa pasa (**102 passed**). El `docker build` no se pudo
-> ejecutar en el host Windows (sin Docker instalado); corre en AWS/CI sobre
-> Linux. El tabla P4 (README de despliegue) queda cubierto por esta misma
-> entrega.
+> (`make data`, `docker build -f backend/Dockerfile`, smoke test y publicación
+> en ECR → App Runner/Lambda). Verificado en local: `make.ps1 data` regenera
+> `e3.db` (28.585 filas, precálculo 10.000 en ~19 s) y la suite completa pasa.
+> **`docker build` verificado de verdad (Docker 29.8.2 / `python:3.11-slim`):**
+> los 9 pasos completan, el pipeline embebido corre en ~8 s dentro de la imagen,
+> la aserción `evaluaciones == 10000` pasa en build-time, `docker run` imprime
+> `evaluaciones: 10000 / accesos: 10000` y la consulta documentada devuelve
+> `(10000,)`. Imagen `e3-backend:latest` ≈ 293 MB. P4 (README de despliegue)
+> queda cubierto por esta misma entrega.
 
 ---
 
@@ -222,6 +225,14 @@ en el README.
 Depende de P2. Reemplazar la sección "Cómo desplegar en AWS" (que hoy describe
 un flujo sin artefactos) por los comandos reales: `make data`, `docker build`,
 `docker run`, variables de entorno, y los 3 ids demo de P3.
+
+> **P4 COMPLETADO (2026-10-15).** La sección "Cómo desplegar en AWS" del README
+> ahora documenta el flujo completo con artefactos reales y verificados:
+> (1) `make data` / `make.ps1 data`, (2) `docker build -f backend/Dockerfile`
+> con el smoke test real (`docker run` → `evaluaciones: 10000`, consulta → `(10000,)`,
+> imagen ≈ 293 MB), y (3) publicación en ECR + despliegue en App Runner/Lambda
+> con los comandos `aws ecr`, `docker tag`/`push` y las variables de entorno y
+> rol de IAM mínimos. Entregado junto a P2 en la branch `rol1/empaquetado-aws`.
 
 ---
 

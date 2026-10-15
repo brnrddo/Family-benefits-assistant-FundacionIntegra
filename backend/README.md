@@ -349,24 +349,65 @@ docker build -f backend/Dockerfile -t e3-backend .
 # smoke test: la base embebida debe tener 10.000 evaluaciones
 docker run --rm e3-backend
 # -> evaluaciones: 10000 / accesos: 10000 / vistas listas: ...
+
+# verificación equivalente (una sola consulta):
+docker run --rm e3-backend \
+    python -c "import sqlite3; print(sqlite3.connect('e3.db').execute('SELECT count(*) FROM evaluaciones').fetchone())"
+# -> (10000,)
 ```
 
 El `Dockerfile` corre el pipeline en build-time y verifica el conteo (falla el
 build si `evaluaciones != 10000`), de modo que la imagen nunca sale con una base
 incompleta.
 
+> **Verificado** (Docker 29.8.2, base `python:3.11-slim`): el build completa los
+> 9 pasos, el precálculo embebido corre en ~8 s dentro de la imagen, la aserción
+> `evaluaciones == 10000` pasa en build-time y `docker run` imprime
+> `evaluaciones: 10000 / accesos: 10000`. Imagen resultante ≈ **293 MB**.
+
 - El backend (FastAPI, Rol 2) lee `e3.db` de **solo lectura** desde la imagen.
   El `CMD` por defecto es un placeholder (imprime el resumen de la base); Rol 2
   lo reemplaza por el server, p. ej.
   `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
-- Despliegue en App Runner / Lambda: publicar la imagen (ECR) y apuntar el
-  servicio a ella. No hace falta un servicio de datos aparte: la base viaja
-  dentro de la imagen.
 - Nada de datos personales en logs ni en lo que viaje al LLM (lo garantiza
   `context_filter.py`, §2.7.3). El `.dockerignore` excluye `.env`, credenciales,
   `.venv`, cachés y las bases locales.
 - Rutas y fecha configurables por entorno: `E3_DB_PATH`, `E3_FECHA_EVALUACION`
   (declaradas con default en el `Dockerfile`; Rol 2 las puede sobrescribir).
+
+### 3) Publicar en ECR y desplegar (handoff a Rol 2)
+
+La base viaja **dentro de la imagen**: no hace falta un servicio de datos
+aparte. Rol 2 solo publica la imagen en ECR y apunta App Runner / Lambda a ella.
+
+```bash
+# variables (ajustar región y cuenta):
+AWS_REGION=us-east-1
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_REPO=e3-backend
+IMAGE_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
+
+# 1) crear el repositorio (una vez)
+aws ecr create-repository --repository-name $ECR_REPO --region $AWS_REGION
+
+# 2) login de Docker contra ECR
+aws ecr get-login-password --region $AWS_REGION \
+  | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# 3) etiquetar y subir
+docker tag e3-backend:latest $IMAGE_URI:latest
+docker push $IMAGE_URI:latest
+```
+
+Luego, en App Runner (recomendado para la demo: HTTP directo, sin API Gateway):
+- Origen = la imagen `$IMAGE_URI:latest` en ECR.
+- Puerto = el que exponga el server de Rol 2 (p. ej. `8000` con uvicorn).
+- Variables de entorno opcionales: `E3_DB_PATH`, `E3_FECHA_EVALUACION`,
+  `E3_LLM_PROVIDER=bedrock` y las credenciales/rol de IAM para Bedrock.
+- Rol de IAM mínimo para la IA: `bedrock:InvokeModel`, `bedrock:Converse`.
+
+En Lambda (contenedor) el esquema es el mismo (imagen desde ECR); requiere un
+adaptador ASGI (p. ej. Mangum) que Rol 2 añadiría al definir el server.
 
 ---
 
