@@ -20,6 +20,8 @@ from .llm_context import (PiiLeakError,  # noqa: F401
 from .provider import (LLMProvider, LLMResponse, StubProvider,  # noqa: F401
                        get_provider)
 from .template_provider import (DISCLAIMER,  # noqa: F401
-                                CatalogEntry, SourceCitation, TemplateError,
-                                TemplateProvider, catalogo_desde_benefits,
+                                PLANTILLAS_NEUTRAS, CatalogEntry,
+                                PlantillasTexto, SourceCitation,
+                                TemplateError, TemplateProvider,
+                                asistente_sin_catalogo, contiene_promesa,
                                 es_pregunta_individual)

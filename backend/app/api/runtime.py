@@ -2,8 +2,11 @@
 
 - La generación de texto (guion/mensaje/asistente) usa SIEMPRE el
   ``TemplateProvider`` determinista de FEAT-002 (``provider='PLANTILLA'``),
-  construido desde el catálogo C4 provisional. El cliente nunca envía contexto,
-  catálogo ni prompt (API-007).
+  construido desde el catálogo C4 de ``content/`` (Rol 4, DEC-055). El cliente
+  nunca envía contexto, catálogo ni prompt (API-007).
+- Un ``benefit_id`` sin respaldo en el catálogo responde 422 y nunca se
+  sustituye por otro beneficio (DEC-056). Si el catálogo no valida, la
+  respuesta falla cerrada sin 500 (DEC-058).
 - La integración del motor (FEAT-001 priority + FEAT-002 filtro) vive detrás de
   la bandera ``E3_MOCK``. Por defecto (``E3_MOCK=1``) todo es mock. Con
   ``E3_MOCK=0`` se intenta tocar la DB; si falta, se degrada a mocks con un
@@ -12,120 +15,137 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 from app.api.deps import DISCLAIMER, construir_meta, mock_habilitado
+from app.api.errors import ApiError
 from app.config import DB_PATH
 from app.genai import (
     TemplateError,
     TemplateProvider,
-    catalogo_desde_benefits,
+    asistente_sin_catalogo,
+    content_catalog,
+)
+from app.genai.template_provider import (
+    GUION_SIN_CATALOGO,
+    WARNING_SIN_CATALOGO,
 )
 from app.priority import ConfigInvalida, cargar_ranking_config
 
 logger = logging.getLogger("app.api")
 
-# Catálogo del TemplateProvider construido una vez desde el bundle C4.
+# TemplateProvider construido una vez desde content/ (solo si valida).
 _provider: TemplateProvider | None = None
+_provider_lock = threading.Lock()
+
+WARNING_SECCION_OMITIDA = "SECCION_SIN_FUENTE_OMITIDA"
+
+_RAZON_DESCONOCIDO = "Beneficio sin respaldo en el catálogo C4."
+_RAZON_SIN_FUENTE = "Beneficio sin fuente oficial para la tarjeta."
 
 
-def _cargar_catalogo() -> dict:
-    """Lee BENEFITS + I18N del bundle C4 mock del Rol 2 y arma el catálogo."""
-    import json
-    from pathlib import Path
-
-    from app.priority.config import _DEFAULT_MANIFEST  # ruta por defecto validada
-
-    # Las rutas del catálogo se resuelven contra el directorio del manifest por
-    # defecto, no contra la raíz del repo: el bundle es relocalizable (DEC-022).
-    # El catálogo NO sigue E3_CONTENT_MANIFEST: siempre lee el mock del Rol 2.
-    bundle_dir = Path(_DEFAULT_MANIFEST).resolve().parent
-    benefits_path = bundle_dir / "benefits.json"
-    i18n_path = bundle_dir / "i18n" / "es.json"
-
-    with benefits_path.open(encoding="utf-8") as fh:
-        benefits = json.load(fh).get("benefits", [])
-    with i18n_path.open(encoding="utf-8") as fh:
-        i18n = json.load(fh)
-
-    # El catálogo exige where_to_go/reason/action; se completan con copy simple
-    # y neutro (español de usted) desde el i18n cuando existe.
-    enriquecidos: list[dict] = []
-    for b in benefits:
-        enriquecidos.append({
-            "benefit_id": b["benefit_id"],
-            "title_key": b.get("title_key", ""),
-            "reason": "Según el catálogo, podría corresponderle este apoyo.",
-            "action": "Vale la pena consultar los requisitos en la institución.",
-            "where_to_go": "Oficina de ChileAtiende de su comuna.",
-            "source_id": b.get("source_id", "SRC-OFICIAL"),
-            "source_url": b.get("source_url", ""),
-        })
-    return catalogo_desde_benefits(enriquecidos, i18n)
+def _log_sin_catalogo(motivo: str) -> None:
+    # Solo el código fijo: sin rutas, IDs, preguntas ni textos.
+    logger.warning("catalogo_c4_no_disponible: motivo=%s", motivo)
 
 
-def get_provider() -> TemplateProvider:
-    """Devuelve el ``TemplateProvider`` (catálogo C4) construyéndolo perezosamente."""
+def get_provider() -> TemplateProvider | None:
+    """``TemplateProvider`` con el catálogo C4 de ``content/``, o ``None``.
+
+    Se construye perezosamente y se cachea solo si el catálogo valida; un fallo
+    no se cachea, así el siguiente request reintenta la carga.
+    """
     global _provider
-    if _provider is None:
-        _provider = TemplateProvider(_cargar_catalogo())
+    if _provider is not None:
+        return _provider
+    with _provider_lock:
+        if _provider is None:
+            try:
+                cat = content_catalog.cargar_catalogo_contenido()
+            except content_catalog.ContenidoInvalido as exc:
+                _log_sin_catalogo(exc.codigo)
+                return None
+            _provider = TemplateProvider(cat.entradas, cat.plantillas)
     return _provider
 
 
-def _ids_autorizados(provider: TemplateProvider, benefit_ids: list[str]) -> list[str]:
-    """Filtra a los benefit_ids con respaldo en el catálogo C4.
+def _detalles(benefit_ids: list[str], razon: str, incluir) -> list[dict]:
+    """``details`` de ErrorResponse por índice, nunca con el valor recibido."""
+    return [
+        {"field": f"body.benefit_ids.{i}", "reason": razon}
+        for i, bid in enumerate(benefit_ids) if incluir(bid)
+    ]
 
-    El request público solo trae IDs; el servidor valida que existan en el
-    catálogo autorizado (API-007). IDs sin respaldo se descartan.
-    """
-    validos: list[str] = []
-    for bid in benefit_ids:
-        if bid in provider._catalogo:  # noqa: SLF001 (acceso controlado interno)
-            validos.append(bid)
-    return validos
+
+def _exigir_conocidos(provider: TemplateProvider, benefit_ids: list[str]) -> None:
+    """422 si algún ``benefit_id`` no está en el catálogo C4 (DEC-056)."""
+    detalles = _detalles(benefit_ids, _RAZON_DESCONOCIDO, lambda b: not provider.conoce(b))
+    if detalles:
+        raise ApiError(status_code=422, details=detalles, retryable=False)
+
+
+def _envelope(request_id: str, content: dict, warnings: list[str]) -> dict:
+    return {
+        "meta": construir_meta(request_id),
+        "provider": TemplateProvider.provider,
+        "warnings": warnings,
+        "content": content,
+        "disclaimer": DISCLAIMER,
+    }
+
+
+def _guion_sin_catalogo(benefit_ids: list[str], request_id: str) -> dict:
+    """Guion fijo sin nombre de ningún beneficio (DEC-058)."""
+    content = {
+        "benefit_ids": list(dict.fromkeys(benefit_ids))[:3],
+        "script": f"{GUION_SIN_CATALOGO} {DISCLAIMER}",
+    }
+    return _envelope(request_id, content, [WARNING_SIN_CATALOGO])
 
 
 def generar_guion(benefit_ids: list[str], request_id: str) -> dict:
     """Arma el ``ScriptGenerationEnvelope`` C3 (provider=PLANTILLA)."""
     provider = get_provider()
-    ids = _ids_autorizados(provider, benefit_ids)
+    if provider is None:
+        return _guion_sin_catalogo(benefit_ids, request_id)
+    _exigir_conocidos(provider, benefit_ids)
     try:
-        content = provider.generar_guion(ids)
-        warnings: list[str] = []
+        content = provider.generar_guion(benefit_ids)
     except TemplateError:
-        # Fallback cerrado: sin respaldo, se usa el primer beneficio del catálogo.
-        content = provider.generar_guion(list(provider._catalogo)[:1])  # noqa: SLF001
-        warnings = ["FALLBACK_TEMPLATE"]
-    return {
-        "meta": construir_meta(request_id),
-        "provider": provider.provider,
-        "warnings": warnings,
-        "content": content,
-        "disclaimer": DISCLAIMER,
-    }
+        # Invariante roto tras validar: se responde sin texto de beneficios.
+        _log_sin_catalogo("INVARIANTE_PLANTILLA")
+        return _guion_sin_catalogo(benefit_ids, request_id)
+    return _envelope(request_id, content, [])
 
 
 def generar_mensaje(benefit_ids: list[str], request_id: str) -> dict:
-    """Arma el ``MessageGenerationEnvelope`` C3 (provider=PLANTILLA)."""
+    """Arma el ``MessageGenerationEnvelope`` C3 (provider=PLANTILLA).
+
+    Sin catálogo no hay tarjeta válida (C3 exige citas): 503. Los beneficios
+    sin fuente oficial (PREG-045) no llevan sección y se avisa con un warning;
+    si ninguno la tiene, 422 (DEC-057).
+    """
     provider = get_provider()
-    ids = _ids_autorizados(provider, benefit_ids)
+    if provider is None:
+        raise ApiError(status_code=503)
+    _exigir_conocidos(provider, benefit_ids)
+    if not any(provider.tiene_cita(bid) for bid in benefit_ids):
+        detalles = _detalles(benefit_ids, _RAZON_SIN_FUENTE, lambda b: True)
+        raise ApiError(status_code=422, details=detalles, retryable=False)
     try:
-        content = provider.generar_mensaje(ids)
-        warnings: list[str] = []
+        content = provider.generar_mensaje(benefit_ids)
     except TemplateError:
-        content = provider.generar_mensaje(list(provider._catalogo)[:1])  # noqa: SLF001
-        warnings = ["FALLBACK_TEMPLATE"]
-    return {
-        "meta": construir_meta(request_id),
-        "provider": provider.provider,
-        "warnings": warnings,
-        "content": content,
-        "disclaimer": DISCLAIMER,
-    }
+        _log_sin_catalogo("INVARIANTE_PLANTILLA")
+        raise ApiError(status_code=503) from None
+    omitidas = len(content["benefit_ids"]) > len(content["printable_card"]["sections"])
+    return _envelope(request_id, content, [WARNING_SECCION_OMITIDA] if omitidas else [])
 
 
 def responder_asistente(question: str, request_id: str) -> dict:
     """Arma el ``AssistantEnvelope`` C3 (plantilla; sin Bedrock)."""
     provider = get_provider()
+    if provider is None:
+        return asistente_sin_catalogo(request_id, question)
     return provider.responder_asistente(request_id, question)
 
 
