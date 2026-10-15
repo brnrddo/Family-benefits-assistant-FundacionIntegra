@@ -31,7 +31,8 @@ describe('resolveProfile — tabla de verdad NIT 4', () => {
   it('local + mocks + none → OK', () => {
     const config = okConfig({ VITE_PROFILE: 'local', VITE_USE_MOCKS: 'true', VITE_AUTH_MODE: 'none' });
     expect(config.apiKind).toBe('mock');
-    expect(config.capabilities).toMatchObject({ mocks: true, authMode: 'none', newFamily: true, syntheticBanner: true });
+    // DEC-039: "Agregar información" activa por defecto solo con mocks.
+    expect(config.capabilities).toMatchObject({ mocks: true, authMode: 'none', newFamily: true, addInfo: true, syntheticBanner: true });
   });
 
   it('local + sin mocks + API loopback o relativa + none → OK', () => {
@@ -41,6 +42,9 @@ describe('resolveProfile — tabla de verdad NIT 4', () => {
       'http://[::1]:8000/api/v1',
     );
     expect(okConfig({ VITE_PROFILE: 'local', VITE_API_BASE_URL: '/api/v1' }).apiKind).toBe('relative');
+    // DEC-039: con API real la propuesta queda oculta salvo VITE_PROPOSAL_ADD_INFO=true.
+    expect(okConfig({ VITE_PROFILE: 'local', VITE_API_BASE_URL: '/api/v1' }).capabilities.addInfo).toBe(false);
+    expect(okConfig({ VITE_PROFILE: 'local', VITE_API_BASE_URL: '/api/v1', VITE_PROPOSAL_ADD_INFO: 'true' }).capabilities.addInfo).toBe(true);
   });
 
   it.each(['local', 'demo', 'escala'] as const)('%s + sin mocks + API no loopback + none → fatal', (profile) => {
@@ -99,18 +103,28 @@ describe('resolveProfile — matriz de capacidades §5.2', () => {
     });
   });
 
-  it('escala: sin persistencia, sin cola, sin Familia nueva ni banner sintético', () => {
-    const config = okConfig({ VITE_PROFILE: 'escala', VITE_API_BASE_URL: CLOUD_API, ...COGNITO, VITE_DATA_CLASSIFICATION: SYNTHETIC });
+  it('escala: sin persistencia, sin cola, sin Familia nueva, sin nombres locales, sin Agregar información ni banner', () => {
+    const config = okConfig({
+      VITE_PROFILE: 'escala',
+      VITE_API_BASE_URL: CLOUD_API,
+      ...COGNITO,
+      VITE_DATA_CLASSIFICATION: SYNTHETIC,
+      VITE_PROPOSAL_ADD_INFO: 'true',
+    });
     expect(config.capabilities).toEqual({
       mocks: false,
       authMode: 'cognito',
       persistence: false,
       queue: false,
       newFamily: false,
+      localNames: false,
+      addInfo: false,
       syntheticBanner: false,
       cacheTtlHours: 12,
     });
   });
+
+
 
   it('local: newFamily verdadero; local cloud exige cognito', () => {
     expect(okConfig({ VITE_USE_MOCKS: 'true' }).capabilities.newFamily).toBe(true);

@@ -1,6 +1,6 @@
 // IndexedDB Demo (design.md §12.2, versión simplificada). Único punto de apertura: falla cerrado
 // si el perfil no permite persistencia (Escala o sin clasificación sintética), así Escala nunca
-// abre IndexedDB. El logout borra la BD completa (caché, cola y meta).
+// abre IndexedDB. El logout borra la BD completa (caché, cola, meta y nombres de trato).
 import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { ConversationRequest } from '../api/types';
 import { runtimeConfig, SYNTHETIC_CLASSIFICATION } from '../config/profile';
@@ -33,10 +33,22 @@ export interface QueueRecord {
   readonly data_classification: typeof SYNTHETIC_CLASSIFICATION;
 }
 
+/**
+ * "Nombre de trato" que la tía escribe en ESTE equipo (DEC-038; clase "Local de la tía" de
+ * PRIVACIDAD_DEMO.md). Nunca viene de la API ni se envía a ella; el logout lo borra con la BD.
+ */
+export interface NameRecord {
+  readonly family_id: string;
+  readonly name: string;
+  readonly updated_at: string;
+  readonly data_classification: typeof SYNTHETIC_CLASSIFICATION;
+}
+
 interface DemoSchema extends DBSchema {
   cache: { key: string; value: CacheRecord };
   queue: { key: string; value: QueueRecord };
   meta: { key: string; value: string };
+  names: { key: string; value: NameRecord };
 }
 
 export type DemoDb = IDBPDatabase<DemoSchema>;
@@ -53,11 +65,15 @@ export function persistenceEnabled(): boolean {
 
 export function openDemoDb(): Promise<DemoDb> {
   if (!persistenceEnabled()) return Promise.reject(new Error('persistence_disabled'));
-  dbPromise ??= openDB<DemoSchema>(DEMO_DB_NAME, 1, {
-    upgrade(db) {
-      db.createObjectStore('cache', { keyPath: 'key' });
-      db.createObjectStore('queue', { keyPath: 'idempotency_key' });
-      db.createObjectStore('meta');
+  dbPromise ??= openDB<DemoSchema>(DEMO_DB_NAME, 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore('cache', { keyPath: 'key' });
+        db.createObjectStore('queue', { keyPath: 'idempotency_key' });
+        db.createObjectStore('meta');
+      }
+      // v2 (DEC-038): nombres de trato locales.
+      if (oldVersion < 2) db.createObjectStore('names', { keyPath: 'family_id' });
     },
     // Otra pestaña borra la BD (logout): soltar la conexión para no bloquearla.
     blocking() {

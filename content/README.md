@@ -2,7 +2,7 @@
 
 Datos y textos que consumen los demás roles: mapeo C0 de la ficha y bundle C4 (ranking, preguntas, beneficios, prompts, accesibilidad, i18n y activos demo). Solo CSV, JSON, YAML, Markdown y un PNG sintético; sin código ni reglas de elegibilidad. No contiene datos de personas.
 
-Estado: **0.2.0, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045), falta API-T14 y revisión humana. Ninguna capa runtime debe activarlo.
+Estado: **0.2.1, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045) y copy del catálogo i18n 1.2.0; falta API-T14 y revisión humana. Ninguna capa runtime debe activarlo.
 
 | Archivo | Clase | Consumidor |
 |---|---|---|

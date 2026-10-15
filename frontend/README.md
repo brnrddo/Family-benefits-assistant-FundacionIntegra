@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Construir la PWA mobile-first para la educadora: lista priorizada, ficha familiar, preguntas, recomendaciones, conversación y KPI, utilizable con poca conexión.
+Construir la PWA mobile-first para la educadora: lista del jardín con acciones prioritarias por familia, ficha familiar, preguntas, recomendaciones, conversación y KPI, utilizable con poca conexión.
 
 - **Dueño:** Ingeniería Eléctrica.
 - **Colaboradores:** Computación entrega contratos/API; Recursos Naturales valida lenguaje, privacidad y pruebas manuales.
@@ -31,7 +31,7 @@ npm run test:e2e     # smoke Playwright a 360 px (construye `build:e2e` y lo sir
 
 Para ver la app como celular, use el modo dispositivo del navegador a 360 px. Sin `content/i18n/es.json` (rama `contenido`) la consola de Vite avisa `copy MOCK_LOCAL` y `C4 MISSING`: es lo esperado en la rama `front`.
 
-Vistas: Mi jardín (`/`), Ficha (`/familias/:id`), Guion, Mensaje e impresión, Marcar conversado (`/familias/:id/conversacion`, 3 toques), Familia nueva (`/familia-nueva`, no existe en `escala`), Avance (`/avance`) y Preguntar (`/preguntar`). Los mocks aceptan escenarios con `?mock=` al cargar (p. ej. `conv503`, `kpiSuppressed`, `assistantDeterministic`; lista en `src/mocks/scenarios.ts`).
+Vistas: Mi jardín (`/`, familias en orden neutro con sus acciones prioritarias, DEC-037), Ficha (`/familias/:id`, con nombre de trato local DEC-038 y beneficios en dos grupos), Guion, Mensaje e impresión, Marcar conversado (`/familias/:id/conversacion`, 3 toques), Agregar información (`/familias/:id/agregar-informacion`, operación propuesta fuera de C3, solo con mocks salvo `VITE_PROPOSAL_ADD_INFO=true`; ver `docs/PROPUESTA_C3_agregar_informacion.md`, DEC-039), Familia nueva (`/familia-nueva`, no existe en `escala`), Avance (`/avance`) y Preguntar (`/preguntar`). Los mocks aceptan escenarios con `?mock=` al cargar (p. ej. `conv503`, `kpiSuppressed`, `assistantDeterministic`; lista en `src/mocks/scenarios.ts`).
 
 | Script | Para qué |
 |---|---|
@@ -40,6 +40,7 @@ Vistas: Mi jardín (`/`), Ficha (`/familias/:id`), Guion, Mensaje e impresión, 
 | `preview` | Sirve `dist/` en `http://localhost:4173` |
 | `typecheck`, `lint`, `test`, `test:e2e` | TypeScript, ESLint (`--max-warnings=0`), Vitest, Playwright |
 | `gen:contract` | Regenera tipos y validadores Ajv desde C3 (`src/api/generated/`) |
+| `gen:proposals` | Regenera el validador del schema local de la operación propuesta (`src/api/proposals/generated/`) |
 | `check:api` | Valida los GET de una API loopback contra C3 (sin bodies ni POST) |
 
 Copy: sin `content/i18n/es.json` canónico se usa el copy provisional `src/i18n/es.mock.ts` con la insignia "Textos provisionales" (SUP-030); solo se permite en `local` o en `demo` con `BRUJULA_ALLOW_MOCK_COPY=true`. Polly/Translate quedan ocultos mientras C4 no los active con evidencia y C3 no tenga ruta (PREG-031).

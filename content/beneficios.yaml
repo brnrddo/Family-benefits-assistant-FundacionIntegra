@@ -3,7 +3,7 @@
 # la elegibilidad la decide solo el motor determinista.
 # Fuentes: data/publico/beneficios.csv, data/publico/beneficios_fuentes.csv y data/publico/fuentes.csv.
 # official_source_id es la fuente DESCRIPCION con URL HTTPS; BEN-018, BEN-019 y BEN-020 solo tienen F900 (PREG-045).
-content_version: "0.2.0"
+content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 beneficios:
   - benefit_id: BEN-001

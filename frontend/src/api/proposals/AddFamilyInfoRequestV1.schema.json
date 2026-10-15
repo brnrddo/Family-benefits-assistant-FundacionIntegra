@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:proposal:add-family-info-request:v1",
+  "title": "AddFamilyInfoRequestV1",
+  "description": "PROPUESTA del frontend (DEC-039, PREG-039). NO es parte de C3 v1.0.2. Cuerpo de POST /familias/{id}/antecedentes: subconjunto cerrado de los campos de PreevaluationRequest (C3) que la tia completa para una familia EXISTENTE. Sin nombres, identificadores, contacto ni texto libre. Ausente = sin cambio; null = 'No se' (housing_type usa UNKNOWN). Exige al menos un campo ademas de data_classification. La respuesta es FamiliaDetailEnvelope de C3 sin cambios (resultados declarados = PRELIMINAR).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_classification"],
+  "minProperties": 2,
+  "properties": {
+    "data_classification": {"const": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON"},
+    "child_age": {"type": ["integer", "null"], "minimum": 0, "maximum": 120},
+    "siblings_under_6": {"type": ["integer", "null"], "minimum": 0, "maximum": 30},
+    "siblings_6_14": {"type": ["integer", "null"], "minimum": 0, "maximum": 30},
+    "siblings_15_18": {"type": ["integer", "null"], "minimum": 0, "maximum": 30},
+    "has_rsh": {"type": ["boolean", "null"]},
+    "rsh_band": {"type": ["integer", "null"], "enum": [40, 50, 60, 70, 80, 90, 100, null]},
+    "household_income_band": {"type": ["string", "null"], "enum": ["UNDER_110K", "110K_250K", "250K_400K", "OVER_400K", null]},
+    "ssyo_participation": {"type": ["boolean", "null"]},
+    "chile_crece_contigo_access": {"type": ["boolean", "null"]},
+    "last_child_health_control_date": {"type": ["string", "null"], "format": "date", "maxLength": 10},
+    "child_possible_disability": {"type": ["boolean", "null"]},
+    "child_in_therapy": {"type": ["boolean", "null"]},
+    "housing_type": {"type": ["string", "null"], "enum": ["ADEQUATE", "CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME", "OTHER", "UNKNOWN", null]},
+    "household_pregnancy": {"type": ["boolean", "null"]},
+    "household_has_adult_over_65": {"type": ["boolean", "null"]},
+    "household_formal_employment_or_pension": {"type": ["boolean", "null"]},
+    "household_water_payment_difficulty": {"type": ["boolean", "null"]},
+    "household_food_purchase_difficulty": {"type": ["boolean", "null"]}
+  }
+}

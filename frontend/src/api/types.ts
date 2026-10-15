@@ -4,6 +4,10 @@ import type { components, operations } from './generated/c3';
 type Schemas = components['schemas'];
 
 export type OperationId = keyof operations;
+/** Operaciones PROPUESTAS por el frontend que aún NO están en C3 (src/api/proposals, DEC-039). */
+export type ProposalOperationId = 'addFamiliaAntecedentes';
+/** Lo que acepta el transporte: una operación C3 o una propuesta explícita. */
+export type AnyOperationId = OperationId | ProposalOperationId;
 
 export type Id = Schemas['Id'];
 export type EnvelopeMetadata = Schemas['EnvelopeMetadata'];

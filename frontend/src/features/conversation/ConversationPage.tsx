@@ -7,11 +7,13 @@ import { useParams } from 'react-router';
 import type { Channel, ConversationRequest, FamilyDetail, NextStep, Opportunity } from '../../api/types';
 import { useSubmitConversation, type ConversationOutcome } from '../../data/mutations';
 import { useFamilia, useOportunidades } from '../../data/queries';
+import { familyDisplayName } from '../../domain/familyName';
 import { isValidId } from '../../domain/ids';
 import { CHANNEL_KEY, NEXT_STEP_KEY } from '../../domain/presentation';
 import { benefitName, t, type PlainCopyKey } from '../../i18n/copy';
 import { nowIsoWithOffset } from '../../lib/now';
 import { uuid } from '../../lib/uuid';
+import { useLocalNames } from '../../offline/localNames';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { CheckList, ChoiceChips } from '../../ui/ChoiceChips';
@@ -206,6 +208,7 @@ function ConversationForm({ detail, snapshotId, options }: FormProps) {
 }
 
 function ConversationView({ familyId }: { readonly familyId: string }) {
+  const names = useLocalNames();
   const ficha = useFamilia(familyId);
   // Checklist: todas las oportunidades en el orden `prioridad` de C3 (independiente de `?orden`).
   const prioridad = useOportunidades(familyId, 'prioridad', ficha.isSuccess);
@@ -235,7 +238,8 @@ function ConversationView({ familyId }: { readonly familyId: string }) {
         {t('nav.back')}
       </ButtonLink>
       <PageTitle>{t('conversation.title')}</PageTitle>
-      <p className="font-semibold">{t('home.family_item', { family_id: familyId })}</p>
+      {/* Nombre de trato local (DEC-038): solo se muestra; el request lleva solo IDs y enums. */}
+      <p className="font-semibold">{familyDisplayName(familyId, names)}</p>
       {body}
     </div>
   );

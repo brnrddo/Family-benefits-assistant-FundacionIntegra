@@ -8,6 +8,7 @@ import { t } from '../i18n/copy';
 import { drain, refreshQueue } from '../offline/conversationQueue';
 import { clearDemoData, persistenceEnabled } from '../offline/db';
 import { demoSnapshotPersistence } from '../offline/demoCache';
+import { refreshLocalNames } from '../offline/localNames';
 import { isOnline } from '../offline/network';
 import { toastStore } from '../ui/toastStore';
 import { invalidateAfterConversation, invalidateCachedQueries } from './queryClient';
@@ -33,6 +34,7 @@ export async function startDataSync(queryClient: QueryClient): Promise<void> {
   if (!persistenceEnabled()) void clearDemoData();
   await initSnapshotStore(queryClient);
   await refreshQueue();
+  await refreshLocalNames();
 
   const resync = () => {
     void invalidateCachedQueries(queryClient);

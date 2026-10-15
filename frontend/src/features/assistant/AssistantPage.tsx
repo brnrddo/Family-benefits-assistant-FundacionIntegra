@@ -2,8 +2,9 @@
 // asistente NO decide elegibilidad individual. Intents de C3: CATALOG_INFO → respuesta como texto +
 // citas HTTPS tipadas; REQUIRES_DETERMINISTIC_EVALUATION → derivar a la ficha SIN mostrar `answer`.
 // Si la API falla o no responde, se muestra una plantilla fija del catálogo i18n (nunca texto
-// inventado). La barrera local bloquea RUT/teléfono/correo sin enviar; no anonimiza (el servidor
-// aplica su filtro y Guardrails). Pregunta y respuesta solo viven en memoria.
+// inventado). La barrera local bloquea RUT/teléfono/correo y los nombres de trato guardados en el
+// equipo (DEC-038) sin enviar; no anonimiza (el servidor aplica su filtro y Guardrails). Pregunta y
+// respuesta solo viven en memoria.
 import { useId, useState } from 'react';
 import type { AssistantEnvelope } from '../../api/types';
 import { useAskAssistant } from '../../data/mutations';
@@ -11,6 +12,7 @@ import { containsPii } from '../../domain/piiGuard';
 import { errorCopyKey, helpCodeOf } from '../../domain/errorCopy';
 import { formatInteger } from '../../domain/format';
 import { t, type PlainCopyKey } from '../../i18n/copy';
+import { containsLocalName, useLocalNames } from '../../offline/localNames';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { ProviderNote } from '../../ui/DataStatus';
@@ -89,6 +91,8 @@ function TemplateFallback({ error, onRetry }: { readonly error: unknown; readonl
 export default function AssistantPage() {
   const [question, setQuestion] = useState('');
   const [piiBlocked, setPiiBlocked] = useState(false);
+  const [nameBlocked, setNameBlocked] = useState(false);
+  const names = useLocalNames();
   const ask = useAskAssistant();
   const fieldId = useId();
   const hintId = useId();
@@ -102,13 +106,21 @@ export default function AssistantPage() {
       ask.reset();
       return;
     }
+    // DEC-038: un nombre de trato guardado en este equipo nunca sale hacia la API.
+    if (containsLocalName(trimmed, names)) {
+      setNameBlocked(true);
+      ask.reset();
+      return;
+    }
     setPiiBlocked(false);
+    setNameBlocked(false);
     ask.mutate(trimmed);
   };
 
   const edit = (value: string) => {
     setQuestion(value);
     setPiiBlocked(false);
+    setNameBlocked(false);
   };
 
   return (
@@ -137,7 +149,7 @@ export default function AssistantPage() {
           required
           rows={4}
           aria-describedby={`${hintId} ${counterId}`}
-          aria-invalid={piiBlocked || undefined}
+          aria-invalid={piiBlocked || nameBlocked || undefined}
           className="w-full rounded-xl border-2 border-border-strong bg-surface p-3"
         />
         <p id={counterId} className="text-[0.9rem] text-ink-muted">
@@ -146,6 +158,11 @@ export default function AssistantPage() {
         {piiBlocked && (
           <p role="alert" className="font-semibold text-danger-ink">
             {t('assistant.pii_blocked')}
+          </p>
+        )}
+        {nameBlocked && (
+          <p role="alert" className="font-semibold text-danger-ink">
+            {t('assistant.name_blocked')}
           </p>
         )}
         <Button type="submit" icon="chat" data-primary-action className="w-full" disabled={trimmed === ''} busy={ask.isPending}>

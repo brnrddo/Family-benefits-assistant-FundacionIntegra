@@ -4,12 +4,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { askCatalogAssistant, createConversacion, createPreevaluacion } from '../api/client';
 import { isApiError } from '../api/errors';
+import { addFamiliaAntecedentes } from '../api/proposals/addInfo';
+import type { AddFamilyInfoRequestV1 } from '../api/proposals/types';
 import type { ConversationRequest, PreevaluationRequest } from '../api/types';
 import { getSession } from '../auth/session';
 import { runtimeConfig } from '../config/profile';
 import { classifyConversationError, discardEntry, enqueue, queueStatusFor } from '../offline/conversationQueue';
 import { invalidateAfterConversation } from './queryClient';
-import { queryKeys } from './queries';
+import { primeFamilia, queryKeys } from './queries';
 
 export type ConversationOutcome =
   | 'confirmed'
@@ -89,6 +91,32 @@ export function useSubmitPreevaluation() {
   return useMutation({
     mutationFn: (input: SubmitPreevaluationInput) => createPreevaluacion(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kpi'] }),
+  });
+}
+
+export interface SubmitAddInfoInput {
+  readonly familyId: string;
+  readonly body: AddFamilyInfoRequestV1;
+  /** Misma clave al reintentar el MISMO cuerpo; cuerpo nuevo → clave nueva. */
+  readonly idempotencyKey: string;
+}
+
+/**
+ * "Agregar información" (DEC-039, operación PROPUESTA fuera de C3): solo en línea, sin cola. La API
+ * re-evalúa y devuelve la ficha (PRELIMINAR); se usa tal cual y se refrescan lista y oportunidades.
+ */
+export function useSubmitAddInfo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SubmitAddInfoInput) => addFamiliaAntecedentes(input),
+    onSuccess: async (ok, input) => {
+      primeFamilia(queryClient, input.familyId, ok);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['oportunidades', input.familyId] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.contexto(input.familyId) }),
+        queryClient.invalidateQueries({ queryKey: ['familias'] }),
+      ]);
+    },
   });
 }
 

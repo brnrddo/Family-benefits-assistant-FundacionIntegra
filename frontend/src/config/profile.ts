@@ -22,6 +22,8 @@ export interface RawEnv {
   readonly VITE_COGNITO_REDIRECT_PATH?: string;
   readonly VITE_DATA_CLASSIFICATION?: string;
   readonly VITE_DEMO_CACHE_TTL_HOURS?: string;
+  /** Operación PROPUESTA "Agregar información" (fuera de C3, DEC-039): '' | 'true' | 'false'. */
+  readonly VITE_PROPOSAL_ADD_INFO?: string;
 }
 
 export interface Capabilities {
@@ -32,6 +34,16 @@ export interface Capabilities {
   readonly queue: boolean;
   /** SUP-038: Familia nueva no existe en `escala`. */
   readonly newFamily: boolean;
+  /**
+   * DEC-038: "nombre de trato" que la tía escribe y guarda SOLO en este equipo. Requiere
+   * la persistencia Demo (local/demo sintético); oculto en `escala`.
+   */
+  readonly localNames: boolean;
+  /**
+   * DEC-039: botón "Agregar información" (operación propuesta, aún no está en C3). Activo por
+   * defecto solo con mocks; con API real solo si VITE_PROPOSAL_ADD_INFO=true. Nunca en `escala`.
+   */
+  readonly addInfo: boolean;
   readonly syntheticBanner: boolean;
   readonly cacheTtlHours: number;
 }
@@ -75,7 +87,7 @@ export type ConfigIssue =
   | 'cognito_insecure_context'
   | 'insecure_context';
 
-export type ConfigWarning = 'cache_ttl_invalid' | 'persistence_disabled_not_synthetic';
+export type ConfigWarning = 'cache_ttl_invalid' | 'persistence_disabled_not_synthetic' | 'add_info_flag_invalid';
 
 export type ProfileResult =
   | { readonly ok: true; readonly config: ResolvedConfig }
@@ -218,6 +230,16 @@ export function resolveProfile(env: RawEnv, options: ResolveOptions): ProfileRes
     else warnings.push('cache_ttl_invalid');
   }
 
+  // DEC-039: '' → activo solo con mocks; 'true'/'false' explícitos; otro valor → oculto (falla cerrada).
+  const addInfoRaw = blank(env.VITE_PROPOSAL_ADD_INFO) ? '' : (env.VITE_PROPOSAL_ADD_INFO as string).trim();
+  let addInfoFlag = mocks;
+  if (addInfoRaw === 'true') addInfoFlag = true;
+  else if (addInfoRaw === 'false') addInfoFlag = false;
+  else if (addInfoRaw !== '') {
+    addInfoFlag = false;
+    warnings.push('add_info_flag_invalid');
+  }
+
   if (issues.length > 0) return { ok: false, issues: [...new Set(issues)] };
 
   return {
@@ -230,6 +252,8 @@ export function resolveProfile(env: RawEnv, options: ResolveOptions): ProfileRes
         persistence,
         queue: persistence,
         newFamily: profile !== 'escala',
+        localNames: persistence,
+        addInfo: profile !== 'escala' && addInfoFlag,
         syntheticBanner: profile !== 'escala',
         cacheTtlHours,
       },
@@ -255,6 +279,7 @@ export function readViteEnv(): RawEnv {
     VITE_COGNITO_REDIRECT_PATH: import.meta.env.VITE_COGNITO_REDIRECT_PATH,
     VITE_DATA_CLASSIFICATION: import.meta.env.VITE_DATA_CLASSIFICATION,
     VITE_DEMO_CACHE_TTL_HOURS: import.meta.env.VITE_DEMO_CACHE_TTL_HOURS,
+    VITE_PROPOSAL_ADD_INFO: import.meta.env.VITE_PROPOSAL_ADD_INFO,
   };
 }
 

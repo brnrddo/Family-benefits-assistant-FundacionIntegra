@@ -1,7 +1,7 @@
 # Accesibilidad de salida (clase C4 ACCESSIBILITY): Polly y Translate empiezan deshabilitados.
 # No contiene datos de personas. 0.2.0: límites de salida fijados en DEC-044 (valores sintéticos de demo); Polly y Translate siguen deshabilitados.
 # `accessibility` debe ser idéntico a `content/manifest.yaml#accessibility` (SUP-040); `trazabilidad` cita cada hoja.
-content_version: "0.2.0"
+content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 accessibility:
   canonical_spanish_label_key: a11y.canonical_spanish_label

@@ -6,4 +6,6 @@ export const familyRoutes = {
   guion: (familyId: string) => generatePath('/familias/:familyId/guion', { familyId }),
   mensaje: (familyId: string) => generatePath('/familias/:familyId/mensaje', { familyId }),
   conversacion: (familyId: string) => generatePath('/familias/:familyId/conversacion', { familyId }),
+  /** DEC-039: formulario de la operación propuesta (solo con `capabilities.addInfo`). */
+  agregarInformacion: (familyId: string) => generatePath('/familias/:familyId/agregar-informacion', { familyId }),
 };

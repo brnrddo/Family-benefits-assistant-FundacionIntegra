@@ -19,6 +19,8 @@ export const SCENARIO_IDS = [
   'preevalTimeout',
   'html403',
   'gateway429',
+  // DEC-039: la operación propuesta "Agregar información" responde 503.
+  'addInfo503',
 ] as const;
 
 export type ScenarioId = (typeof SCENARIO_IDS)[number];
