@@ -188,6 +188,11 @@ Lo completa B en la tarea 5.
 
 ## 7. Compatibilización con la visión del Rol 2
 
+**Criterio rector: demo primero.** Todo es sintético y se presenta en 5 minutos.
+Lo que se ve debe parecer real: nombres ficticios de familias, niños, tía y jardín
+en toda la interfaz; nunca "Familia 00424" ni "Hijo 1234". Ante la duda entre
+funcional-real y vistoso, gana vistoso, siempre que no rompa contratos ni tests.
+
 Idea común: **la tía quiere acciones concretas, no un informe.** El agente va
 primero; la lista de beneficios queda como opción secundaria. Los límites no
 cambian: el motor decide elegibilidad, acceso y orden; el LLM solo redacta; al LLM
@@ -209,21 +214,18 @@ sigue congelado en 1.0.2.
 ### 7.2 Lo que NO entra así, y por qué
 
 - **"Entregar al LLM toda la información de la familia y todos los beneficios":**
-  no se puede. `PRIVACIDAD_DEMO.md` solo permite `LlmContextV1` (roles/edades,
-  bandas RSH/ingreso, formato, idioma y hasta 3 beneficios del motor). Coincide con
-  la idea de no saturar: el agente habla de los 3 primeros del ranking.
-- **"Su hija registra una enfermedad":** diagnósticos y salud detallada están en la
-  clase *totalmente excluido*; no se capturan ni se envían. Lo que sí se puede: si
-  el motor deja BEN-006 en `PENDIENTE_ANTECEDENTES`/`INDETERMINADO` por un
-  `missing_code` de credencial de discapacidad, el agente dice "si algún integrante
-  tiene o puede tramitar la credencial de discapacidad, revise BEN-006", sin nombrar
-  a la persona ni la condición. El nombre del niño lo pone la pantalla, localmente.
+  no por tiempo, no por los datos (son ficticios). Ampliar `LlmContextV1` rompe
+  contratos y tests a horas de la demo. Además calza con la idea de no saturar: el
+  agente habla de los 3 primeros del ranking.
+- **"Su hija registra una enfermedad":** el snapshot no trae diagnósticos; trae la
+  señal de discapacidad (BEN-006 y su `missing_code` de credencial). La respuesta
+  usa el nombre ficticio del niño y esa señal: "Considerando a Sofía, tramitar la
+  credencial de discapacidad abre BEN-006". El nombre lo pone la pantalla.
 - **Pregunta libre por familia hacia Bedrock (Fase 2):** `/asistente` solo acepta
   `{question}` sin familia, y `FamilyGenerationRequestV1` no tiene campo de pregunta.
   Requiere un envelope interno nuevo (`FamilyAssistantRequestV1`: `LlmContextV1` +
   pregunta filtrada + hasta 3 ítems de catálogo) y una ruta de propuesta fuera de
-  C3 1.0.2, como se hizo con antecedentes. Necesita revisión de privacidad. Dueño:
-  Rol 2.
+  C3 1.0.2, como se hizo con antecedentes. Dueño: Rol 2.
 - **Agente del jardín con LLM (Fase 2):** el contexto agregado (`top_gaps`, región)
   tampoco cabe en los envelopes actuales. Mientras tanto, plantilla determinista.
 - **Tono:** "te recomiendo presentarles" se acepta como acción para la tía; siguen
