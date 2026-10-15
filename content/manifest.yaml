@@ -1,18 +1,18 @@
 # Manifiesto C4 del bundle de contenido (Rol 4), 0.2.1. No publicable (DEC-040): falta API-T14 y revisión humana.
-# Los valores que §8 no fija se decidieron en DEC-041..DEC-044 o se calcularon desde E-3 (CALC); ver content/VALORES_RANKING.md.
+# Los valores que §8 no fija se decidieron en DEC-041..DEC-045 o se calcularon desde E-3 (CALC); DEC-060 propone U/B/V 0.5/0.3/0.2 y DEC-061 siete tramos RSH diferenciados; ver content/VALORES_RANKING.md.
 # No contiene datos de personas. `ranking` y `accessibility` son copia idéntica de sus archivos (SUP-040).
 # files[].sha256 = SHA-256 de los bytes; content_bundle_hash = SHA-256 de las líneas '<sha256>  <path>' de files[] ordenadas (SUP-041).
 # Cualquier edición de un archivo listado obliga a recalcular su sha256 y el content_bundle_hash.
 schema_version: "1.0.0"
 content_version: "0.2.1"
-content_bundle_hash: "aa1fbe0526001fb42e61d170822bbae15a34ead9286e29f296a6288a97b44b69"
+content_bundle_hash: "871136ccb361fd49a74ebf166a9cf3a6edff62df970374d06acd3ae55a796556"
 canonical_i18n: content/i18n/es.json
 files:
   - path: content/accessibility.yaml
     sha256: "f3a020f6514eb37bc47fbe5bae887c89986aff26533bd9de30449e7538dcf1e5"
     kind: ACCESSIBILITY
   - path: content/beneficios.yaml
-    sha256: "9512d16c1f433b6efc97868121dc003e49fad345113c51072e991b6703547277"
+    sha256: "5e23adbb2122e0dd9ccae689457000a7299fac516bc1b47eb182aae90d5794b8"
     kind: BENEFITS
   - path: content/demo/inventario_activos.yaml
     sha256: "6aa8653be77be9e3e3bd7b70f0cd9a6ab98433bb96fd14cc64ab75fb7212e632"
@@ -21,10 +21,10 @@ files:
     sha256: "d2cffd8dec67c16f816bb695cf5eef620d0f27971f6434799494c384f0bc2044"
     kind: I18N
   - path: content/pesos_priorizacion.yaml
-    sha256: "ea7be77170db34a7090f5072c83c5bf63a4a736f76e62baf488880cfa58563d6"
+    sha256: "cf86e7ebb025ee8c4ecd47de4d4103127ff80fa722e9d74dc606d1d255eb8d0b"
     kind: WEIGHTS
   - path: content/preguntas.yaml
-    sha256: "0e3f21ca6610a59a2b4a363822f0127539098b667f28d69d9ca3429466bd1818"
+    sha256: "6fe6eab5228df29fbbf295397766f395d1575a2ab565ba6bb2a61bf7e4c254cd"
     kind: QUESTIONS
   - path: content/prompts/asistente_catalogo.md
     sha256: "a50ecc5a57f1fbbdfe7c87f266f8798f7db53b7475c5914f7a87853b25d25cbc"
@@ -40,8 +40,8 @@ files:
     kind: PROMPT
 ranking:
   axis_weights:
-    u: 0.4
-    b: 0.4
+    u: 0.5
+    b: 0.3
     v: 0.2
   urgency:
     aggregation: MAX
@@ -153,11 +153,11 @@ ranking:
       possible_child_disability: 0.1  # DEC-042
     rsh_scores:
       band_40: 1.0
-      band_50: 0.85
-      band_60: 0.7
-      band_70: 0.4
-      band_80: 0.2
-      band_90: 0
+      band_50: 0.83
+      band_60: 0.67
+      band_70: 0.5
+      band_80: 0.33
+      band_90: 0.17
       band_100: 0
       no_rsh: 0.8
     income_band_scores:

@@ -1,15 +1,16 @@
 # Configuración de ranking U/B/V (clase C4 WEIGHTS) para "3 cosas para conversar" (§8).
 # No contiene datos de personas ni parámetros normativos de elegibilidad: estos valores solo ordenan.
 # 0.2.0: lo que la fuente no fija se decidió en DEC-041..DEC-043 (valores sintéticos de demo, no normativos) o se
-# calculó desde E-3 (origen CALC: script + sha256 LF del CSV). Explicación en content/VALORES_RANKING.md.
+# calculó desde E-3 (origen CALC: script + sha256 LF del CSV). 0.2.1 incorpora la propuesta de Rol 4 DEC-060:
+# urgencia 0.5, beneficio 0.3 y vulnerabilidad 0.2; DEC-061 diferencia los siete tramos RSH. Explicación en content/VALORES_RANKING.md.
 # `ranking` debe ser idéntico a `content/manifest.yaml#ranking` (SUP-040); `trazabilidad` cita cada hoja.
 content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 fuente: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md
 ranking:
   axis_weights:
-    u: 0.4
-    b: 0.4
+    u: 0.5
+    b: 0.3
     v: 0.2
   urgency:
     aggregation: MAX
@@ -121,11 +122,11 @@ ranking:
       possible_child_disability: 0.1  # DEC-042
     rsh_scores:
       band_40: 1.0
-      band_50: 0.85
-      band_60: 0.7
-      band_70: 0.4
-      band_80: 0.2
-      band_90: 0
+      band_50: 0.83
+      band_60: 0.67
+      band_70: 0.5
+      band_80: 0.33
+      band_90: 0.17
       band_100: 0
       no_rsh: 0.8
     income_band_scores:
@@ -161,14 +162,17 @@ ranking:
     new_family_max_age_days: 30
 trazabilidad:
   - ruta: /ranking/axis_weights/u
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
-    literal: "w_U = 0.4"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-060
+    literal: "w_U = 0.5"
+    nota: "Propuesta de Rol 4 para dar precedencia a oportunidades que pueden perderse; reemplaza 0.4 de la fuente para la demo."
   - ruta: /ranking/axis_weights/b
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
-    literal: "w_B = 0.4"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-060
+    literal: "w_B = 0.3"
+    nota: "Mantiene el impacto económico visible sin permitir que desplace por sí solo una urgencia temporal; reemplaza 0.4 de la fuente para la demo."
   - ruta: /ranking/axis_weights/v
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L540
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-060
     literal: "w_V = 0.2"
+    nota: "Se conserva como contexto de vulnerabilidad y no como medida de merecimiento."
   - ruta: /ranking/urgency/aggregation
     origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L503
     literal: "Se toma el **máximo**"
@@ -667,26 +671,33 @@ trazabilidad:
     literal: "0.1"
     nota: "Señal de la ficha; si no se conoce queda fuera del promedio."
   - ruta: /ranking/vulnerability/rsh_scores/band_40
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
     literal: "40 → 1.0"
+    nota: "Inicio de la escala lineal de siete tramos; prioridad socioeconómica muy alta."
   - ruta: /ranking/vulnerability/rsh_scores/band_50
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "50 → 0.85"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "50 → 0.83"
+    nota: "Segundo nivel de la escala lineal; prioridad socioeconómica alta."
   - ruta: /ranking/vulnerability/rsh_scores/band_60
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "60 → 0.7"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "60 → 0.67"
+    nota: "Tercer nivel; prioridad socioeconómica media-alta."
   - ruta: /ranking/vulnerability/rsh_scores/band_70
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "70 → 0.4"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "70 → 0.5"
+    nota: "Punto medio de la escala; prioridad socioeconómica media."
   - ruta: /ranking/vulnerability/rsh_scores/band_80
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "80 → 0.2"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "80 → 0.33"
+    nota: "Quinto nivel; prioridad socioeconómica media-baja."
   - ruta: /ranking/vulnerability/rsh_scores/band_90
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "90–100 → 0"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "90 → 0.17"
+    nota: "Sexto nivel; prioridad socioeconómica baja."
   - ruta: /ranking/vulnerability/rsh_scores/band_100
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
-    literal: "90–100 → 0"
+    origen: .kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md#DEC-061
+    literal: "100 → 0"
+    nota: "Fin de la escala lineal; prioridad socioeconómica muy baja."
   - ruta: /ranking/vulnerability/rsh_scores/no_rsh
     origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L528
     literal: "sin RSH → 0.8"

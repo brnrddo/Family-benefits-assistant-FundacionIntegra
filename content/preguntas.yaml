@@ -4,19 +4,21 @@
 # La respuesta se guarda como dato declarado y el motor reevalúa: la pregunta no decide elegibilidad.
 # Sin diagnósticos ni números de documentos. sin_pregunta: DATO_ADMINISTRATIVO (lo resuelve el registro
 # o la institución), SE_RESUELVE_CON_OTRA_PREGUNTA (ver: indica cuál) o NO_SE_PREGUNTA_A_LA_FAMILIA.
+# DEC-063 incorpora la revisión humana de Rol 4: preguntas cerradas, sensibles opcionales y datos escolares administrativos.
 content_version: "0.2.1"
 estado: PENDIENTE_REVISION_HUMANA
 fuente_vocabulario: data/publico/reglas_elegibilidad.csv#campo_dato
 preguntas:
   - missing_code: acompanamiento_aceptado
     benefit_ids: [BEN-010]
-    pregunta: "¿Su familia aceptó el acompañamiento del Subsistema Seguridades y Oportunidades?"
+    sin_pregunta: SE_RESUELVE_CON_OTRA_PREGUNTA
+    ver: subsistema_ssyo_vigencia
   - missing_code: antecedente_edad_vigente
     benefit_ids: [BEN-001, BEN-002]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: asistencia_pct
     benefit_ids: [BEN-013]
-    pregunta: "¿El estudiante va a clases casi todos los días?"
+    sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: carga_acreditada_de
     benefit_ids: [BEN-016]
     sin_pregunta: DATO_ADMINISTRATIVO
@@ -28,39 +30,39 @@ preguntas:
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: comuna_residencia
     benefit_ids: [BEN-018, BEN-020]
-    pregunta: "¿En qué comuna vive su familia?"
+    pregunta: "¿En qué comuna vive actualmente su familia?"
   - missing_code: control_infantil_red_publica
     benefit_ids: [BEN-009]
-    pregunta: "¿El niño o niña tiene sus controles de salud en un centro de salud público?"
+    pregunta: "¿El niño o niña realiza sus controles en un centro de salud público?"
   - missing_code: control_prenatal_red_publica
     benefit_ids: [BEN-009]
-    pregunta: "¿Los controles del embarazo se hacen en un centro de salud público?"
+    pregunta: "Si desea responder, ¿los controles de embarazo los realiza en un centro de salud público?"
   - missing_code: dias_desde_control
     benefit_ids: [BEN-012]
-    pregunta: "¿Cuándo fue el último control de salud del niño o niña?"
+    pregunta: "¿En qué fecha fue el último control de salud del niño o niña?"
   - missing_code: dias_desde_evento
     benefit_ids: [BEN-020]
-    pregunta: "¿Hace cuánto tiempo ocurrió esa emergencia?"
+    pregunta: "¿Su familia sufrió alguna emergencia o accidente durante el último año? Si es así, ¿en qué fecha aproximada ocurrió?"
   - missing_code: dias_desde_nacimiento
     benefit_ids: [BEN-008]
     sin_pregunta: SE_RESUELVE_CON_OTRA_PREGUNTA
     ver: parto_red_publica
   - missing_code: discapacidad_severidad
     benefit_ids: [BEN-006]
-    pregunta: "¿Tiene credencial de discapacidad?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L138
+    pregunta: "¿Cuenta con un documento vigente que indique el grado de discapacidad?"
+    origen: DEC-063
   - missing_code: discapacidad_vigencia
     benefit_ids: [BEN-006]
-    pregunta: "¿La credencial de discapacidad está vigente?"
+    pregunta: "¿El documento que acredita la discapacidad se encuentra vigente?"
   - missing_code: distancia_terapia_km
     benefit_ids: [BEN-019]
-    pregunta: "¿El lugar de la terapia queda lejos de su casa?"
+    pregunta: "¿El lugar de la terapia queda cerca o lejos de su casa?"
   - missing_code: documento_terapia_dias
     benefit_ids: [BEN-019]
-    pregunta: "¿Cuándo vence el documento de la terapia del niño o niña?"
+    pregunta: "¿En qué fecha fue emitido el documento de la terapia?"
   - missing_code: edad
     benefit_ids: [BEN-001, BEN-002, BEN-006, BEN-007, BEN-012, BEN-013, BEN-014, BEN-017, BEN-019]
-    pregunta: "¿Qué edades tienen los niños, niñas y adultos del hogar?"
+    pregunta: "¿Qué edad tiene cada persona que vive en el hogar?"
   - missing_code: edad_meses
     benefit_ids: [BEN-009]
     sin_pregunta: SE_RESUELVE_CON_OTRA_PREGUNTA
@@ -73,31 +75,31 @@ preguntas:
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: gasto_agua_pct_ingreso
     benefit_ids: [BEN-005]
-    pregunta: "¿Le cuesta pagar la cuenta del agua?"
+    pregunta: "¿Cuánto paga aproximadamente por la cuenta del agua cada mes?"
   - missing_code: hijos_activos
     benefit_ids: [BEN-017]
-    pregunta: "¿Cuántos hijos o hijas ha tenido la persona mayor de la familia?"
+    pregunta: "¿La persona mayor tiene al menos un hijo o hija registrado?"
   - missing_code: id_beneficio_o_programa
     benefit_ids: [BEN-004]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: indice_inseguridad
     benefit_ids: [BEN-018]
-    pregunta: "¿Le ha costado comprar alimentos para la familia en el último tiempo?"
+    pregunta: "En el último mes, ¿con qué frecuencia presentó dificultades para comprar alimentos?"
   - missing_code: informe_derivacion_vigente
     benefit_ids: [BEN-020]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: ingreso_bruto
     benefit_ids: [BEN-016]
-    pregunta: "¿Cuánto recibe al mes, más o menos, por sueldo o pensión?"
+    pregunta: "Antes de descuentos, ¿en qué rango está su ingreso mensual?"
   - missing_code: ingreso_per_capita
     benefit_ids: [BEN-011, BEN-019]
-    pregunta: "¿Cuánto dinero entra al hogar cada mes, más o menos, y cuántas personas viven en él?"
+    pregunta: "¿En qué rango está el ingreso mensual total del hogar? Luego indique cuántas personas comparten ese ingreso."
   - missing_code: matricula_vigencia
     benefit_ids: [BEN-007, BEN-013, BEN-015]
-    pregunta: "¿El niño o niña está matriculado este año en un jardín o escuela?"
+    sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: mora_dias
     benefit_ids: [BEN-005]
-    pregunta: "¿Tiene la cuenta del agua al día?"
+    pregunta: "¿Presenta dificultades con el pago de la cuenta del agua? Si hay atraso, ¿sabe de cuántos días es?"
   - missing_code: nivel
     benefit_ids: [BEN-014, BEN-015]
     pregunta: "¿En qué curso o nivel está cada estudiante del hogar?"
@@ -106,48 +108,48 @@ preguntas:
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: parto_red_publica
     benefit_ids: [BEN-008]
-    pregunta: "¿Hay un bebé de menos de 3 meses? ¿Nació en un hospital público?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L591
+    pregunta: "¿Hay un bebé menor de tres meses? Si es así, ¿nació en un hospital de la red pública?"
+    origen: DEC-063
   - missing_code: percentil_desempeno
     benefit_ids: [BEN-014]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: residencia_total_anios
     benefit_ids: [BEN-017]
-    pregunta: "¿Cuántos años lleva viviendo en Chile?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L590
+    pregunta: "¿Cuántos años ha vivido en Chile en total?"
+    origen: DEC-063
   - missing_code: residencia_ultimos20_anios
     benefit_ids: [BEN-017]
-    pregunta: "¿Cuántos años lleva viviendo en Chile?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L590
+    pregunta: "De los últimos veinte años, ¿cuántos ha vivido en Chile?"
+    origen: DEC-063
   - missing_code: semanas_gestacion
     benefit_ids: [BEN-003]
-    pregunta: "¿Hay alguien embarazada en la familia?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L589
+    pregunta: "Si desea responder, ¿hay una persona embarazada en la familia y cuántas semanas de embarazo tiene?"
+    origen: DEC-063
   - missing_code: sexo_registral
     benefit_ids: [BEN-017]
     sin_pregunta: NO_SE_PREGUNTA_A_LA_FAMILIA
   - missing_code: situacion_previsional
     benefit_ids: [BEN-016, BEN-017]
-    pregunta: "¿Alguien del hogar trabaja con contrato o recibe una pensión?"
+    pregunta: "¿La persona trabaja con contrato, cotiza como independiente, recibe pensión o subsidio de cesantía?"
   - missing_code: subsistema_ssyo_vigencia
     benefit_ids: [BEN-010, BEN-011, BEN-012, BEN-013]
-    pregunta: "¿Su familia participa en el Subsistema Seguridades y Oportunidades?"
+    pregunta: "¿Su familia participa actualmente en el Subsistema Seguridades y Oportunidades? Si es así, ¿recibe el acompañamiento del programa?"
   - missing_code: subtramo_sintetico
     benefit_ids: [BEN-014]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: terapia_vigencia
     benefit_ids: [BEN-019]
-    pregunta: "¿El niño o niña asiste a alguna terapia en este momento?"
+    pregunta: "¿El niño o niña asiste actualmente a alguna terapia?"
   - missing_code: tipo_establecimiento
     benefit_ids: [BEN-015]
     sin_pregunta: DATO_ADMINISTRATIVO
   - missing_code: tipo_evento
     benefit_ids: [BEN-020]
-    pregunta: "¿Su familia vivió hace poco una emergencia grave en el hogar?"
+    pregunta: "¿Qué tipo de emergencia ocurrió? Puede omitir detalles sensibles."
   - missing_code: tramo_rsh
     benefit_ids: [BEN-001, BEN-002, BEN-003, BEN-006]
-    pregunta: "¿Tiene el Registro Social de Hogares al día?"
-    origen: docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md#L588
+    pregunta: "¿Tiene el Registro Social de Hogares al día? Si lo conoce, ¿en qué tramo está?"
+    origen: DEC-063
   - missing_code: vigencia
     benefit_ids: [BEN-004]
     sin_pregunta: DATO_ADMINISTRATIVO

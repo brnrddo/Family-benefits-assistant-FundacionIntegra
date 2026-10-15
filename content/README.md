@@ -2,7 +2,7 @@
 
 Datos y textos que consumen los demás roles: mapeo C0 de la ficha y bundle C4 (ranking, preguntas, beneficios, prompts, accesibilidad, i18n y activos demo). Solo CSV, JSON, YAML, Markdown y un PNG sintético; sin código ni reglas de elegibilidad. No contiene datos de personas.
 
-Estado: **0.2.1, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045) y copy del catálogo i18n 1.2.0; falta API-T14 y revisión humana. Ninguna capa runtime debe activarlo.
+Estado: **0.2.1, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045), propuestas de pesos U/B/V 0.5/0.3/0.2 (DEC-060) y siete tramos RSH diferenciados (DEC-061), copy de beneficios revisado (DEC-062) y banco de preguntas revisado por Rol 4 (DEC-063); falta API-T14, revisión conjunta y resolver PREG-045/PREG-061/PREG-062. Ninguna capa runtime debe activarlo.
 
 | Archivo | Clase | Consumidor |
 |---|---|---|
@@ -12,6 +12,7 @@ Estado: **0.2.1, no publicable** (DEC-040): valores completos (DEC-041 a DEC-045
 | `accessibility.yaml` | `ACCESSIBILITY` | Roles 2 y 3 |
 | `beneficios.yaml` | `BENEFITS` | Rol 2 (catálogo y prompts) |
 | `preguntas.yaml` | `QUESTIONS` | Rol 2 |
+| `revision/preguntas_matriz_revision.csv` | Matriz humana fuera del bundle C4; nunca runtime | Rol 4 |
 | `i18n/es.json` | `I18N` (canónico, DEC-010) | Rol 3 (PWA) |
 | `prompts/*.md` (4) | `PROMPT` | Rol 2 (GenAI con plantilla de respaldo) |
 | `demo/inventario_activos.yaml` | `SYNTHETIC_ASSET_MANIFEST` | Roles 2 y 4 |
@@ -23,6 +24,6 @@ C0 (DEC-046): `mapeo_ficha.csv` se genera desde el mapeo humano del Rol 4 `Mapeo
 
 Hashes: `files[].sha256` y `content_bundle_hash` siguen SUP-041; `ranking` y `accessibility` del manifiesto son copia idéntica de sus archivos (SUP-040). Al editar un archivo listado hay que recalcular su hash y el del bundle. Las fixtures de `content/demo/` (`familias_demo.yaml`, `salidas_referencia_prompts.json`) conservan su versión 0.1.0: es la versión del set de fixtures y sus bytes no cambiaron.
 
-Preguntas pendientes: PREG-045 (beneficios sin fuente HTTPS), PREG-047 (semántica de `amount`), PREG-048 (BEN-010 sin monto), PREG-049 (campos que el mapeo quiere enviar al LLM fuera de `LlmContextV1`), PREG-060 (destinos de C0 fuera de C2), PREG-008 (Textract) y PREG-009 (voces e idiomas).
+Preguntas pendientes: PREG-045 (beneficios sin fuente HTTPS), PREG-047 (semántica de `amount`), PREG-048 (BEN-010 sin monto), PREG-049 (campos que el mapeo quiere enviar al LLM fuera de `LlmContextV1`), PREG-060 (destinos de C0 fuera de C2), PREG-061 (`cerca o lejos` sin kilómetros), PREG-062 (frecuencia de dificultad para comprar alimentos a `indice_inseguridad`), PREG-008 (Textract) y PREG-009 (voces e idiomas).
 
 Validación oficial: la futura tarea API-T14 (`python -m backend.app.contracts.validate_content --manifest content/manifest.yaml`), aún no implementada. Mientras tanto, el Rol 4 usa un validador local fuera del repositorio.

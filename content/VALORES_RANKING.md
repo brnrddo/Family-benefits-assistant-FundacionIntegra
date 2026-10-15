@@ -2,7 +2,7 @@
 
 Este documento explica, en palabras simples, los números de `pesos_priorizacion.yaml` (y los de KPI y accesibilidad del manifiesto). Estos valores **solo ordenan** la lista: deciden qué beneficio se conversa primero y qué familia del jardín aparece arriba. **Quién califica a un beneficio lo decide el motor determinista (Rol 1), nunca estos números ni la IA.**
 
-Lo que la especificación (§8) no fija se decidió en DEC-041 a DEC-044 o se calculó desde el dataset sintético E-3. Son valores sintéticos de demo, no normativos, y se revisan con Integra antes del perfil Escala. Los decimales se escriben con punto, igual que en el archivo; los montos van en pesos sintéticos.
+Lo que la especificación (§8) no fija se decidió en DEC-041 a DEC-044 o se calculó desde el dataset sintético E-3. DEC-045 fija los finales de línea, DEC-060 propone usar pesos 0.5/0.3/0.2 y DEC-061 propone siete puntajes RSH diferenciados. Son valores sintéticos de demo, no normativos, y se revisan con coordinación e Integra antes del perfil Escala. Los decimales se escriben con punto, igual que en el archivo; los montos van en pesos sintéticos.
 
 DATOS SINTETICOS - NO CORRESPONDEN A UNA PERSONA REAL
 
@@ -17,7 +17,7 @@ Cada beneficio de una familia recibe tres notas de 0 a 1:
 Con esas notas se calcula el puntaje de cada beneficio:
 
 ```text
-puntaje = peso del estado × (1 + bonus por acción) × (0.4·U + 0.4·B + 0.2·V)
+puntaje = peso del estado × (1 + bonus por acción) × (0.5·U + 0.3·B + 0.2·V)
 ```
 
 Y la prioridad de la familia en la lista del jardín:
@@ -34,7 +34,7 @@ prioridad = suma de los 3 mejores puntajes + 3 × V + bonus si no ha sido conver
 
 | Valor | Cuánto | Origen | Por qué |
 |---|---|---|---|
-| Peso de U, B y V | 0.4 / 0.4 / 0.2 | Fuente §8, línea L540 | La urgencia y el beneficio pesan igual; la vulnerabilidad desempata. |
+| Peso de U, B y V | 0.5 / 0.3 / 0.2 | DEC-060, propuesta de Rol 4 | La urgencia tiene precedencia porque una oportunidad con plazo perdido puede no recuperarse; el beneficio mantiene influencia y la vulnerabilidad aporta contexto sin medir merecimiento. |
 | Peso por estado de acceso | 10 elegible sin asignación, 7 gestión rechazada, 6 pendiente de antecedentes, 5 indeterminado, 2 gestión en curso, 1 sin cupo, 0 asignado | Fuente §8, líneas L537 y L538 | Primero lo que la familia puede pedir ya; lo que ya tiene vale 0. |
 | Indeterminado resoluble | con 1 pregunta | Fuente §8, línea L538 | Solo cuenta si basta una pregunta para aclararlo. |
 | Bonus por acción | +1 (duplica el puntaje) | Fuente §8, línea L539 | Sube lo que la familia tiene que hacer; lo automático no necesita conversación. |
@@ -90,7 +90,14 @@ El cálculo se puede repetir y el validador local lo vuelve a hacer. Usa estos a
 
 | Valor | Cuánto | Origen | Por qué |
 |---|---|---|---|
-| Tramo del Registro Social de Hogares | 40 → 1.0; 50 → 0.85; 60 → 0.7; 70 → 0.4; 80 → 0.2; 90 y 100 → 0; sin registro → 0.8 | Fuente §8, línea L528 | A menor tramo, más vulnerable. |
+| RSH hasta 40 % | 1.00 | DEC-061 | Prioridad socioeconómica interna muy alta. |
+| RSH entre 41 % y 50 % | 0.83 | DEC-061 | Prioridad socioeconómica interna alta. |
+| RSH entre 51 % y 60 % | 0.67 | DEC-061 | Prioridad socioeconómica interna media-alta. |
+| RSH entre 61 % y 70 % | 0.50 | DEC-061 | Punto medio de la escala. |
+| RSH entre 71 % y 80 % | 0.33 | DEC-061 | Prioridad socioeconómica interna media-baja. |
+| RSH entre 81 % y 90 % | 0.17 | DEC-061 | Prioridad socioeconómica interna baja. |
+| RSH entre 91 % y 100 % | 0.00 | DEC-061 | Prioridad socioeconómica interna muy baja. |
+| Sin Registro Social de Hogares | 0.80 | Fuente §8, línea L528 | Se conserva sin cambios; debe revisarse aparte y no equivale a un tramo. |
 | Ingreso por persona: menos de $110.000 | 1.0 | Fuente §8, línea L529 | Extremo más vulnerable. |
 | Ingreso por persona: de $110.000 a $250.000 | 0.67 | DEC-042 | Tercios entre los extremos de la fuente. |
 | Ingreso por persona: de $250.000 a $400.000 | 0.33 | DEC-042 | Tercios entre los extremos de la fuente. |
@@ -144,31 +151,32 @@ En el dataset E-3 estas cuatro señales no existen, así que hoy V usa solo el t
 
 Familia `FAM-SIM-E3-00091`, del jardín `JAR-SIM-E3-00041`. Los estados de acceso son **hipotéticos**, solo para mostrar la cuenta; no son un resultado del motor.
 
-1. **Vulnerabilidad.** Ingreso del hogar $267.300 al mes, 4 integrantes: $66.825 por persona (menos de $110.000) → 1.0. Tramo 50 → 0.85. Sin señales de ficha. V = (0.3 × 0.85 + 0.3 × 1.0) / 0.6 = **0.925**.
+1. **Vulnerabilidad.** Ingreso del hogar $267.300 al mes, 4 integrantes: $66.825 por persona (menos de $110.000) → 1.0. Tramo 50 → 0.83. Sin señales de ficha. V = (0.3 × 0.83 + 0.3 × 1.0) / 0.6 = **0.915**.
 2. **Urgencia.** Índice de inseguridad alimentaria 3 → U = **0.8**.
 3. **Beneficio.** Ingreso anual $3.207.600.
    - Subsidio Familiar (BEN-001): $22.000 al mes → $264.000 al año → B = (264.000 / 3.207.600) / 0.20 = **0.41**.
    - Bono Base Familiar (BEN-011): $55.000 al mes → $660.000 al año, más del 20 % del ingreso → B = **1** (tope).
    - Si faltara el ingreso se usaría la mediana del jardín ($319.800): B estimado de 0.34 para BEN-001 y 0.86 para BEN-011.
 4. **Puntajes** (perfil hipotético):
-   - BEN-001, elegible sin asignación y requiere acción: 10 × 2 × (0.4 × 0.8 + 0.4 × 0.41 + 0.2 × 0.925) ≈ **13.39**.
-   - BEN-011, elegible sin asignación y automático: 10 × 1 × (0.32 + 0.4 + 0.185) = **9.05**.
+   - BEN-001, elegible sin asignación y requiere acción: 10 × 2 × (0.5 × 0.8 + 0.3 × 0.4115 + 0.2 × 0.915) ≈ **14.13**.
+   - BEN-011, elegible sin asignación y automático: 10 × 1 × (0.4 + 0.3 + 0.183) = **8.83**.
    - Alimentación Escolar (BEN-007), ya asignado: **0**.
-5. **Prioridad.** 13.39 + 9.05 + 0 + 3 × 0.925 ≈ **25.22**. Si no ha sido conversada: ≈ **30.22**. Si además es familia nueva: ≈ **33.22**.
+5. **Prioridad.** Usando los valores internos sin redondear: ≈ **25.70**. Si no ha sido conversada: ≈ **30.70**. Si además es familia nueva: ≈ **33.70**.
 
 ## Qué dice el chequeo de sensatez
 
 Se aplicaron los valores a las 500 familias sintéticas con el mismo perfil hipotético. No apareció ningún resultado degenerado:
 
-- **V** no es igual para todos: va de 0.335 a 1.0 (cuartiles 0.685, 0.85 y 0.925) con 10 valores distintos. Si una familia tuviera las cuatro señales de ficha, su V subiría (por ejemplo de 0.85 a 0.91); si se supiera que no las tiene, bajaría (a 0.51).
+- **V** no es igual para todos: con las señales disponibles en E-3 va de 0.335 a 1.0 (cuartiles 0.67, 0.835 y 0.915) y conserva 10 valores combinados distintos. Los siete tramos RSH tienen puntajes diferentes; las señales adicionales de la ficha deben probarse cuando estén integradas.
 - **B** distingue beneficios: con el ingreso por defecto va de 0.05 (Útiles) a 1 (solo 2 de 18 llegan al tope). Las equivalencias valen entre 0.13 y 1.14 meses de ingreso mediano.
-- **Bonus:** la prioridad sin bonus va de 10.5 a 25.6. Los dos bonus juntos (8) son menores que ese rango y que el puntaje de una oportunidad fuerte (11.7 en la familia mediana). Dentro de un jardín, el bonus de familia no conversada sube en promedio 2.3 puestos de 10. Con un perfil idéntico para todas las familias, ese bonus lleva al primer lugar a 206 de 500 familias. Con estados de acceso reales, que varían entre familias, el efecto debería ser menor.
+- **Cambio DEC-060:** frente a 0.4/0.4/0.2, el subtotal cambia exactamente en `0.1 × (U − B)`. Por eso suben los casos donde la urgencia supera al impacto monetario y bajan los de alto monto pero baja urgencia. El cambio absoluto del subtotal nunca supera 0.1; incluso con estado 10 y bonus de acción, una oportunidad puede variar como máximo 2 puntos.
+- **Bonus:** los bonus de familia no conversada (5) y nueva (3) no cambiaron. Su efecto en posiciones debe recalcularse con las salidas reales del motor bajo 0.5/0.3/0.2 antes de aprobar esta propuesta.
 
 ## Qué revisar con Integra
 
 - SUP-045: que el ingreso del hogar del dataset sea mensual (es una inferencia).
 - Las equivalencias de BEN-007, BEN-008, BEN-009 y BEN-015, y la simplificación del subsidio de agua BEN-005 (sin tope de consumo).
-- Los pesos de V y el umbral CSE de 20.
+- Los pesos de V, la escala lineal de siete tramos RSH de DEC-061 y el umbral CSE de 20.
 - Los bonus 5 y 3. El chequeo muestra que reordenan bastante dentro de un jardín cuando las familias se parecen.
 - El mínimo de 5 familias por celda y los 90 días (PREG-007 en el perfil Escala).
 - El límite de 1500 caracteres para audio y traducción.
