@@ -10,7 +10,7 @@ import { useFamilia, useOportunidades } from '../../data/queries';
 import { familyDisplayName } from '../../domain/familyName';
 import { isValidId } from '../../domain/ids';
 import { CHANNEL_KEY, NEXT_STEP_KEY } from '../../domain/presentation';
-import { benefitName, t, type PlainCopyKey } from '../../i18n/copy';
+import { benefitName, t } from '../../i18n/copy';
 import { nowIsoWithOffset } from '../../lib/now';
 import { uuid } from '../../lib/uuid';
 import { useLocalNames } from '../../offline/localNames';
@@ -23,6 +23,8 @@ import { Banner, EmptyState, ErrorState, Skeleton } from '../../ui/states';
 import { familyRoutes } from '../family/routes';
 import NotFoundPage from '../system/NotFoundPage';
 import { QueuePanel } from './QueuePanel';
+// Avisos por resultado (`confirmed` usa su propia vista) y reintentos con la misma clave.
+import { OUTCOME_COPY, RETRY_SAME } from './QuickInform';
 
 const NEXT_STEPS: readonly NextStep[] = ['GO_TO_INSTITUTION', 'UPDATE_RSH', 'BRING_DOCUMENTS', 'NONE'];
 const CHANNELS: readonly Channel[] = ['IN_PERSON', 'GROUP_MEETING', 'WHATSAPP_PREVIEW', 'PRINTED'];
@@ -33,20 +35,6 @@ interface Attempt {
   readonly body: ConversationRequest;
   readonly key: string;
 }
-
-/** Resultado → texto y tono del aviso. `confirmed` usa su propia vista. */
-const OUTCOME_COPY: Readonly<Record<Exclude<ConversationOutcome, 'confirmed'>, { key: PlainCopyKey; tone: 'info' | 'warn' | 'danger' }>> = {
-  queued: { key: 'conversation.queued', tone: 'warn' },
-  queue_disabled: { key: 'conversation.queue_disabled', tone: 'warn' },
-  paused_auth: { key: 'conversation.paused_auth', tone: 'warn' },
-  login_required: { key: 'auth.login_required.body', tone: 'warn' },
-  conflict: { key: 'conversation.conflict', tone: 'warn' },
-  unavailable: { key: 'conversation.unavailable', tone: 'danger' },
-  rejected: { key: 'conversation.rejected', tone: 'danger' },
-};
-
-/** Resultados que se reintentan con el MISMO cuerpo y la MISMA clave. */
-const RETRY_SAME: ReadonlySet<ConversationOutcome> = new Set(['queue_disabled', 'unavailable']);
 
 interface FormProps {
   readonly detail: FamilyDetail;

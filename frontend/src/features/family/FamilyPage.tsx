@@ -26,6 +26,7 @@ import { DataFreshness } from '../../ui/DataStatus';
 import { Icon } from '../../ui/icons';
 import { PageTitle } from '../../ui/PageTitle';
 import { Banner, EmptyState, ErrorState, ReferentialNotice, Skeleton } from '../../ui/states';
+import { QuickInformButton } from '../conversation/QuickInform';
 import NotFoundPage from '../system/NotFoundPage';
 import { BenefitGroups } from './BenefitGroups';
 import { NameEditor } from './NameEditor';
@@ -246,9 +247,19 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
 
       <div className="sticky bottom-18 z-10 flex flex-col gap-2 rounded-card bg-canvas/95 py-2">
         {hasOpportunities ? (
-          <ButtonLink to={familyRoutes.conversacion(familyId)} icon="check" data-primary-action className="w-full">
-            {t('family.actions.mark')}
-          </ButtonLink>
+          <>
+            {/* B3 (DEC-080): un toque con los beneficios recién mostrados; el flujo de 3 toques sigue. */}
+            <QuickInformButton
+              familyId={familyId}
+              gardenId={detail.garden_id}
+              benefitIds={detail.top_opportunities.map((o) => o.benefit_id)}
+              snapshotId={ficha.data.body.meta.snapshot_id}
+              informed={detail.informed}
+            />
+            <ButtonLink to={familyRoutes.conversacion(familyId)} icon="check" data-primary-action className="w-full">
+              {t('family.actions.mark')}
+            </ButtonLink>
+          </>
         ) : (
           <>
             <Button icon="check" disabled className="w-full">

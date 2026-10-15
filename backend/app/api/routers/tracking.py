@@ -38,6 +38,12 @@ def familias_conversadas() -> frozenset[str]:
     return frozenset(record["family_id"] for _, record in registros)
 
 
+def conversaciones() -> list[dict]:
+    """Copia de los registros de este proceso (KPI real, B3). Sin texto libre."""
+    with _LOCK_IDEMPOTENCIA:
+        return [dict(record) for _, record in _IDEMPOTENCIA.values()]
+
+
 def _body_hash(body: ConversationRequest) -> str:
     payload = json.dumps(body.model_dump(), sort_keys=True, default=str)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
