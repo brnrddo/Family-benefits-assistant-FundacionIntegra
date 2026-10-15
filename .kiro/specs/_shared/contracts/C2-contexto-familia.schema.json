@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:c2:contexto-familia:v1",
+  "title": "C2 Contexto familiar v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_classification", "id_familia", "fuente", "hechos", "procedencia", "inconsistencias", "no_informado", "senales_urgencia", "senales_vulnerabilidad", "formato_preferido", "idioma_mensaje"],
+  "properties": {
+    "data_classification": {"const": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON"},
+    "id_familia": {"$ref": "#/$defs/id"},
+    "fuente": {"enum": ["FICHA_SINTETICA", "FICHA_DIGITAL"]},
+    "hechos": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/hecho"}},
+    "procedencia": {"type": "array", "maxItems": 50, "items": {"$ref": "#/$defs/procedencia"}},
+    "inconsistencias": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/inconsistencia"}},
+    "no_informado": {"type": "array", "uniqueItems": true, "maxItems": 20, "items": {"$ref": "#/$defs/campo"}},
+    "senales_urgencia": {"$ref": "#/$defs/senalesUrgencia"},
+    "senales_vulnerabilidad": {"$ref": "#/$defs/senalesVulnerabilidad"},
+    "formato_preferido": {"enum": ["TEXTO", "VISUAL", "AUDIO"]},
+    "idioma_mensaje": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$", "maxLength": 5}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Z0-9][A-Z0-9_-]*$"},
+    "campo": {
+      "enum": [
+        "composition",
+        "child.age",
+        "siblings.under_6",
+        "siblings.6_14",
+        "siblings.15_18",
+        "rsh.has_registry",
+        "rsh.band",
+        "income.per_capita_band",
+        "ssyo.participation",
+        "chile_crece_contigo.access",
+        "child.last_health_control_date",
+        "child.possible_disability",
+        "child.in_therapy",
+        "housing.type",
+        "household.pregnancy",
+        "household.has_adult_over_65",
+        "household.formal_employment_or_pension",
+        "household.water_payment_difficulty",
+        "household.food_purchase_difficulty"
+      ]
+    },
+    "estadoDato": {"enum": ["OBSERVADO", "DECLARADO", "DESCONOCIDO", "NO_APLICA"]},
+    "miembroComposicion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rol", "edad"],
+      "properties": {
+        "rol": {"enum": ["ADULTA_REFERENCIA", "NINO_JARDIN", "OTRO_ADULTO"]},
+        "edad": {"type": "integer", "minimum": 0, "maximum": 120}
+      }
+    },
+    "hecho": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "composition"},
+            "valor": {"type": ["array", "null"], "maxItems": 20, "items": {"$ref": "#/$defs/miembroComposicion"}},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "child.age"},
+            "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 120},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"enum": ["siblings.under_6", "siblings.6_14", "siblings.15_18"]},
+            "valor": {"type": ["integer", "null"], "minimum": 0, "maximum": 30},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"enum": ["rsh.has_registry", "ssyo.participation", "chile_crece_contigo.access", "child.possible_disability", "child.in_therapy", "household.pregnancy", "household.has_adult_over_65", "household.formal_employment_or_pension", "household.water_payment_difficulty", "household.food_purchase_difficulty"]},
+            "valor": {"type": ["boolean", "null"]},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "rsh.band"},
+            "valor": {"type": ["integer", "null"], "enum": [40, 50, 60, 70, 80, 90, 100, null]},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "income.per_capita_band"},
+            "valor": {"type": ["string", "null"], "enum": ["UNDER_110K", "110K_250K", "250K_400K", "OVER_400K", null]},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "child.last_health_control_date"},
+            "valor": {"type": ["string", "null"], "format": "date", "maxLength": 10},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["campo", "valor", "estado_dato", "acreditada"],
+          "properties": {
+            "campo": {"const": "housing.type"},
+            "valor": {"type": ["string", "null"], "enum": ["ADEQUATE", "CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME", "OTHER", "UNKNOWN", null]},
+            "estado_dato": {"$ref": "#/$defs/estadoDato"},
+            "acreditada": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "procedencia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["campo", "fuente"],
+      "properties": {
+        "campo": {"$ref": "#/$defs/campo"},
+        "fuente": {"enum": ["DATASET_E3", "FICHA_SINTETICA", "FICHA_DIGITAL", "CALCULADO"]}
+      }
+    },
+    "inconsistencia": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codigo", "valor_dataset", "valor_ficha"],
+      "properties": {
+        "codigo": {"enum": ["SIBLINGS_UNDER_6_MISMATCH", "SIBLINGS_6_14_MISMATCH", "SIBLINGS_15_18_MISMATCH", "RSH_STATUS_MISMATCH", "HOUSEHOLD_SIZE_MISMATCH"]},
+        "valor_dataset": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120},
+        "valor_ficha": {"type": ["boolean", "integer", "null"], "minimum": 0, "maximum": 120}
+      }
+    },
+    "senalesUrgencia": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "emergencia_reciente": {"type": ["boolean", "null"]},
+        "cupo_limitado": {"type": ["boolean", "null"]},
+        "inseguridad_alimentaria_nivel": {"type": ["integer", "null"], "minimum": 0, "maximum": 4},
+        "vivienda_precaria": {"type": ["boolean", "null"]},
+        "dias_restantes_postulacion": {"type": ["integer", "null"], "minimum": 0, "maximum": 366},
+        "dias_restantes_recien_nacido": {"type": ["integer", "null"], "minimum": 0, "maximum": 90},
+        "dias_restantes_documento_terapia": {"type": ["integer", "null"], "minimum": 0, "maximum": 90}
+      }
+    },
+    "senalesVulnerabilidad": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rsh_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "income_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "prevision_salud": {"type": ["string", "null"], "enum": ["FONASA_A", "SIN_PREVISION", "OTRA", "NO_INFORMADO", null]},
+        "puntaje_cse": {"type": ["integer", "null"], "minimum": 0, "maximum": 34},
+        "jefa_hogar_sernameg": {"type": ["boolean", "null"]},
+        "posible_discapacidad_nino": {"type": ["boolean", "null"]}
+      }
+    }
+  }
+}

@@ -1,0 +1,873 @@
+openapi: 3.1.0
+info:
+  title: Brújula Familiar API
+  version: 1.0.2
+  description: >-
+    Contrato documental C3. No prueba que exista una API desplegada. Los cuerpos
+    públicos nunca aceptan C1, C2, catálogo, prompts ni envelopes internos Bedrock.
+servers:
+  - url: /api/v1
+security:
+  - CognitoAccessToken: []
+tags:
+  - name: jardines
+  - name: familias
+  - name: genai
+  - name: tracking
+  - name: kpi
+  - name: catalogo
+paths:
+  /jardines:
+    get:
+      tags: [jardines]
+      operationId: listJardines
+      x-required-scope: jardines:read
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': {$ref: '#/components/responses/JardinListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '429': {$ref: '#/components/responses/Throttled'}
+  /jardines/{id}/familias:
+    get:
+      tags: [jardines]
+      operationId: listFamiliasByJardin
+      x-required-scope: familias:read
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': {$ref: '#/components/responses/FamiliaListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/Throttled'}
+  /familias/{id}:
+    get:
+      tags: [familias]
+      operationId: getFamilia
+      x-required-scope: familias:read
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200': {$ref: '#/components/responses/FamiliaDetailResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /familias/{id}/contexto:
+    get:
+      tags: [familias]
+      operationId: getContextoFamilia
+      description: Devuelve vista minimizada y cerrada; nunca C2 crudo ni identificadores civiles.
+      x-required-scope: familias:read
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      responses:
+        '200': {$ref: '#/components/responses/FamiliaContextResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /familias/{id}/oportunidades:
+    get:
+      tags: [familias]
+      operationId: listOportunidades
+      x-required-scope: familias:read
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: orden
+          in: query
+          schema: {type: string, enum: [prioridad, urgencia, beneficio], default: prioridad}
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': {$ref: '#/components/responses/OpportunityListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /familias/{id}/guion:
+    post:
+      tags: [genai]
+      operationId: createGuion
+      description: >-
+        El cliente selecciona únicamente beneficios autorizados. El servidor carga C1/C2/C4,
+        elige el prompt C4 y construye FamilyGenerationRequestV1 internamente.
+      x-required-scope: genai:write
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FamilyGenerationPublicRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/ScriptGenerationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '429': {$ref: '#/components/responses/Throttled'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /familias/{id}/mensaje:
+    post:
+      tags: [genai]
+      operationId: createMensaje
+      description: >-
+        El cliente selecciona únicamente beneficios autorizados. El servidor carga C1/C2/C4,
+        elige el prompt C4 y construye FamilyGenerationRequestV1 internamente.
+      x-required-scope: genai:write
+      parameters: [{$ref: '#/components/parameters/Id'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FamilyGenerationPublicRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/MessageGenerationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '429': {$ref: '#/components/responses/Throttled'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /familias/{id}/conversaciones:
+    post:
+      tags: [tracking]
+      operationId: createConversacion
+      x-required-scope: conversaciones:write
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConversationRequest'}
+      responses:
+        '201': {$ref: '#/components/responses/ConversationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /familias/nueva/preevaluacion:
+    post:
+      tags: [familias]
+      operationId: createPreevaluacion
+      description: Campos cerrados de ficha sintética; sin mapa EAV, nombres, identificadores, contacto ni texto libre. Siempre PRELIMINAR.
+      x-required-scope: familias:write
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PreevaluationRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/PreevaluationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /kpi:
+    get:
+      tags: [kpi]
+      operationId: getKpi
+      x-required-scope: kpi:read
+      parameters:
+        - name: nivel
+          in: query
+          required: true
+          schema: {type: string, enum: [jardin, comuna, region, nacional]}
+        - name: id
+          in: query
+          schema: {$ref: '#/components/schemas/Id'}
+        - name: desde
+          in: query
+          schema: {type: string, format: date}
+        - name: hasta
+          in: query
+          schema: {type: string, format: date}
+      responses:
+        '200': {$ref: '#/components/responses/KpiResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+  /asistente:
+    post:
+      tags: [genai]
+      operationId: askCatalogAssistant
+      description: >-
+        El público envía solo una pregunta filtrable. El servidor recupera catálogo C4 y
+        construye AssistantRequestV1 internamente. Elegibilidad individual no llama Bedrock.
+      x-required-scope: asistente:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AssistantPublicRequest'}
+      responses:
+        '200': {$ref: '#/components/responses/AssistantResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '429': {$ref: '#/components/responses/Throttled'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /catalogo/ingesta-afiche:
+    post:
+      tags: [catalogo]
+      operationId: ingestSyntheticFlyer
+      description: COULD. Solo asset sintético prepublicado; siempre queda pendiente de revisión humana.
+      x-required-scope: catalogo:admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: './schemas/TextractFlyerRequestV1.schema.json'}
+      responses:
+        '200': {$ref: '#/components/responses/FlyerDraftResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/Unprocessable'}
+        '429': {$ref: '#/components/responses/Throttled'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+components:
+  securitySchemes:
+    CognitoAccessToken:
+      type: oauth2
+      description: JWT de acceso Cognito; se rechaza token de identidad. Backend valida firma, iss, exp, nbf, token_use=access, client_id y scope.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.invalid/oauth2/authorize
+          tokenUrl: https://example.invalid/oauth2/token
+          scopes:
+            jardines:read: Listar jardines autorizados
+            familias:read: Leer familias del scope
+            familias:write: Crear preevaluación sintética
+            genai:write: Generar guion o mensaje
+            conversaciones:write: Registrar conversación
+            kpi:read: Leer agregados autorizados
+            asistente:write: Consultar catálogo
+            catalogo:admin: Crear borrador de catálogo
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/Id'}
+    Limit:
+      name: limit
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 25}
+    Cursor:
+      name: cursor
+      in: query
+      schema: {type: string, maxLength: 2048}
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      maxLength: 80
+      pattern: '^[A-Z0-9][A-Z0-9_-]*$'
+    Hash:
+      type: string
+      pattern: '^[a-f0-9]{64}$'
+    EnvelopeMetadata:
+      type: object
+      additionalProperties: false
+      required: [request_id, snapshot_id, eligibility_bundle_hash, content_bundle_hash, content_version]
+      properties:
+        request_id: {type: string, minLength: 1, maxLength: 80}
+        snapshot_id: {$ref: '#/components/schemas/Id'}
+        eligibility_bundle_hash: {$ref: '#/components/schemas/Hash'}
+        content_bundle_hash: {$ref: '#/components/schemas/Hash'}
+        content_version: {type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'}
+    CompositionMember:
+      type: object
+      additionalProperties: false
+      required: [role, age]
+      properties:
+        role: {type: string, enum: [ADULT_REFERENCE, CHILD, OTHER_ADULT]}
+        age: {type: integer, minimum: 0, maximum: 120}
+    SourceCitation:
+      type: object
+      additionalProperties: false
+      required: [source_id, url]
+      properties:
+        source_id: {$ref: '#/components/schemas/Id'}
+        url: {type: string, format: uri, pattern: '^https://'}
+    TraceItem:
+      type: object
+      additionalProperties: false
+      required: [rule_id, field, operator, result]
+      properties:
+        rule_id: {$ref: '#/components/schemas/Id'}
+        field: {type: string, minLength: 1, maxLength: 120, pattern: '^[a-z0-9_.-]+$'}
+        operator: {type: string, enum: [EQ, LT, LTE, GT, GTE, IN, BETWEEN, ACTIVE_ON_DATE, RANGE_LOOKUP, REF_EQ, COUNT_REL_GTE, NOT_EXISTS_WITHIN]}
+        result: {type: string, enum: [CUMPLE, NO_CUMPLE, INDETERMINADO]}
+    BenefitResult:
+      type: object
+      additionalProperties: false
+      required: [benefit_id, result, level, access_state, missing_codes, trace]
+      properties:
+        benefit_id: {$ref: '#/components/schemas/Id'}
+        result: {type: string, enum: [SI, 'NO', INDETERMINADO, NO_APLICA]}
+        level: {type: [string, 'null'], enum: [CONFIRMADO, PRELIMINAR, null]}
+        access_state: {type: string, enum: [ASIGNADO, GESTION_EN_CURSO, GESTION_RECHAZADA, ELEGIBLE_SIN_ASIGNACION, SIN_CUPO, PENDIENTE_ANTECEDENTES, INDETERMINADO, NO_APLICA]}
+        missing_codes:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: {type: string, pattern: '^[a-z0-9_.-]+$', maxLength: 80}
+        trace:
+          type: array
+          maxItems: 200
+          items: {$ref: '#/components/schemas/TraceItem'}
+      oneOf:
+        - properties:
+            result: {const: SI}
+            level: {type: string, enum: [CONFIRMADO, PRELIMINAR]}
+            access_state: {type: string, enum: [ASIGNADO, GESTION_EN_CURSO, GESTION_RECHAZADA, ELEGIBLE_SIN_ASIGNACION, SIN_CUPO, PENDIENTE_ANTECEDENTES]}
+        - properties:
+            result: {const: INDETERMINADO}
+            level: {const: null}
+            access_state: {const: INDETERMINADO}
+        - properties:
+            result: {type: string, enum: ['NO', NO_APLICA]}
+            level: {const: null}
+            access_state: {const: NO_APLICA}
+    Opportunity:
+      type: object
+      additionalProperties: false
+      required: [benefit_id, simple_title, result, level, access_state, urgency, benefit, vulnerability, score, position, estimated_annual_amount, benefit_estimated, action_type, why_first, missing_codes, suggested_questions, where_to_go, sources]
+      properties:
+        benefit_id: {$ref: '#/components/schemas/Id'}
+        simple_title: {type: string, minLength: 1, maxLength: 100}
+        result: {type: string, enum: [SI, INDETERMINADO]}
+        level: {type: [string, 'null'], enum: [CONFIRMADO, PRELIMINAR, null]}
+        access_state: {type: string, enum: [ASIGNADO, GESTION_EN_CURSO, GESTION_RECHAZADA, ELEGIBLE_SIN_ASIGNACION, SIN_CUPO, PENDIENTE_ANTECEDENTES, INDETERMINADO]}
+        urgency: {type: number, minimum: 0, maximum: 1}
+        benefit: {type: number, minimum: 0, maximum: 1}
+        vulnerability: {type: number, minimum: 0, maximum: 1}
+        score: {type: number, minimum: 0}
+        position: {type: integer, minimum: 1, maximum: 20}
+        estimated_annual_amount: {type: [number, 'null'], minimum: 0}
+        benefit_estimated: {type: boolean}
+        action_type: {type: string, enum: [FAMILY_ACTION, AUTOMATIC, FOLLOW_UP, ASK_FIRST]}
+        why_first: {type: string, minLength: 1, maxLength: 240}
+        missing_codes:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: {type: string, pattern: '^[a-z0-9_.-]+$', maxLength: 80}
+        suggested_questions:
+          type: array
+          maxItems: 10
+          items: {type: string, minLength: 1, maxLength: 200}
+        where_to_go: {type: [string, 'null'], maxLength: 160}
+        sources:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: {$ref: '#/components/schemas/SourceCitation'}
+      oneOf:
+        - properties:
+            result: {const: SI}
+            level: {type: string, enum: [CONFIRMADO, PRELIMINAR]}
+            access_state: {type: string, enum: [ASIGNADO, GESTION_EN_CURSO, GESTION_RECHAZADA, ELEGIBLE_SIN_ASIGNACION, SIN_CUPO, PENDIENTE_ANTECEDENTES]}
+        - properties:
+            result: {const: INDETERMINADO}
+            level: {const: null}
+            access_state: {const: INDETERMINADO}
+    JardinSummary:
+      type: object
+      additionalProperties: false
+      required: [garden_id, commune_id, region_id, zone, families_total, families_informed, informed_percentage]
+      properties:
+        garden_id: {$ref: '#/components/schemas/Id'}
+        commune_id: {$ref: '#/components/schemas/Id'}
+        region_id: {$ref: '#/components/schemas/Id'}
+        zone: {type: string, enum: [URBANA, RURAL]}
+        families_total: {type: integer, minimum: 0}
+        families_informed: {type: integer, minimum: 0}
+        informed_percentage: {type: [number, 'null'], minimum: 0, maximum: 100}
+    FamilySummary:
+      type: object
+      additionalProperties: false
+      required: [family_id, priority_score, vulnerability, opportunity_count, conversation_status, traffic_light, top_benefit_ids]
+      properties:
+        family_id: {$ref: '#/components/schemas/Id'}
+        priority_score: {type: number, minimum: 0}
+        vulnerability: {type: number, minimum: 0, maximum: 1}
+        opportunity_count: {type: integer, minimum: 0, maximum: 20}
+        conversation_status: {type: string, enum: [PENDIENTE, CONVERSADA, EN_COLA]}
+        traffic_light: {type: string, enum: [VERDE, AMARILLO, AZUL, SIN_OPORTUNIDADES]}
+        top_benefit_ids:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+    FamilyDetail:
+      type: object
+      additionalProperties: false
+      required: [family_id, garden_id, composition, rsh_band, informed, top_opportunities, benefit_results, disclaimer]
+      properties:
+        family_id: {$ref: '#/components/schemas/Id'}
+        garden_id: {$ref: '#/components/schemas/Id'}
+        composition:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/CompositionMember'}
+        rsh_band: {type: [integer, 'null'], enum: [40, 50, 60, 70, 80, 90, 100, null]}
+        informed: {type: boolean}
+        top_opportunities:
+          type: array
+          maxItems: 3
+          items: {$ref: '#/components/schemas/Opportunity'}
+        benefit_results:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/BenefitResult'}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+    FamilyContextView:
+      type: object
+      additionalProperties: false
+      required: [family_id, composition, rsh_band, income_band, preferred_format, language, urgency_signals, vulnerability_signals, inconsistency_codes, missing_codes]
+      properties:
+        family_id: {$ref: '#/components/schemas/Id'}
+        composition:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/CompositionMember'}
+        rsh_band: {type: [integer, 'null'], enum: [40, 50, 60, 70, 80, 90, 100, null]}
+        income_band: {type: [string, 'null'], enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K, null]}
+        preferred_format: {type: string, enum: [TEXT, VISUAL, AUDIO]}
+        language: {type: string, pattern: '^[a-z]{2}(-[A-Z]{2})?$', maxLength: 5}
+        urgency_signals:
+          type: object
+          additionalProperties: false
+          required: [recent_emergency, limited_quota, precarious_housing]
+          properties:
+            recent_emergency: {type: [boolean, 'null']}
+            limited_quota: {type: [boolean, 'null']}
+            precarious_housing: {type: [boolean, 'null']}
+        vulnerability_signals:
+          type: object
+          additionalProperties: false
+          required: [rsh_score, income_score, possible_child_disability]
+          properties:
+            rsh_score: {type: [number, 'null'], minimum: 0, maximum: 1}
+            income_score: {type: [number, 'null'], minimum: 0, maximum: 1}
+            possible_child_disability: {type: [boolean, 'null']}
+        inconsistency_codes:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: {type: string, enum: [SIBLINGS_UNDER_6_MISMATCH, SIBLINGS_6_14_MISMATCH, SIBLINGS_15_18_MISMATCH, RSH_STATUS_MISMATCH, HOUSEHOLD_SIZE_MISMATCH]}
+        missing_codes:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: {type: string, enum: [composition, child_age, siblings_under_6, siblings_6_14, siblings_15_18, rsh_status, rsh_band, income_band, ssyo_participation, chile_crece_contigo_access, last_health_control_date, possible_disability, therapy, housing_type, pregnancy, adult_over_65, employment_or_pension, water_difficulty, food_difficulty]}
+    FamilyGenerationPublicRequest:
+      type: object
+      additionalProperties: false
+      required: [benefit_ids]
+      properties:
+        benefit_ids:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+    AssistantPublicRequest:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question: {type: string, minLength: 1, maxLength: 500}
+    ConversationRequest:
+      type: object
+      additionalProperties: false
+      required: [benefit_ids, next_step, channel, occurred_at, snapshot_id, origin]
+      properties:
+        benefit_ids:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+        next_step: {type: string, enum: [GO_TO_INSTITUTION, UPDATE_RSH, BRING_DOCUMENTS, NONE]}
+        channel: {type: string, enum: [IN_PERSON, GROUP_MEETING, WHATSAPP_PREVIEW, PRINTED]}
+        occurred_at: {type: string, format: date-time}
+        snapshot_id: {$ref: '#/components/schemas/Id'}
+        origin: {type: string, enum: [REAL_DEMO, SIMULADO_DEMO]}
+    PreevaluationRequest:
+      type: object
+      additionalProperties: false
+      required: [data_classification, garden_id, commune_id, demo_notice_accepted]
+      properties:
+        data_classification: {const: SYNTHETIC_DEMO_NOT_A_REAL_PERSON}
+        garden_id: {$ref: '#/components/schemas/Id'}
+        commune_id: {$ref: '#/components/schemas/Id'}
+        demo_notice_accepted: {const: true}
+        child_age: {type: [integer, 'null'], minimum: 0, maximum: 120}
+        siblings_under_6: {type: [integer, 'null'], minimum: 0, maximum: 30}
+        siblings_6_14: {type: [integer, 'null'], minimum: 0, maximum: 30}
+        siblings_15_18: {type: [integer, 'null'], minimum: 0, maximum: 30}
+        has_rsh: {type: [boolean, 'null']}
+        rsh_band: {type: [integer, 'null'], enum: [40, 50, 60, 70, 80, 90, 100, null]}
+        household_income_band: {type: [string, 'null'], enum: [UNDER_110K, 110K_250K, 250K_400K, OVER_400K, null]}
+        ssyo_participation: {type: [boolean, 'null']}
+        chile_crece_contigo_access: {type: [boolean, 'null']}
+        last_child_health_control_date: {type: [string, 'null'], format: date, maxLength: 10}
+        child_possible_disability: {type: [boolean, 'null']}
+        child_in_therapy: {type: [boolean, 'null']}
+        housing_type: {type: [string, 'null'], enum: [ADEQUATE, CAMP_OR_OCCUPATION, ROOM_IN_OTHER_HOME, OTHER, UNKNOWN, null]}
+        household_pregnancy: {type: [boolean, 'null']}
+        household_has_adult_over_65: {type: [boolean, 'null']}
+        household_formal_employment_or_pension: {type: [boolean, 'null']}
+        household_water_payment_difficulty: {type: [boolean, 'null']}
+        household_food_purchase_difficulty: {type: [boolean, 'null']}
+    ConversationRecord:
+      type: object
+      additionalProperties: false
+      required: [conversation_id, family_id, garden_id, benefit_ids, next_step, channel, occurred_at, snapshot_id, origin, status]
+      properties:
+        conversation_id: {type: string, format: uuid}
+        family_id: {$ref: '#/components/schemas/Id'}
+        garden_id: {$ref: '#/components/schemas/Id'}
+        benefit_ids:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+        next_step: {type: string, enum: [GO_TO_INSTITUTION, UPDATE_RSH, BRING_DOCUMENTS, NONE]}
+        channel: {type: string, enum: [IN_PERSON, GROUP_MEETING, WHATSAPP_PREVIEW, PRINTED]}
+        occurred_at: {type: string, format: date-time}
+        snapshot_id: {$ref: '#/components/schemas/Id'}
+        origin: {type: string, enum: [REAL_DEMO, SIMULADO_DEMO]}
+        status: {type: string, enum: [CONFIRMED]}
+    PreevaluationResult:
+      type: object
+      additionalProperties: false
+      required: [family_id, level, created_at, opportunities, questions, disclaimer]
+      properties:
+        family_id: {$ref: '#/components/schemas/Id'}
+        level: {const: PRELIMINAR}
+        created_at: {type: string, format: date-time}
+        opportunities:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/Opportunity'}
+        questions:
+          type: array
+          maxItems: 20
+          items: {type: string, minLength: 1, maxLength: 200}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+    GapSummary:
+      type: object
+      additionalProperties: false
+      required: [benefit_id, family_count, potential_annual_amount]
+      properties:
+        benefit_id: {$ref: '#/components/schemas/Id'}
+        family_count: {type: integer, minimum: 0}
+        potential_annual_amount: {type: [number, 'null'], minimum: 0}
+    KpiResult:
+      type: object
+      additionalProperties: false
+      required: [level, scope_id, period_start, period_end, total_families, informed_families, informed_percentage, total_new_families, informed_new_families, informed_new_percentage, opportunity_coverage_percentage, suppressed, top_gaps, calculated_at, watermark]
+      properties:
+        level: {type: string, enum: [jardin, comuna, region, nacional]}
+        scope_id: {oneOf: [{$ref: '#/components/schemas/Id'}, {type: 'null'}]}
+        period_start: {type: string, format: date}
+        period_end: {type: string, format: date}
+        total_families: {type: integer, minimum: 0}
+        informed_families: {type: integer, minimum: 0}
+        informed_percentage: {type: [number, 'null'], minimum: 0, maximum: 100}
+        total_new_families: {type: integer, minimum: 0}
+        informed_new_families: {type: integer, minimum: 0}
+        informed_new_percentage: {type: [number, 'null'], minimum: 0, maximum: 100}
+        opportunity_coverage_percentage: {type: [number, 'null'], minimum: 0, maximum: 100}
+        suppressed: {type: boolean}
+        top_gaps:
+          type: array
+          maxItems: 5
+          items: {$ref: '#/components/schemas/GapSummary'}
+        calculated_at: {type: string, format: date-time}
+        watermark: {type: string, format: date-time}
+    FlyerDraft:
+      type: object
+      additionalProperties: false
+      required: [draft_id, synthetic_asset_id, status, confidence, name, institution, requirements, commune_id, valid_from, valid_until, public_contact, benefit_type, warnings]
+      properties:
+        draft_id: {$ref: '#/components/schemas/Id'}
+        synthetic_asset_id: {$ref: '#/components/schemas/Id'}
+        status: {type: string, enum: [PENDIENTE_REVISION, REQUIERE_REVISION]}
+        confidence: {type: number, minimum: 0, maximum: 1}
+        name: {type: [string, 'null'], maxLength: 120}
+        institution: {type: [string, 'null'], maxLength: 120}
+        requirements: {type: [string, 'null'], maxLength: 2000}
+        commune_id: {oneOf: [{$ref: '#/components/schemas/Id'}, {type: 'null'}]}
+        valid_from: {type: [string, 'null'], format: date}
+        valid_until: {type: [string, 'null'], format: date}
+        public_contact: {type: [string, 'null'], maxLength: 200}
+        benefit_type: {type: [string, 'null'], enum: [MONETARY, IN_KIND, SERVICE, null]}
+        warnings:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Z0-9_]+$', maxLength: 80}
+    GenerationBase:
+      type: object
+      additionalProperties: false
+      required: [meta, provider, warnings, disclaimer]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        provider: {type: string, enum: [BEDROCK, PLANTILLA]}
+        warnings:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Z0-9_]+$', maxLength: 80}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+    ScriptContent:
+      type: object
+      additionalProperties: false
+      required: [benefit_ids, script]
+      properties:
+        benefit_ids:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+        script: {type: string, minLength: 1, maxLength: 1200}
+    PrintableBenefitSection:
+      description: Texto estructurado sin markup; el frontend lo escapa y lo renderiza con su plantilla propia.
+      type: object
+      additionalProperties: false
+      required: [benefit_id, heading, reason, action, where_to_go, sources]
+      properties:
+        benefit_id: {$ref: '#/components/schemas/Id'}
+        heading: {type: string, minLength: 1, maxLength: 100}
+        reason: {type: string, minLength: 1, maxLength: 240}
+        action: {type: string, minLength: 1, maxLength: 240}
+        where_to_go: {type: [string, 'null'], maxLength: 160}
+        sources:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: {$ref: '#/components/schemas/SourceCitation'}
+    PrintableCard:
+      description: Datos para CARD_V1; nunca contiene HTML, CSS, atributos, handlers ni URLs fuera de SourceCitation.
+      type: object
+      additionalProperties: false
+      required: [format_version, title, introduction, sections]
+      properties:
+        format_version: {const: CARD_V1}
+        title: {type: string, minLength: 1, maxLength: 100}
+        introduction: {type: string, minLength: 1, maxLength: 240}
+        sections:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: {$ref: '#/components/schemas/PrintableBenefitSection'}
+    MessageContent:
+      type: object
+      additionalProperties: false
+      required: [benefit_ids, whatsapp_preview, printable_card]
+      properties:
+        benefit_ids:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Id'}
+        whatsapp_preview: {type: string, minLength: 1, maxLength: 600}
+        printable_card: {$ref: '#/components/schemas/PrintableCard'}
+    ScriptGenerationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, provider, warnings, content, disclaimer]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        provider: {type: string, enum: [BEDROCK, PLANTILLA]}
+        warnings:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Z0-9_]+$', maxLength: 80}
+        content: {$ref: '#/components/schemas/ScriptContent'}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+    MessageGenerationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, provider, warnings, content, disclaimer]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        provider: {type: string, enum: [BEDROCK, PLANTILLA]}
+        warnings:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Z0-9_]+$', maxLength: 80}
+        content: {$ref: '#/components/schemas/MessageContent'}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+    AssistantEnvelope:
+      type: object
+      additionalProperties: false
+      required: [request_id, intent, answer, citations, disclaimer, provider, warnings]
+      properties:
+        request_id: {type: string, minLength: 1, maxLength: 80}
+        intent: {type: string, enum: [CATALOG_INFO, REQUIRES_DETERMINISTIC_EVALUATION]}
+        answer: {type: string, minLength: 1, maxLength: 2000}
+        citations:
+          type: array
+          maxItems: 8
+          items: {$ref: '#/components/schemas/SourceCitation'}
+        disclaimer: {const: 'Orientación referencial; no determina derechos. Confirmar en la institución.'}
+        provider: {type: string, enum: [BEDROCK, PLANTILLA]}
+        warnings:
+          type: array
+          maxItems: 10
+          items: {type: string, pattern: '^[A-Z0-9_]+$', maxLength: 80}
+    JardinListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, items, next_cursor]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/JardinSummary'}}
+        next_cursor: {type: [string, 'null'], maxLength: 2048}
+    FamiliaListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, items, next_cursor]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/FamilySummary'}}
+        next_cursor: {type: [string, 'null'], maxLength: 2048}
+    OpportunityListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, items, next_cursor]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        items: {type: array, maxItems: 20, items: {$ref: '#/components/schemas/Opportunity'}}
+        next_cursor: {type: [string, 'null'], maxLength: 2048}
+    FamiliaDetailEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/FamilyDetail'}
+    FamiliaContextEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/FamilyContextView'}
+    ConversationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/ConversationRecord'}
+    PreevaluationEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/PreevaluationResult'}
+    KpiEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/KpiResult'}
+    FlyerDraftEnvelope:
+      type: object
+      additionalProperties: false
+      required: [meta, data]
+      properties:
+        meta: {$ref: '#/components/schemas/EnvelopeMetadata'}
+        data: {$ref: '#/components/schemas/FlyerDraft'}
+    InternalFamilyGenerationEnvelope:
+      description: Solo servidor; se construye desde C1/C2 minimizado/C4 y nunca es request público.
+      $ref: './schemas/FamilyGenerationRequestV1.schema.json'
+    InternalAssistantEnvelope:
+      description: Solo servidor; catálogo y prompt provienen de C4, nunca del cliente.
+      $ref: './schemas/AssistantRequestV1.schema.json'
+  responses:
+    JardinListResponse:
+      description: Jardines autorizados con conteos cerrados
+      content: {application/json: {schema: {$ref: '#/components/schemas/JardinListEnvelope'}}}
+    FamiliaListResponse:
+      description: Familias autorizadas priorizadas
+      content: {application/json: {schema: {$ref: '#/components/schemas/FamiliaListEnvelope'}}}
+    FamiliaDetailResponse:
+      description: Ficha minimizada, top tres y resultados técnicos
+      content: {application/json: {schema: {$ref: '#/components/schemas/FamiliaDetailEnvelope'}}}
+    FamiliaContextResponse:
+      description: Contexto familiar minimizado y cerrado
+      content: {application/json: {schema: {$ref: '#/components/schemas/FamiliaContextEnvelope'}}}
+    OpportunityListResponse:
+      description: Oportunidades con U/B/V y posición deterministas
+      content: {application/json: {schema: {$ref: '#/components/schemas/OpportunityListEnvelope'}}}
+    ScriptGenerationResponse:
+      description: Guion validado o fallback de plantilla
+      content: {application/json: {schema: {$ref: '#/components/schemas/ScriptGenerationEnvelope'}}}
+    MessageGenerationResponse:
+      description: Vista previa y tarjeta validada o fallback de plantilla
+      content: {application/json: {schema: {$ref: '#/components/schemas/MessageGenerationEnvelope'}}}
+    ConversationResponse:
+      description: Conversación confirmada idempotentemente
+      content: {application/json: {schema: {$ref: '#/components/schemas/ConversationEnvelope'}}}
+    PreevaluationResponse:
+      description: Resultado preliminar de ficha sintética
+      content: {application/json: {schema: {$ref: '#/components/schemas/PreevaluationEnvelope'}}}
+    KpiResponse:
+      description: KPI agregado con nulos y supresión explícitos
+      content: {application/json: {schema: {$ref: '#/components/schemas/KpiEnvelope'}}}
+    AssistantResponse:
+      description: Información general o redirección a evaluación determinista
+      content: {application/json: {schema: {$ref: '#/components/schemas/AssistantEnvelope'}}}
+    FlyerDraftResponse:
+      description: Borrador sintético que exige revisión humana
+      content: {application/json: {schema: {$ref: '#/components/schemas/FlyerDraftEnvelope'}}}
+    BadRequest: {$ref: '#/components/responses/Error400'}
+    Unauthorized: {$ref: '#/components/responses/Error401'}
+    Forbidden: {$ref: '#/components/responses/Error403'}
+    NotFound: {$ref: '#/components/responses/Error404'}
+    Conflict: {$ref: '#/components/responses/Error409'}
+    Unprocessable: {$ref: '#/components/responses/Error422'}
+    Throttled: {$ref: '#/components/responses/Error429'}
+    Unavailable: {$ref: '#/components/responses/Error503'}
+    Error400: {description: JSON o MIME inválido, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error401: {description: Autenticación ausente o inválida, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error403: {description: Operación no permitida sobre recurso visible, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error404: {description: Recurso inexistente o fuera de scope, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error409: {description: Idempotencia, asset o snapshot en conflicto, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error422: {description: Semántica, schema o seguridad inválida, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error429: {description: Límite de solicitudes, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}
+    Error503: {description: Dependencia sin fallback seguro, content: {application/json: {schema: {$ref: './schemas/ErrorResponse.schema.json'}}}}

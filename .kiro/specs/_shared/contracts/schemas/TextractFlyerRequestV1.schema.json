@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:textract-flyer-request:v1",
+  "title": "TextractFlyerRequestV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["synthetic_asset_id", "media_type", "sha256"],
+  "properties": {
+    "synthetic_asset_id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Z0-9][A-Z0-9_-]*$"},
+    "media_type": {"enum": ["image/jpeg", "image/png"]},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "description": "Solo metadata de un asset sintético prepublicado e inventariado; prohíbe bytes, base64, URL o clave S3 del cliente."
+}
