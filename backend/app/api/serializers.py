@@ -11,11 +11,16 @@ import copy
 
 from app.api.deps import DISCLAIMER
 
+# Resultados que la ficha muestra a la tía.
+_RESULTADOS_RELEVANTES = frozenset({"SI", "INDETERMINADO"})
+
 
 def familia_detail_data(fam: dict) -> dict:
     """``FamilyDetail`` de C3 (8 claves exactas) desde la familia sintética.
 
-    Devuelve copias profundas: ningún consumidor puede mutar ``mock_data``.
+    ``benefit_results`` lleva solo ``SI``/``INDETERMINADO`` (propuesta DEC-070:
+    NO/NO_APLICA no se muestran, fuente §6; el snapshot y el motor conservan
+    todo). Devuelve copias profundas: ningún consumidor puede mutar ``mock_data``.
     """
     return {
         "family_id": fam["summary"]["family_id"],
@@ -24,6 +29,8 @@ def familia_detail_data(fam: dict) -> dict:
         "rsh_band": fam["rsh_band"],
         "informed": fam["informed"],
         "top_opportunities": copy.deepcopy(fam["opportunities"][:3]),
-        "benefit_results": copy.deepcopy(fam["benefit_results"]),
+        "benefit_results": copy.deepcopy(
+            [b for b in fam["benefit_results"] if b["result"] in _RESULTADOS_RELEVANTES]
+        ),
         "disclaimer": DISCLAIMER,
     }

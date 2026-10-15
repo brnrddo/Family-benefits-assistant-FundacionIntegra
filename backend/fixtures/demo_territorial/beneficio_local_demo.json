@@ -1,0 +1,103 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "leyenda": "SOLO DEMO — beneficio inventado para mostrar la capacidad territorial; no existe.",
+  "tablas": {
+    "beneficios": [
+      {
+        "id_beneficio": "BEN-DEMO-LOCAL-01",
+        "nombre": "Programa Municipal Sintético de Apoyo Familiar (solo demo)",
+        "tipo_fuente": "MUNICIPAL_SINTETICO",
+        "institucion": "Municipalidad Sintética (solo demo)",
+        "descripcion_sintetica": "SOLO DEMO. Apoyo inventado para familias que viven en una comuna sintética.",
+        "tipo_prestacion": "MONETARIA",
+        "plataforma_canal_principal": "Municipalidad (solo demo)",
+        "es_sintetico": "true"
+      }
+    ],
+    "beneficios_versiones": [
+      {
+        "id_version": "V-DEMO-LOCAL-01",
+        "id_beneficio": "BEN-DEMO-LOCAL-01",
+        "vigencia_desde": "2026-01-01",
+        "vigencia_hasta": "2026-10-14",
+        "descripcion_entrega": "SOLO DEMO. Entrega única sintética.",
+        "monto_referencial_sintetico": "30000.00",
+        "unidad_monto": "CLP_SIM",
+        "periodicidad": "UNICA",
+        "tramo_maximo_sintetico": "60",
+        "modalidad_acceso": "POSTULACION",
+        "ventana_acceso_desde": "2026-01-01",
+        "ventana_acceso_hasta": "2026-10-14",
+        "requiere_accion_familia": "true",
+        "estados_acceso": "APROBADA,VIGENTE,FINALIZADA",
+        "politica_perdida": "MANTENER",
+        "cupo_contingente": null,
+        "advertencia": "SOLO DEMO: beneficio inventado, no existe."
+      }
+    ],
+    "reglas_elegibilidad": [
+      {
+        "id_regla": "R-DEMO-LOCAL-01-01",
+        "id_version": "V-DEMO-LOCAL-01",
+        "grupo_or": "1",
+        "orden": "1",
+        "cuantificador": "HOUSEHOLD",
+        "binding_grupo": "HOGAR",
+        "binding_padre": null,
+        "rol_causante": "NINGUNO",
+        "entidad_objetivo": "FAMILIA",
+        "campo_dato": "comuna_residencia",
+        "operador": "IN",
+        "valor_literal_tipo": null,
+        "valor_literal": null,
+        "id_parametro_version": "P-DEMO-LOCAL-01-01",
+        "valor_binding_ref": null,
+        "id_parametro_fecha_contexto": null,
+        "vigencia_desde": "2026-01-01",
+        "vigencia_hasta": "2026-10-14"
+      },
+      {
+        "id_regla": "R-DEMO-LOCAL-01-02",
+        "id_version": "V-DEMO-LOCAL-01",
+        "grupo_or": "1",
+        "orden": "2",
+        "cuantificador": "HOUSEHOLD",
+        "binding_grupo": "HOGAR",
+        "binding_padre": null,
+        "rol_causante": "NINGUNO",
+        "entidad_objetivo": "FAMILIA",
+        "campo_dato": "tramo_rsh",
+        "operador": "LTE",
+        "valor_literal_tipo": null,
+        "valor_literal": null,
+        "id_parametro_version": "P-DEMO-LOCAL-01-02",
+        "valor_binding_ref": null,
+        "id_parametro_fecha_contexto": null,
+        "vigencia_desde": "2026-01-01",
+        "vigencia_hasta": "2026-10-14"
+      }
+    ],
+    "parametros_version": [
+      {
+        "id_parametro": "P-DEMO-LOCAL-01-01",
+        "id_version": "V-DEMO-LOCAL-01",
+        "nombre_parametro": "comunas",
+        "tipo_valor": "ENUM_LIST",
+        "valor_int": null,
+        "valor_decimal": null,
+        "valor_fecha": null,
+        "valor_texto": "[\"COM-001\"]"
+      },
+      {
+        "id_parametro": "P-DEMO-LOCAL-01-02",
+        "id_version": "V-DEMO-LOCAL-01",
+        "nombre_parametro": "tramo_max",
+        "tipo_valor": "INT",
+        "valor_int": "60",
+        "valor_decimal": null,
+        "valor_fecha": null,
+        "valor_texto": null
+      }
+    ]
+  }
+}

@@ -47,6 +47,7 @@ from app.api import mock_data, runtime
 from app.api.deps import SNAPSHOT_ID, mock_habilitado
 from app.api.errors import ApiError
 from app.api.models import validar_benefit_result, validar_opportunity
+from app.catalog import territorial
 from app.context import ContextoBuilder
 from app.engine.model import Nivel, Tri
 from app.priority import (
@@ -775,6 +776,7 @@ def _construir(db: Path, contenido: ContenidoC4, huella: str) -> MotorSnapshot:
     conn = _conectar_solo_lectura(db)
     try:
         datos = _leer_precalculo(conn)
+        contenido = territorial.con_overlay(contenido, datos.beneficios)  # B2 solo demo
         constructor = ContextoBuilder(conn, datos.fecha)
         familias: dict[str, dict] = {}
         prioridades: dict[str, tuple[float, float]] = {}
