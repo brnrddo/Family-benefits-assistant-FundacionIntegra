@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 409,
+  "payload": {
+    "error": {
+      "code": "CONFLICT",
+      "message": "Conflicto de idempotencia o de snapshot.",
+      "request_id": "REQ-SIM-ERR-409",
+      "retryable": true,
+      "details": []
+    }
+  }
+}

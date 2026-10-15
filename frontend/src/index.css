@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+@import './ui/tokens.css';
+
+/* Base (design.md §10.2, §13): 18 px, foco visible, sin dependencia de color. */
+@layer base {
+  html {
+    font-size: 112.5%;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+  h1 {
+    font-size: 1.5556rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  h2 {
+    font-size: 1.2222rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  h3 {
+    font-size: 1.0556rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+/* Aislamiento bidi de todo texto que viene de C3 o del modelo (design.md §11.1). */
+.c3-text {
+  unicode-bidi: isolate;
+  direction: ltr;
+  overflow-wrap: anywhere;
+}
+
+/* Barra de avance nativa: el valor lo entrega C3 tal cual (FE-003). */
+progress.progress {
+  appearance: none;
+  width: 100%;
+  height: 0.875rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-neutral-bg);
+  overflow: hidden;
+}
+progress.progress::-webkit-progress-bar {
+  background: var(--color-neutral-bg);
+  border-radius: 999px;
+}
+progress.progress::-webkit-progress-value {
+  background: var(--color-go-icon);
+  border-radius: 999px;
+}
+progress.progress::-moz-progress-bar {
+  background: var(--color-go-icon);
+  border-radius: 999px;
+}
+
+meter.meter {
+  width: 6rem;
+  height: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Impresión (V-16): solo la tarjeta CARD_V1, negro sobre blanco, URL de cada cita en texto. */
+@media print {
+  body {
+    background: var(--color-surface);
+  }
+  body * {
+    visibility: hidden;
+  }
+  [data-print-root],
+  [data-print-root] * {
+    visibility: visible;
+    color: var(--color-print-ink) !important;
+    background: var(--color-surface) !important;
+    box-shadow: none !important;
+  }
+  [data-print-root] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    font-size: 14pt;
+    border: 1px solid var(--color-print-ink);
+  }
+  [data-print-root] a[href]::after {
+    content: ' (' attr(href) ')';
+    overflow-wrap: anywhere;
+  }
+  [data-print-hide] {
+    display: none !important;
+  }
+}

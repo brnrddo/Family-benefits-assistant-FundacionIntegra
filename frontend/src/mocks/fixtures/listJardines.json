@@ -1,0 +1,44 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listJardines",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0001",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "garden_id": "JAR-SIM-E3-00001",
+        "commune_id": "COM-001",
+        "region_id": "REG-SIM-01",
+        "zone": "URBANA",
+        "families_total": 8,
+        "families_informed": 2,
+        "informed_percentage": 25
+      },
+      {
+        "garden_id": "JAR-SIM-E3-00002",
+        "commune_id": "COM-001",
+        "region_id": "REG-SIM-01",
+        "zone": "RURAL",
+        "families_total": 0,
+        "families_informed": 0,
+        "informed_percentage": null
+      },
+      {
+        "garden_id": "JAR-SIM-E3-00003",
+        "commune_id": "COM-002",
+        "region_id": "REG-SIM-02",
+        "zone": "URBANA",
+        "families_total": 1,
+        "families_informed": 0,
+        "informed_percentage": 0
+      }
+    ],
+    "next_cursor": null
+  }
+}

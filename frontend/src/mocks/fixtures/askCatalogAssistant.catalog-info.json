@@ -1,0 +1,17 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "askCatalogAssistant",
+  "status": 200,
+  "payload": {
+    "request_id": "REQ-SIM-0801",
+    "intent": "CATALOG_INFO",
+    "answer": "El aporte mensual por hijo es un apoyo en dinero para hogares con niñas y niños.\nSe consulta en la oficina municipal de atención social.\nLos requisitos exactos los confirma la institución.",
+    "citations": [
+      { "source_id": "SRC-SIM-001", "url": "https://fuentes.brujula-demo.example/ben-001" },
+      { "source_id": "SRC-SIM-002", "url": "https://fuentes.brujula-demo.example/ben-002" }
+    ],
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución.",
+    "provider": "BEDROCK",
+    "warnings": []
+  }
+}

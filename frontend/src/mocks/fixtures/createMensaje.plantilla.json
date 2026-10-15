@@ -1,0 +1,36 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createMensaje",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0402",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "provider": "PLANTILLA",
+    "warnings": ["LLM_UNAVAILABLE"],
+    "content": {
+      "benefit_ids": ["BEN-001", "BEN-002", "BEN-003"],
+      "whatsapp_preview": "Hola. Estos apoyos podrían corresponderle: aporte mensual por hijo, bono de invierno y control de salud infantil. Consulte en la institución.",
+      "printable_card": {
+        "format_version": "CARD_V1",
+        "title": "Apoyos que podrían corresponderle",
+        "introduction": "Texto base revisado. Confirme cada apoyo en la institución.",
+        "sections": [
+          {
+            "benefit_id": "BEN-001",
+            "heading": "Aporte mensual por hijo",
+            "reason": "Podría corresponderle.",
+            "action": "Consulte en el municipio.",
+            "where_to_go": null,
+            "sources": [{ "source_id": "SRC-SIM-001", "url": "https://fuentes.brujula-demo.example/ben-001" }]
+          }
+        ]
+      }
+    },
+    "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
+  }
+}

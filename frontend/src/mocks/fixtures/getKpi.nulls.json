@@ -1,0 +1,31 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "getKpi",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0703",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "level": "jardin",
+      "scope_id": "JAR-SIM-E3-00002",
+      "period_start": "2026-03-01",
+      "period_end": "2026-10-13",
+      "total_families": 0,
+      "informed_families": 0,
+      "informed_percentage": null,
+      "total_new_families": 0,
+      "informed_new_families": 0,
+      "informed_new_percentage": null,
+      "opportunity_coverage_percentage": null,
+      "suppressed": false,
+      "top_gaps": [{ "benefit_id": "BEN-001", "family_count": 0, "potential_annual_amount": null }],
+      "calculated_at": "2026-10-14T09:00:00-03:00",
+      "watermark": "2026-10-13T23:59:59-03:00"
+    }
+  }
+}

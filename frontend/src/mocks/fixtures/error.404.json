@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 404,
+  "payload": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Recurso inexistente o fuera de alcance.",
+      "request_id": "REQ-SIM-ERR-404",
+      "retryable": false,
+      "details": []
+    }
+  }
+}

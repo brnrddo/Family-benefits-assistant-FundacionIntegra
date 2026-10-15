@@ -1,0 +1,14 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "*",
+  "status": 401,
+  "payload": {
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Autenticacion ausente o invalida.",
+      "request_id": "REQ-SIM-ERR-401",
+      "retryable": false,
+      "details": []
+    }
+  }
+}

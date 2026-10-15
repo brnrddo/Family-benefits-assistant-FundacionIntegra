@@ -1,0 +1,26 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "createConversacion",
+  "status": 201,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0501",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "conversation_id": "00000000-0000-4000-8000-000000000001",
+      "family_id": "FAM-SIM-E3-00001",
+      "garden_id": "JAR-SIM-E3-00001",
+      "benefit_ids": ["BEN-001", "BEN-002", "BEN-003"],
+      "next_step": "GO_TO_INSTITUTION",
+      "channel": "IN_PERSON",
+      "occurred_at": "2026-10-14T10:00:00-03:00",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "origin": "REAL_DEMO",
+      "status": "CONFIRMED"
+    }
+  }
+}

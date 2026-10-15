@@ -1,0 +1,127 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "listOportunidades",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0013",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      {
+        "benefit_id": "BEN-001",
+        "simple_title": "Aporte mensual por hijo",
+        "result": "SI",
+        "level": "CONFIRMADO",
+        "access_state": "ELEGIBLE_SIN_ASIGNACION",
+        "urgency": 0.45,
+        "benefit": 0.9,
+        "vulnerability": 0.8,
+        "score": 0.91,
+        "position": 1,
+        "estimated_annual_amount": 264000,
+        "benefit_estimated": false,
+        "action_type": "FAMILY_ACTION",
+        "why_first": "Podría recibir un aporte mensual que aún no pide y es el monto anual más alto de su lista.",
+        "missing_codes": [],
+        "suggested_questions": [
+          "¿Ya consultó por el aporte mensual en el municipio?"
+        ],
+        "where_to_go": "Oficina municipal de atención social (sintética)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-001",
+            "url": "https://fuentes.brujula-demo.example/ben-001"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-002",
+        "simple_title": "Bono de invierno",
+        "result": "SI",
+        "level": "PRELIMINAR",
+        "access_state": "ELEGIBLE_SIN_ASIGNACION",
+        "urgency": 0.85,
+        "benefit": 0.55,
+        "vulnerability": 0.8,
+        "score": 0.84,
+        "position": 2,
+        "estimated_annual_amount": 120000,
+        "benefit_estimated": true,
+        "action_type": "FAMILY_ACTION",
+        "why_first": "La postulación cierra pronto; vale la pena consultar esta semana.",
+        "missing_codes": [
+          "rsh_band"
+        ],
+        "suggested_questions": [
+          "¿Tiene a mano el tramo del Registro Social de Hogares?"
+        ],
+        "where_to_go": "Municipio, ventanilla de postulaciones (sintética)",
+        "sources": [
+          {
+            "source_id": "SRC-SIM-002",
+            "url": "https://fuentes.brujula-demo.example/ben-002"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-003",
+        "simple_title": "Control de salud infantil",
+        "result": "INDETERMINADO",
+        "level": null,
+        "access_state": "INDETERMINADO",
+        "urgency": 0.62,
+        "benefit": 0.4,
+        "vulnerability": 0.8,
+        "score": 0.66,
+        "position": 3,
+        "estimated_annual_amount": null,
+        "benefit_estimated": false,
+        "action_type": "ASK_FIRST",
+        "why_first": "Falta un dato para saber si corresponde; conviene preguntarlo hoy.",
+        "missing_codes": [
+          "last_health_control_date"
+        ],
+        "suggested_questions": [
+          "¿Cuándo fue el último control de salud de la niña o el niño?"
+        ],
+        "where_to_go": null,
+        "sources": [
+          {
+            "source_id": "SRC-SIM-003",
+            "url": "https://fuentes.brujula-demo.example/ben-003"
+          }
+        ]
+      },
+      {
+        "benefit_id": "BEN-004",
+        "simple_title": "Asignación escolar",
+        "result": "SI",
+        "level": "CONFIRMADO",
+        "access_state": "ASIGNADO",
+        "urgency": 0.1,
+        "benefit": 0.3,
+        "vulnerability": 0.8,
+        "score": 0.2,
+        "position": 4,
+        "estimated_annual_amount": 60000,
+        "benefit_estimated": false,
+        "action_type": "AUTOMATIC",
+        "why_first": "Ya recibe este apoyo; solo confirme que siga vigente.",
+        "missing_codes": [],
+        "suggested_questions": [],
+        "where_to_go": null,
+        "sources": [
+          {
+            "source_id": "SRC-SIM-004",
+            "url": "https://fuentes.brujula-demo.example/ben-004"
+          }
+        ]
+      }
+    ],
+    "next_cursor": null
+  }
+}
