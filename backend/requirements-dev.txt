@@ -2,3 +2,6 @@
 -r requirements.txt
 pytest==8.3.4
 ruff==0.8.6
+# Validación de contratos JSON Schema (C2) en tests. Opcional: el test se
+# salta la validación completa si no está instalado.
+jsonschema==4.23.0

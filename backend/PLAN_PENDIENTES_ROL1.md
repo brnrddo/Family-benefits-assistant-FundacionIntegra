@@ -34,9 +34,10 @@ enganchar lo nuevo.
 | # | Proceso faltante | Origen en el plan | Estado real | Prioridad |
 |---|---|---|---|---|
 | **P1** | Ficha digital → hechos DECLARADO → **reevaluación** | Día 2, punto 4 | ✅ **Hecho** (ver §2) — `tests/test_reevaluacion.py` | **Alta** |
-| **P2** | Empaquetado AWS (`e3.db` embebido, `make data`, despliegue) | §0 "Soporte a AWS" + §6 | Ausente: no hay Dockerfile ni Makefile ni config de App Runner/Lambda | **Alta** |
+| **P2** | Empaquetado AWS (`e3.db` embebido, `make data`, despliegue) | §0 "Soporte a AWS" + §6 | ✅ **Hecho** (ver §3) — `Dockerfile`, `Makefile`, `make.ps1`, `.dockerignore` | **Alta** |
 | **P3** | Sembrar 3 familias demo verificadas (brecha, discapacidad, sin RSH) | Día 2, punto 8 | No verificado: no hay script/test que fije las 3 familias de demo | Media |
 | **P4** | README de datos: cerrar "cómo desplegar en AWS" con artefactos reales | Día 2, punto 7 + §6 | Parcial: el README describe el flujo pero apunta a artefactos que no existen (depende de P2) | Media (sigue a P2) |
+| **C2** | Emitir el **contrato C2 formal** (schema `urn:brujula:c2:v1`), no solo el objeto interno §2.7.2 | Contrato Rol 1→Rol 2 (INDICE.md, Día 2 12:00) | ✅ **Hecho** (ver §C2) — `app/context/contrato_c2.py`, `tests/test_contrato_c2.py` | **Alta** |
 
 > Fuera de alcance de los 2 días (quedan como gancho, **no** en este plan):
 > G1/G2 bindings `ACCESO_*` de BEN-004, G3/G4 monto por FORMULA/MAP,
@@ -184,9 +185,23 @@ artefacto reproducible con `e3.db` ya generado, listo para que el backend
   C2 ya lo garantiza para el LLM).
 
 ### 3.4 Definición de terminado (P2)
-- [ ] `Dockerfile` + `.dockerignore` + `Makefile` en `backend/`.
-- [ ] Build reproducible con `e3.db` embebida (10.000 filas).
-- [ ] README actualizado (ver P4).
+- [x] `Dockerfile` + `.dockerignore` + `Makefile` en `backend/`.
+- [x] Build reproducible con `e3.db` embebida (10.000 filas).
+- [x] README actualizado (ver P4).
+
+> **P2 COMPLETADO (2026-10-15).** Entregables en `backend/`: `Makefile`
+> (targets `data`/`load`/`views`/`test`/`clean`), `make.ps1` (equivalente para
+> Windows sin `make`), `Dockerfile` (base `python:3.11-slim`, contexto de build
+> = raíz del repo, corre el pipeline en build-time y **verifica** 10.000
+> evaluaciones o falla el build) y `.dockerignore` en la raíz del repo (excluye
+> secretos, `.venv`, cachés, bases locales y carpetas de otros roles). Sección
+> "Cómo desplegar en AWS" del README reescrita con los comandos reales
+> (`make data`, `docker build -f backend/Dockerfile`, smoke test). Verificado en
+> local: `make.ps1 data` regenera `e3.db` (28.585 filas, precálculo 10.000 en
+> ~19 s) y la suite completa pasa (**102 passed**). El `docker build` no se pudo
+> ejecutar en el host Windows (sin Docker instalado); corre en AWS/CI sobre
+> Linux. El tabla P4 (README de despliegue) queda cubierto por esta misma
+> entrega.
 
 ---
 
@@ -220,3 +235,55 @@ un flujo sin artefactos) por los comandos reales: `make data`, `docker build`,
 > Riesgo principal: P1 toca el `evaluator` (núcleo). Mitigación: todos los
 > parámetros nuevos son **opcionales**, se cubre con tests de regresión antes de
 > extender, y el contrato DECLARADO→PRELIMINAR ya existe (no se inventa semántica).
+
+
+---
+
+## §C2 · Emitir el contrato C2 formal (hallazgo tras el merge PR #9)
+
+### Hallazgo
+El Rol 1 construía `contexto_familia` siguiendo la **redacción** §2.7.2 (claves
+planas en español). Pero el contrato que Rol 2 y el frontend consumen es el
+**schema versionado** `urn:brujula:c2:contexto-familia:v1`
+(`.kiro/specs/_shared/contracts/C2-contexto-familia.schema.json`, declarado en
+`INDICE.md` como "C2, Rol 1 → Rol 2, Día 2 12:00"). Ese schema tiene otra forma:
+
+- `data_classification: "SYNTHETIC_DEMO_NOT_A_REAL_PERSON"` (requerido)
+- `hechos[]` tipados `{campo, valor, estado_dato, acreditada}` + `procedencia[]`
+- vocabulario **cerrado en inglés**: `composition`, `child.age`, `rsh.band`,
+  `income.per_capita_band`, etc. (los mismos nombres del `mapeo_ficha.csv`)
+- roles `ADULTA_REFERENCIA/NINO_JARDIN/OTRO_ADULTO`
+- bandas de ingreso `UNDER_110K/110K_250K/250K_400K/OVER_400K`
+- señales con nombres propios (`rsh_score`, `emergencia_reciente`, ...)
+
+El objeto interno del Rol 1 **no validaba** contra ese schema.
+
+### Decisión (no invasiva)
+No se renombra el contrato (lo consumen Rol 2 y Rol 3) ni se reescribe el
+builder. Se añade un **adaptador** interno→contrato:
+
+- `app/context/contrato_c2.py` → `a_contrato_c2(ctx)` traduce la salida de
+  `construir_contexto` al schema C2 v1 (mapea vocabularios y descarta lo que el
+  contrato no admite; no decide elegibilidad ni inventa datos).
+- Expuesto en `app/context/__init__.py`.
+
+Esto conecta con el hallazgo del test de coherencia (`test_mapeo_coherencia.py`):
+el filtro C2 ya estaba 1:1 con `mapeo_ficha.csv`; ahora además el Rol 1 **emite**
+el contrato en el vocabulario correcto.
+
+### Verificación
+- `tests/test_contrato_c2.py`: claves requeridas, vocabulario cerrado, roles,
+  bandas, procedencia coherente, sin datos prohibidos, y **validación completa
+  contra el JSON Schema** (`jsonschema`, añadido a `requirements-dev.txt`) de
+  **las 500 familias**.
+- Suite: **111 passed**.
+
+### Pendiente menor (coordinación, no bloqueante)
+- `inconsistencias` del contrato usa un enum cerrado distinto del interno
+  (`SIBLINGS_*_MISMATCH`, `RSH_STATUS_MISMATCH`, ...). Hoy el adaptador emite
+  `inconsistencias: []`; poblarlas requiere acordar el cruce ficha↔dataset con
+  Rol 4 y se hace cuando entre `FICHA_DIGITAL` (liga con P1).
+- La reconciliación de nombres que un compañero empezó en `mapeo_ficha.csv`
+  (branch `rol4/mapeo-campo-motor-wip`) **no debe aplicarse al CSV**: el
+  contrato manda y el Rol 1 ya se adapta vía `contrato_c2.py`. Comunicar al
+  equipo.
