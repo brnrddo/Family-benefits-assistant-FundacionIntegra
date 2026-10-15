@@ -10,10 +10,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Header, Query, Request
 
 from app.api import mock_data
-from app.api.deps import DISCLAIMER, construir_meta, require_scope
+from app.api.antecedentes_service import aplicar_declarados
+from app.api.antecedentes_store import declarados_get
+from app.api.deps import construir_meta, require_scope
 from app.api.errors import ApiError
 from app.api.models import FamilyGenerationPublicRequest, PreevaluationRequest
 from app.api.runtime import generar_guion, generar_mensaje
+from app.api.serializers import familia_detail_data
 
 router = APIRouter(tags=["familias"])
 
@@ -45,16 +48,9 @@ def get_familia(
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
         raise ApiError(status_code=404)
-    data = {
-        "family_id": fam["summary"]["family_id"],
-        "garden_id": fam["garden_id"],
-        "composition": fam["composition"],
-        "rsh_band": fam["rsh_band"],
-        "informed": fam["informed"],
-        "top_opportunities": fam["opportunities"][:3],
-        "benefit_results": fam["benefit_results"],
-        "disclaimer": DISCLAIMER,
-    }
+    # Mismo serializador que la propuesta POST /antecedentes, y con los hechos
+    # declarados aplicados para que la ficha reevaluada siga visible al refrescar.
+    data = familia_detail_data(aplicar_declarados(fam, declarados_get(id)))
     return {"meta": construir_meta(request.state.request_id), "data": data}
 
 
@@ -67,7 +63,8 @@ def get_contexto_familia(
     fam = mock_data.FAMILIAS.get(id)
     if fam is None:
         raise ApiError(status_code=404)
-    return {"meta": construir_meta(request.state.request_id), "data": fam["context"]}
+    ctx = aplicar_declarados(fam, declarados_get(id))["context"]
+    return {"meta": construir_meta(request.state.request_id), "data": ctx}
 
 
 @router.get("/familias/{id}/oportunidades")
@@ -84,7 +81,8 @@ def list_oportunidades(
         raise ApiError(status_code=404)
     if orden not in ("prioridad", "urgencia", "beneficio"):
         raise ApiError(status_code=422)
-    items = fam["opportunities"][:limit]
+    # Coherencia con la ficha: misma reevaluación por hechos declarados.
+    items = aplicar_declarados(fam, declarados_get(id))["opportunities"][:limit]
     return {
         "meta": construir_meta(request.state.request_id),
         "items": items,
