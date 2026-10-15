@@ -21,6 +21,8 @@ from .provider import (BedrockError, BedrockProvider,  # noqa: F401
                        GuardrailIntervino, GuardrailNoConfigurado,
                        LLMProvider, LLMResponse, StubProvider, get_provider)
 from .template_provider import (DISCLAIMER,  # noqa: F401
-                                CatalogEntry, SourceCitation, TemplateError,
-                                TemplateProvider, catalogo_desde_benefits,
+                                PLANTILLAS_NEUTRAS, CatalogEntry,
+                                PlantillasTexto, SourceCitation,
+                                TemplateError, TemplateProvider,
+                                asistente_sin_catalogo, contiene_promesa,
                                 es_pregunta_individual)

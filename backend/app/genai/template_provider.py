@@ -9,11 +9,14 @@ Garantías de seguridad (API-008/API-009, PRIVACIDAD_DEMO):
 
 - Produce únicamente los campos cerrados de C3 (``ScriptContent``,
   ``MessageContent`` con ``PrintableCard`` CARD_V1, ``AssistantEnvelope``).
+- El texto habla SOLO de los ``benefit_ids`` pedidos, en el orden pedido, con
+  su nombre y descripción del catálogo C4; nunca sustituye un beneficio por
+  otro. Un ID sin respaldo es un ``TemplateError`` (el servidor responde 422).
 - ``PrintableCard`` transporta SOLO strings inertes y ``SourceCitation``
   tipadas; nunca HTML/CSS/handlers/atributos ni URLs libres. Todo texto se
   neutraliza (markup se vuelve texto plano) y se recorta a los límites C3.
-- Cada cita proviene del catálogo C4 autorizado; una cita sin respaldo se
-  descarta.
+- Cada cita proviene del catálogo C4 autorizado (URL HTTPS); un beneficio sin
+  cita no lleva sección en la tarjeta y nunca se le inventa una URL (PREG-045).
 - ``provider = 'PLANTILLA'`` y ``disclaimer`` exacto con tildes.
 - ``/asistente``: una consulta de elegibilidad individual se detecta
   determinísticamente y devuelve ``REQUIRES_DETERMINISTIC_EVALUATION`` sin
@@ -23,7 +26,8 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
+import unicodedata
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,14 @@ _MAX_SECTION_REASON = 240
 _MAX_SECTION_ACTION = 240
 _MAX_WHERE_TO_GO = 160
 _MAX_ANSWER = 2000
+_MAX_CITATIONS = 8
+_MAX_ASSISTANT_MATCHES = 3
+
+# Placeholders literales de las plantillas de respaldo del Rol 4
+# (content/prompts/*.md). Se renderizan con ``str.replace`` sobre valores ya
+# neutralizados; nunca con ``str.format``.
+PH_TITULOS = "{{catalog_items[].title}}"
+PH_INSTITUCION = "{{catalog_items[].institution}}"
 
 # Patrones de markup/handler/URL que NUNCA deben transportarse como activos.
 _RE_TAG = re.compile(r"<[^>]*>")                 # <script>, <b>, etc.
@@ -72,6 +84,53 @@ def _inert(texto: object, limite: int) -> str:
     return s
 
 
+def _con_aviso(cuerpo: str, limite: int) -> str:
+    """Neutraliza ``cuerpo`` y agrega el aviso exacto (que lleva ';') al final."""
+    texto = _inert(cuerpo, limite - len(DISCLAIMER) - 1)
+    return f"{texto} {DISCLAIMER}".strip()
+
+
+# --- Política de copy (DEC-054) -----------------------------------------------
+
+def _normalizar(texto: str) -> str:
+    """Minúsculas, sin tildes y con espacios simples (para comparar texto)."""
+    s = unicodedata.normalize("NFKD", texto)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    return _RE_WS.sub(" ", s.lower()).strip()
+
+
+# Promesas de elegibilidad o montos (PROD-008, "Prohibiciones" de los prompts
+# C4 y PREG-047). Se evalúan sobre el texto normalizado (sin tildes).
+_RE_PROMESA = re.compile(
+    r"\btiene(?:n)? derecho\b"
+    r"|\brecibira(?:n)?\b"
+    r"|\b(?:le|les) corresponde(?:n)?\b"
+    r"|\bcorresponderle(?:s)?\b"
+    r"|\bgarantiza\w*"
+    r"|\basegurad[oa]s?\b"
+    r"|\bcalifica(?:n)?\b"
+    r"|\b(?:es|son) elegibles?\b"
+    r"|\$"
+    r"|\b\d{4,}\b"
+    r"|\b\d{1,3}(?:\.\d{3})+\b"
+)
+
+# Marcas que un texto plano de catálogo nunca debe traer.
+_RE_NO_PLANO = re.compile(r"[<>{};]|https?://|javascript:|on\w+\s*=", re.IGNORECASE)
+
+
+def contiene_promesa(texto: str) -> bool:
+    """True si ``texto`` promete un resultado o menciona montos."""
+    return bool(_RE_PROMESA.search(_normalizar(texto or "")))
+
+
+def es_texto_plano(texto: str) -> bool:
+    """True si ``texto`` no trae markup, llaves, ';', URLs ni handlers."""
+    return isinstance(texto, str) and not _RE_NO_PLANO.search(texto)
+
+
+# --- Tipos ----------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class SourceCitation:
     """Cita tipada: solo ``source_id`` + URL HTTPS inventariada (C3)."""
@@ -84,18 +143,122 @@ class SourceCitation:
 
 @dataclass(frozen=True)
 class CatalogEntry:
-    """Entrada del catálogo C4 autorizado para un beneficio."""
+    """Entrada del catálogo C4 autorizado para un beneficio.
+
+    ``source_id``/``source_url`` valen ``""`` cuando el beneficio no tiene
+    fuente oficial con URL (BEN-018/019/020, PREG-045).
+    """
     benefit_id: str
     title: str
-    reason: str
-    action: str
+    description: str
+    institution: str
     where_to_go: str | None
     source_id: str
     source_url: str
 
 
+@dataclass(frozen=True)
+class PlantillasTexto:
+    """Frases marco del TemplateProvider (sin el aviso final).
+
+    ``guion``, ``whatsapp`` y ``asistente_catalogo`` contienen ``PH_TITULOS``;
+    ``seccion_accion`` contiene ``PH_INSTITUCION``.
+    """
+    guion: str
+    whatsapp: str
+    tarjeta_titulo: str
+    tarjeta_introduccion: str
+    seccion_razon: str
+    seccion_accion: str
+    asistente_individual: str
+    asistente_catalogo: str
+    etiqueta_donde_ir: str
+
+
+# Marcos fijos neutros: sin "podría", sin "vale la pena" y sin promesas.
+PLANTILLAS_NEUTRAS = PlantillasTexto(
+    guion=(
+        "Hola, ¿cómo está? Revisamos algunos apoyos para conversar con su familia: "
+        f"{PH_TITULOS}. Para confirmar, consulte en la institución de cada apoyo."
+    ),
+    whatsapp=(
+        "Hola. Le escribimos desde el jardín. Revisamos algunos apoyos para "
+        f"conversar con su familia: {PH_TITULOS}. Para confirmar, consulte en la "
+        "institución de cada apoyo."
+    ),
+    tarjeta_titulo="Apoyos para consultar",
+    tarjeta_introduccion=(
+        "Estos apoyos son para conversar con su familia. Confirme cada uno en su institución."
+    ),
+    seccion_razon="Según la revisión del jardín, este apoyo es para conversar con su familia.",
+    seccion_accion=f"Consulte en {PH_INSTITUCION}.",
+    asistente_individual=(
+        "Esta pregunta es sobre una familia en particular. El asistente no evalúa "
+        "casos individuales. Revise la ficha de la familia en la aplicación."
+    ),
+    asistente_catalogo=(
+        "Por ahora no es posible responder con el asistente. Revise la información "
+        f"oficial de estos apoyos: {PH_TITULOS}."
+    ),
+    etiqueta_donde_ir="Dónde ir",
+)
+
+# Textos fijos cuando el catálogo C4 no está disponible (DEC-058): no nombran
+# ningún beneficio.
+GUION_SIN_CATALOGO = (
+    "Hola, ¿cómo está? Por ahora no está disponible el texto de estos apoyos. "
+    "Revise la ficha de la familia en la aplicación."
+)
+ASISTENTE_SIN_CATALOGO = (
+    "Por ahora no es posible responder con el asistente. Revise la información "
+    "oficial en la institución."
+)
+WARNING_SIN_CATALOGO = "CATALOGO_C4_NO_DISPONIBLE"
+
+
 def _es_https(url: str) -> bool:
     return isinstance(url, str) and url.startswith("https://")
+
+
+def _envelope_asistente(request_id: str, intent: str, answer: str,
+                        citations: list[dict], warnings: list[str]) -> dict:
+    return {
+        "request_id": request_id,
+        "intent": intent,
+        "answer": answer,
+        "citations": citations,
+        "disclaimer": DISCLAIMER,
+        "provider": PROVIDER,
+        "warnings": warnings,
+    }
+
+
+def asistente_sin_catalogo(request_id: str, question: str) -> dict:
+    """``AssistantEnvelope`` válido cuando el catálogo C4 no carga (DEC-058).
+
+    La derivación individual no cambia; la respuesta general es un texto fijo,
+    sin citas y con el warning de código fijo.
+    """
+    if es_pregunta_individual(question):
+        answer = _con_aviso(PLANTILLAS_NEUTRAS.asistente_individual, _MAX_ANSWER)
+        return _envelope_asistente(
+            request_id, "REQUIRES_DETERMINISTIC_EVALUATION", answer, [], []
+        )
+    answer = _con_aviso(ASISTENTE_SIN_CATALOGO, _MAX_ANSWER)
+    return _envelope_asistente(
+        request_id, "CATALOG_INFO", answer, [], [WARNING_SIN_CATALOGO]
+    )
+
+
+# --- Recuperación determinista por nombre (DEC-059) ----------------------------
+
+_RE_NO_ALNUM = re.compile(r"[^a-z0-9]+")
+_RE_DEMO = re.compile(r"\(programa de demostracion\)")
+
+
+def _clave_busqueda(texto: str) -> str:
+    s = _RE_DEMO.sub(" ", _normalizar(texto))
+    return _RE_NO_ALNUM.sub(" ", s).strip()
 
 
 class TemplateProvider:
@@ -104,21 +267,32 @@ class TemplateProvider:
     nombre = "plantilla"
     provider = PROVIDER
 
-    def __init__(self, catalogo: dict[str, CatalogEntry]):
+    def __init__(self, catalogo: dict[str, CatalogEntry],
+                 plantillas: PlantillasTexto | None = None):
         # Catálogo indexado por benefit_id (ya autorizado y validado por C4).
         self._catalogo = dict(catalogo)
+        self._plantillas = plantillas or PLANTILLAS_NEUTRAS
 
     # -- catálogo -----------------------------------------------------------
+
+    def conoce(self, benefit_id: str) -> bool:
+        """True si ``benefit_id`` tiene respaldo en el catálogo C4."""
+        return benefit_id in self._catalogo
+
+    def tiene_cita(self, benefit_id: str) -> bool:
+        """True si el beneficio tiene una fuente oficial HTTPS en el catálogo."""
+        entrada = self._catalogo.get(benefit_id)
+        return entrada is not None and self._cita(entrada) is not None
 
     def _entrada(self, benefit_id: str) -> CatalogEntry:
         entrada = self._catalogo.get(benefit_id)
         if entrada is None:
-            raise TemplateError(f"benefit_id sin respaldo en catálogo C4: {benefit_id}")
+            raise TemplateError("benefit_id sin respaldo en catálogo C4")
         return entrada
 
     def _cita(self, entrada: CatalogEntry) -> SourceCitation | None:
         """Devuelve la cita del catálogo solo si la URL es HTTPS inventariada."""
-        if not _es_https(entrada.source_url):
+        if not entrada.source_id or not _es_https(entrada.source_url):
             return None
         return SourceCitation(source_id=entrada.source_id, url=entrada.source_url)
 
@@ -132,59 +306,77 @@ class TemplateProvider:
                 vistos.append(bid)
         return vistos[:3]
 
+    @staticmethod
+    def _titulo(entrada: CatalogEntry) -> str:
+        return _inert(entrada.title, _MAX_SECTION_HEADING) or entrada.benefit_id
+
+    def _titulos(self, entradas: list[CatalogEntry]) -> str:
+        return ", ".join(self._titulo(e) for e in entradas)
+
     # -- guion --------------------------------------------------------------
 
     def generar_guion(self, benefit_ids: list[str]) -> dict:
         """``ScriptContent``: benefit_ids (1–3) + guion ≤1200 chars."""
         ids = self._normalizar_benefit_ids(benefit_ids)
-        partes: list[str] = []
-        for bid in ids:
-            e = self._entrada(bid)
-            partes.append(
-                f"Sobre {e.title}: {e.reason} Vale la pena consultar: {e.action}"
-            )
+        entradas = [self._entrada(bid) for bid in ids]
+        marco = _inert(
+            self._plantillas.guion.replace(PH_TITULOS, self._titulos(entradas)),
+            _MAX_SCRIPT,
+        )
+        detalle = [
+            f"{self._titulo(e)}: {_inert(e.description, _MAX_SCRIPT)}"
+            for e in entradas if _inert(e.description, _MAX_SCRIPT)
+        ]
         # El cuerpo dinámico se neutraliza; el disclaimer exacto (con ';') se
         # añade después para no alterar su literal obligatorio.
-        cuerpo = _inert(" ".join(partes), _MAX_SCRIPT - len(DISCLAIMER) - 1)
-        guion = f"{cuerpo} {DISCLAIMER}".strip()
+        guion = _con_aviso(" ".join([marco, *detalle]), _MAX_SCRIPT)
         return {"benefit_ids": ids, "script": guion}
 
     # -- mensaje ------------------------------------------------------------
 
-    def _seccion(self, benefit_id: str) -> dict:
-        e = self._entrada(benefit_id)
-        cita = self._cita(e)
-        sources = [cita.to_dict()] if cita else []
-        if not sources:
-            raise TemplateError(f"beneficio sin cita HTTPS inventariada: {benefit_id}")
-        where = _inert(e.where_to_go, _MAX_WHERE_TO_GO) if e.where_to_go else None
+    def _seccion(self, entrada: CatalogEntry, cita: SourceCitation) -> dict:
+        institucion = _inert(entrada.institution, _MAX_SECTION_ACTION) or "la institución"
+        where = _inert(entrada.where_to_go, _MAX_WHERE_TO_GO) if entrada.where_to_go else ""
         return {
-            "benefit_id": benefit_id,
-            "heading": _inert(e.title, _MAX_SECTION_HEADING) or benefit_id,
-            "reason": _inert(e.reason, _MAX_SECTION_REASON) or "Puede corresponderle.",
-            "action": _inert(e.action, _MAX_SECTION_ACTION) or "Consulte en la institución.",
-            "where_to_go": where,
-            "sources": sources,
+            "benefit_id": entrada.benefit_id,
+            "heading": self._titulo(entrada),
+            "reason": _inert(
+                f"{self._plantillas.seccion_razon} {entrada.description}",
+                _MAX_SECTION_REASON,
+            ),
+            "action": _inert(
+                self._plantillas.seccion_accion.replace(PH_INSTITUCION, institucion),
+                _MAX_SECTION_ACTION,
+            ),
+            "where_to_go": where or None,
+            "sources": [cita.to_dict()],
         }
 
     def generar_mensaje(self, benefit_ids: list[str]) -> dict:
-        """``MessageContent``: preview WhatsApp + ``PrintableCard`` CARD_V1."""
-        ids = self._normalizar_benefit_ids(benefit_ids)
-        secciones = [self._seccion(bid) for bid in ids]
+        """``MessageContent``: preview WhatsApp + ``PrintableCard`` CARD_V1.
 
-        titulos = ", ".join(s["heading"] for s in secciones)
-        preview_cuerpo = _inert(
-            f"Hola. Podrían corresponderle estos apoyos: {titulos}.",
-            _MAX_WHATSAPP - len(DISCLAIMER) - 1,
+        El preview nombra todos los beneficios pedidos. La tarjeta lleva una
+        sección solo por beneficio con cita HTTPS (C3 exige ≥1 fuente por
+        sección); si ninguno la tiene, ``TemplateError``.
+        """
+        ids = self._normalizar_benefit_ids(benefit_ids)
+        entradas = [self._entrada(bid) for bid in ids]
+        secciones: list[dict] = []
+        for e in entradas:
+            cita = self._cita(e)
+            if cita is not None:
+                secciones.append(self._seccion(e, cita))
+        if not secciones:
+            raise TemplateError("ningún beneficio con cita HTTPS inventariada")
+
+        preview = _con_aviso(
+            self._plantillas.whatsapp.replace(PH_TITULOS, self._titulos(entradas)),
+            _MAX_WHATSAPP,
         )
-        preview = f"{preview_cuerpo} {DISCLAIMER}".strip()
         card = {
             "format_version": "CARD_V1",
-            "title": _inert("Apoyos que vale la pena consultar", _MAX_CARD_TITLE),
-            "introduction": _inert(
-                "Esta tarjeta resume orientaciones. Confirme en la institución.",
-                _MAX_CARD_INTRO,
-            ),
+            "title": _inert(self._plantillas.tarjeta_titulo, _MAX_CARD_TITLE),
+            "introduction": _inert(self._plantillas.tarjeta_introduccion, _MAX_CARD_INTRO),
             "sections": secciones,
         }
         return {
@@ -195,6 +387,20 @@ class TemplateProvider:
 
     # -- asistente ----------------------------------------------------------
 
+    def _coincidencias(self, question: str) -> list[CatalogEntry]:
+        """Beneficios cuyo nombre aparece en la pregunta (gana el más específico)."""
+        pregunta = f" {_clave_busqueda(question or '')} "
+        halladas: list[tuple[str, CatalogEntry]] = []
+        for e in self._catalogo.values():
+            clave = _clave_busqueda(e.title)
+            if clave and f" {clave} " in pregunta:
+                halladas.append((clave, e))
+        especificas = [
+            e for clave, e in halladas
+            if not any(clave != otra and f" {clave} " in f" {otra} " for otra, _ in halladas)
+        ]
+        return especificas[:_MAX_ASSISTANT_MATCHES]
+
     def responder_asistente(self, request_id: str, question: str) -> dict:
         """``AssistantEnvelope``: catálogo general o derivación determinista.
 
@@ -202,42 +408,39 @@ class TemplateProvider:
         se detecta sin LLM y devuelve ``REQUIRES_DETERMINISTIC_EVALUATION``.
         """
         if es_pregunta_individual(question):
-            return {
-                "request_id": request_id,
-                "intent": "REQUIRES_DETERMINISTIC_EVALUATION",
-                "answer": _inert(
-                    "Para saber si a usted le corresponde un beneficio, use la "
-                    "evaluación con los datos de su ficha. Esta respuesta no decide "
-                    "su caso.",
-                    _MAX_ANSWER,
-                ),
-                "citations": [],
-                "disclaimer": DISCLAIMER,
-                "provider": PROVIDER,
-                "warnings": [],
-            }
+            answer = _con_aviso(self._plantillas.asistente_individual, _MAX_ANSWER)
+            return _envelope_asistente(
+                request_id, "REQUIRES_DETERMINISTIC_EVALUATION", answer, [], []
+            )
 
-        # Información general del catálogo (sin decidir elegibilidad individual).
-        citas: list[dict] = []
-        for entrada in self._catalogo.values():
-            cita = self._cita(entrada)
-            if cita:
-                citas.append(cita.to_dict())
-            if len(citas) >= 8:
-                break
-        return {
-            "request_id": request_id,
-            "intent": "CATALOG_INFO",
-            "answer": _inert(
-                "Le comparto información general del catálogo de beneficios. "
-                "Revise los requisitos y consulte en la institución indicada.",
+        coincidencias = self._coincidencias(question)
+        if coincidencias:
+            partes: list[str] = []
+            for e in coincidencias:
+                parte = f"{self._titulo(e)}: {e.description}"
+                if e.where_to_go:
+                    parte += f" {self._plantillas.etiqueta_donde_ir}: {e.where_to_go}"
+                partes.append(parte)
+            answer = _con_aviso(" ".join(partes), _MAX_ANSWER)
+            seleccion = coincidencias
+        else:
+            # Información general: los primeros beneficios con fuente oficial.
+            seleccion = [e for e in self._catalogo.values() if self._cita(e)][:_MAX_CITATIONS]
+            answer = _con_aviso(
+                self._plantillas.asistente_catalogo.replace(
+                    PH_TITULOS, self._titulos(seleccion)
+                ),
                 _MAX_ANSWER,
-            ),
-            "citations": citas,
-            "disclaimer": DISCLAIMER,
-            "provider": PROVIDER,
-            "warnings": [],
-        }
+            )
+
+        citas: list[dict] = []
+        for e in seleccion:
+            cita = self._cita(e)
+            if cita is not None and cita.to_dict() not in citas:
+                citas.append(cita.to_dict())
+        return _envelope_asistente(
+            request_id, "CATALOG_INFO", answer, citas[:_MAX_CITATIONS], []
+        )
 
 
 # Palabras que delatan una consulta de elegibilidad individual (determinista).
@@ -256,26 +459,3 @@ def es_pregunta_individual(question: str) -> bool:
     if not isinstance(question, str):
         return False
     return bool(_PATRONES_INDIVIDUAL.search(question))
-
-
-def catalogo_desde_benefits(benefits_c4: list[dict], i18n: dict | None = None) -> dict[str, CatalogEntry]:
-    """Construye el índice de catálogo desde el archivo BENEFITS de C4.
-
-    Reutilizable por FEAT-003 para alimentar al ``TemplateProvider`` sin
-    hardcodear copy. ``i18n`` opcional resuelve ``title_key`` a texto visible.
-    """
-    i18n = i18n or {}
-    catalogo: dict[str, CatalogEntry] = {}
-    for b in benefits_c4:
-        bid = b["benefit_id"]
-        title = i18n.get(b.get("title_key", ""), b.get("title_key", bid))
-        catalogo[bid] = CatalogEntry(
-            benefit_id=bid,
-            title=title,
-            reason=b.get("reason", "Según su ficha, podría corresponderle."),
-            action=b.get("action", "Consulte en la institución para confirmar."),
-            where_to_go=b.get("where_to_go"),
-            source_id=b.get("source_id", "SRC-OFICIAL"),
-            source_url=b.get("source_url", ""),
-        )
-    return catalogo
