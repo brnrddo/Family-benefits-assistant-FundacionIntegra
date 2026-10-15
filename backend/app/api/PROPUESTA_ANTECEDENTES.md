@@ -15,8 +15,9 @@
 | Request | `AddFamilyInfoRequestV1` (cerrado) |
 | Respuesta 200 | `FamiliaDetailEnvelope` de C3, **sin cambios de forma** |
 | IA | **ninguna**; esta ruta no llama Bedrock |
+| Ruta auxiliar | `GET /api/v1/familias/{id}/antecedentes` (`familias:read`): umbral `pregnancy_weeks_threshold`, ver [Preguntas que alimentan al motor](#preguntas-que-alimentan-al-motor-tarea-2) |
 
-El request es un subconjunto cerrado de los 18 campos de `PreevaluationRequest` (C3) con idénticos tipos, enums y rangos, más `data_classification`. **No** acepta `garden_id`, `commune_id`, `demo_notice_accepted`, nombres, identificadores, contacto ni texto libre. Cualquier propiedad extra → `422`.
+El request es un subconjunto cerrado de los 18 campos de `PreevaluationRequest` (C3) con idénticos tipos, enums y rangos, más `data_classification` y las seis preguntas Sí/No de [Preguntas que alimentan al motor](#preguntas-que-alimentan-al-motor-tarea-2). **No** acepta `garden_id`, `commune_id`, `demo_notice_accepted`, nombres, identificadores, contacto ni texto libre. Cualquier propiedad extra → `422`.
 
 ```json
 {
@@ -65,11 +66,36 @@ Con `E3_MOCK=1` (modo de la demo) la reevaluación es **simulada, determinista y
 - **sí**: resuelve o conserva `missing_codes` (en el `BenefitResult`, en la `Opportunity` del mismo beneficio y en el contexto), baja el nivel a `PRELIMINAR` y refleja `rsh_band` / `income_band` declarados **con valor conocido** (mismo campo y mismo enum de C3, no una inferencia);
 - **no**: no cambia ningún `result`, no promueve `INDETERMINADO → SI`, no recalcula U/B/V, `score`, `position` ni los `*_score` del contexto, y no borra datos de C1/C2. Esos números son del motor determinista (Rol 1) y del bundle C4; inventarlos sería decidir elegibilidad.
 
-Con `E3_MOCK=0` (B2) la ruta **reevalúa de verdad con el motor determinista** y devuelve una `FamiliaDetailEnvelope` recalculada (elegibilidad, nivel, `missing_codes`, U/B/V, `score`, `position` y oportunidades), reusando la misma maquinaria que el snapshot. De los campos de la pantalla, el **único** que el motor puede convertir en elegibilidad hoy es `last_child_health_control_date`: se transforma en `dias_desde_control` (días hasta la fecha de evaluación, nunca negativo) del niño o niña **más joven** de la familia (menor de 18) y alimenta la regla `R01203` del subsistema SSyO. Un dato declarado nunca da `CONFIRMADO` (el motor da `PRELIMINAR` como máximo). El resto de los campos **no tiene mapeo al motor** y no mueve elegibilidad por esta vía:
+Con `E3_MOCK=0` (B2) la ruta **reevalúa de verdad con el motor determinista** y devuelve una `FamiliaDetailEnvelope` recalculada (elegibilidad, nivel, `missing_codes`, acceso, U/B/V, `score`, `position` y oportunidades), reusando la misma maquinaria que el snapshot. `last_child_health_control_date` se transforma en `dias_desde_control` (días hasta la fecha de evaluación, nunca negativo) del niño o niña **más joven** de la familia (menor de 18) y alimenta la regla `R01203` del subsistema SSyO; el resto de las traducciones está en la sección siguiente. Un dato declarado nunca da `CONFIRMADO` (el motor da `PRELIMINAR` como máximo). Sin mapeo al motor quedan: ingreso, Chile Crece Contigo y SSyO (registros oficiales, no declarables por diseño) y discapacidad, terapia, vivienda, empleo, agua y alimentación (no existen como `campo_dato` declarable).
 
-- `household_pregnancy` llega como booleano; el motor pide `semanas_gestacion` (número), que no se puede derivar de un sí/no sin inventar;
-- RSH, ingreso, Chile Crece Contigo y SSyO vienen de registros oficiales (no declarables por diseño);
-- discapacidad, terapia, vivienda, empleo, agua y alimentación no existen como `campo_dato` del motor.
+## Preguntas que alimentan al motor (Tarea 2)
+
+Propuesta fuera de C3 (DEC-081). Seis campos nuevos en `AddFamilyInfoRequestV1`, todos `bool | null` (`null` = "No sé", no se inyecta). Mapa en `models_antecedentes.CAMPOS_MOTOR`; traducción en `antecedentes_motor.declarados_para_motor`:
+
+| Campo de la pantalla | Código motor | Efecto en el motor |
+|---|---|---|
+| `household_pregnancy` (existente) | `gestacion_declarada` (hogar) | `true` crea la candidata GESTANTE (adulta de referencia: PERSONA_REFERENCIA F, si no PAREJA F, si no PERSONA_REFERENCIA); `false` deja BEN-003 en `NO` |
+| `rsh_band` (existente) | `tramo_rsh` (hogar) | solo si la base no trae tramo |
+| `pregnancy_weeks_at_least_threshold` | `semanas_gestacion` | gestante: `true` → N, `false` → N−1 |
+| `has_incompatible_coverage` | `cobertura_incompatible` | hogar; la base manda si trae el dato (hoy lo trae para las 500 familias) |
+| `pregnancy_public_network_delivery` | `parto_red_publica` | niño o niña más joven |
+| `pregnancy_public_prenatal_control` | `control_prenatal_red_publica` | gestante |
+| `residence_requirement_met` | `residencia_total_anios` y `residencia_ultimos20_anios` | persona de referencia: `true` → cada umbral vigente, `false` → umbral − 1 |
+| `age_record_current` | `antecedente_edad_vigente` | niño o niña más joven |
+
+**N no está escrito en el código.** Sale del parámetro versionado `P006-02` de la regla vigente `R00301` (`semanas_gestacion GTE P006-02`, BEN-003 `V006`) mediante `engine.facts.umbral_regla`; si no se puede leer, no se inyecta semanas (sigue `INDETERMINADO`). Los umbrales de residencia se leen igual.
+
+**Dónde lee el front N.** Ruta de propuesta, también fuera de C3: `GET /api/v1/familias/{id}/antecedentes`, scope `familias:read`. Respuesta 200 exacta:
+
+```json
+{"meta": {"…": "construir_meta"}, "data": {"family_id": "FAM-SIM-E3-00002", "pregnancy_weeks_threshold": 20}}
+```
+
+`pregnancy_weeks_threshold` es `int`. `404` si la familia no existe; `503` (retryable) si N no se puede leer. Va aparte porque la pantalla necesita N **antes** de preguntar y la respuesta del POST es `FamiliaDetailEnvelope` de C3 sin cambios de forma.
+
+**Resultado y acceso.** Lo declarado da como máximo `SI PRELIMINAR`, nunca `CONFIRMADO`. En los beneficios cuyo resultado o nivel cambió por la reevaluación, el acceso se recalcula en memoria con las gestiones de la base: SI sin gestión → `ELEGIBLE_SIN_ASIGNACION` (con gestión → `ASIGNADO`/`GESTION_*`; BEN-018 respeta cupo; IND → `INDETERMINADO`; NO → `NO_APLICA`). Es una desviación consciente de la decisión [3] (`AccesoService.evaluar` manda SI PRELIMINAR sin gestión a `PENDIENTE_ANTECEDENTES`), pendiente de registro como **DEC-082**. Antes, la familia quedaba SI + `INDETERMINADO` (combinación inválida) y la ruta respondía `503`. Nada se escribe en la DB ni en el snapshot.
+
+**Códigos del motor que quedan como guía (sin pregunta).** De `SELECT DISTINCT datos_faltantes FROM evaluaciones`: `discapacidad_severidad`/`discapacidad_vigencia` (salud detallada, clase excluida), `distancia_terapia_km`/`documento_terapia_dias`/`terapia_vigencia` (numéricos/documentales), `dias_desde_evento`/`pago_previo_ben020` (administrativos), `estado_acceso`/`id_beneficio_o_programa`/`vigencia` (rol ACCESO, administrativo) y `dias_desde_nacimiento` (derivado de la fecha de nacimiento).
 
 Si el motor real no puede operar (sin DB, sin precálculo o sin C4 válido) la ruta falla cerrada con `503 UNAVAILABLE` (`retryable: true`). El enganche vive en un único punto de `app/api/routers/antecedentes.py` (helper `_reevaluar_con_motor`) y la reconstrucción de la ficha en `app/api/motor_real.py` (`reconstruir_familia_declarada`); la traducción pantalla→motor está aislada en `app/api/antecedentes_motor.py`.
 

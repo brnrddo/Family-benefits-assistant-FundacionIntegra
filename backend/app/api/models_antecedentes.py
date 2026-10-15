@@ -7,7 +7,8 @@ parte de C3 v1.0.2: el contrato queda intacto (ver
 ``backend/app/api/PROPUESTA_ANTECEDENTES.md``).
 
 El cuerpo es un subconjunto CERRADO de ``PreevaluationRequest`` (C3) con
-idénticos tipos, enums y límites: sin ``garden_id``, ``commune_id``,
+idénticos tipos, enums y límites, más seis preguntas Sí/No (``CAMPOS_MOTOR``,
+propuesta fuera de C3, DEC-081) que el motor sabe usar: sin ``garden_id``, ``commune_id``,
 ``demo_notice_accepted``, nombres, identificadores, contacto ni texto libre
 (PRIVACIDAD_DEMO). Semántica de los campos opcionales:
 
@@ -60,6 +61,14 @@ class AddFamilyInfoRequestV1(_Closed):
     household_formal_employment_or_pension: bool | None = None
     household_water_payment_difficulty: bool | None = None
     household_food_purchase_difficulty: bool | None = None
+    # Preguntas Sí/No de la ficha que alimentan al motor (``CAMPOS_MOTOR``).
+    # Propuesta fuera de C3 (DEC-081); ``null`` = "No sé".
+    pregnancy_weeks_at_least_threshold: bool | None = None
+    has_incompatible_coverage: bool | None = None
+    pregnancy_public_network_delivery: bool | None = None
+    pregnancy_public_prenatal_control: bool | None = None
+    residence_requirement_met: bool | None = None
+    age_record_current: bool | None = None
 
     @field_validator("last_child_health_control_date")
     @classmethod
@@ -103,5 +112,17 @@ CAMPO_A_MISSING_CODE: dict[str, str] = {
     "household_food_purchase_difficulty": "food_difficulty",
 }
 
-# Los 18 campos que la tía puede declarar (todo lo demás es ``data_classification``).
+# Los 18 campos de PreevaluationRequest (C3) que la tía puede declarar.
 CAMPOS_DECLARABLES = frozenset(CAMPO_A_MISSING_CODE)
+
+# Campos Sí/No de la ficha (propuesta fuera de C3, DEC-081) -> código del motor
+# (``datos_faltantes`` de C1). No son ``missing_codes`` de C3; ver
+# ``PROPUESTA_ANTECEDENTES.md`` y ``antecedentes_motor.declarados_para_motor``.
+CAMPOS_MOTOR: dict[str, str] = {
+    "pregnancy_weeks_at_least_threshold": "semanas_gestacion",
+    "has_incompatible_coverage": "cobertura_incompatible",
+    "pregnancy_public_network_delivery": "parto_red_publica",
+    "pregnancy_public_prenatal_control": "control_prenatal_red_publica",
+    "residence_requirement_met": "residencia_total_anios",
+    "age_record_current": "antecedente_edad_vigente",
+}

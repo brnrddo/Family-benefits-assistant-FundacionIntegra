@@ -66,12 +66,21 @@ CAMPOS_FALTANTES = {
 # La tía (o el LLM, vía caracterizador) puede DECLARAR un dato que el dataset no
 # trae. Un hecho declarado nunca viene acreditado -> el beneficio puede dar SI
 # pero como PRELIMINAR (nunca CONFIRMADO). Solo se permiten los campos que hoy
-# son faltantes/ausentes; un declarado NUNCA pisa un dato real de la base.
+# son faltantes/ausentes o que la base puede no traer; un declarado NUNCA pisa
+# un dato real de la base (el resolver consulta la base primero).
+#
+# De hogar: ``gestacion_declarada`` (habilita el candidato GESTANTE; ``False``
+# deja el beneficio de embarazo en NO), ``cobertura_incompatible`` (respaldo si
+# la base no trae el antecedente) y ``tramo_rsh`` (respaldo si la familia no
+# trae ``tramo_rsh_corte``).
 #
 # Tipo esperado de cada campo declarable, para validar/convertir el valor:
 #   "num"  -> entero/decimal (se rechaza lo no numérico)
 #   "bool" -> booleano (acepta true/false, "si"/"no", 1/0)
 CAMPOS_DECLARABLES = {
+    "gestacion_declarada": "bool",
+    "cobertura_incompatible": "bool",
+    "tramo_rsh": "num",
     "semanas_gestacion": "num",
     "parto_red_publica": "bool",
     "control_prenatal_red_publica": "bool",
@@ -213,6 +222,36 @@ class Repo:
                 id_origen=_first_id(r),
             )
         return None
+
+
+def umbral_regla(conn: sqlite3.Connection, fecha: str, campo_dato: str) -> int | float | None:
+    """Valor del parámetro versionado que usa la regla de ``campo_dato`` a ``fecha``.
+
+    Busca las reglas de ``campo_dato`` en las versiones de beneficio VIGENTES a
+    ``fecha`` (semiabierta) y devuelve el ``valor_int``/``valor_decimal`` de su
+    ``id_parametro_version`` como número (p. ej. ``semanas_gestacion`` ->
+    ``R00301`` -> ``P006-02``). Falla cerrada (``None``) si no hay parámetro,
+    hay más de un valor distinto o el valor no es numérico. Solo lectura.
+    """
+    filas = conn.execute(
+        "SELECT p.valor_int, p.valor_decimal FROM reglas_elegibilidad r "
+        "JOIN beneficios_versiones v ON v.id_version = r.id_version "
+        "JOIN parametros_version p ON p.id_parametro = r.id_parametro_version "
+        "WHERE r.campo_dato = ? AND (v.vigencia_desde IS NULL OR v.vigencia_desde <= ?) "
+        "AND (v.vigencia_hasta IS NULL OR v.vigencia_hasta = '' OR ? < v.vigencia_hasta)",
+        (campo_dato, fecha, fecha),
+    ).fetchall()
+    valores: set = set()
+    for valor_int, valor_decimal in filas:
+        crudo = valor_int if valor_int not in (None, "") else valor_decimal
+        if crudo in (None, ""):
+            return None
+        try:
+            s = str(crudo).strip()
+            valores.add(int(s) if "." not in s else float(s))
+        except (ValueError, TypeError):
+            return None
+    return valores.pop() if len(valores) == 1 else None
 
 
 def _coerce(col_valor: str, valor):

@@ -164,7 +164,10 @@ def test_desde_declarado_tipos():
 
 def test_declarables_son_subconjunto_de_faltantes():
     from app.engine.facts import CAMPOS_FALTANTES
-    assert set(CAMPOS_DECLARABLES) <= set(CAMPOS_FALTANTES)
+    # Además de los faltantes, tres respaldos de hogar que solo se usan si la base
+    # no trae el dato (o, para gestación, porque el dataset no la trae nunca).
+    respaldos = {"gestacion_declarada", "cobertura_incompatible", "tramo_rsh"}
+    assert set(CAMPOS_DECLARABLES) <= set(CAMPOS_FALTANTES) | respaldos
 
 
 def test_puente_declarados_desde_propuesta():

@@ -51,6 +51,11 @@ def _hogar_directo(campo: str, ctx: FamiliaCtx) -> Hecho | None:
         return None
     if campo == "tramo_rsh":
         v = f["tramo_rsh_corte"]
+        if v in (None, ""):
+            # Sin tramo en la base: respaldo declarado (PRELIMINAR); nunca pisa la base.
+            d = desde_declarado(campo, ctx.declarado_hogar(campo), id_origen=f["id_familia"])
+            if d is not None:
+                return d
         return Hecho(campo=campo, valor=_num_or_none(v), presente=v not in (None, ""),
                      id_origen=f["id_familia"])
     return None
@@ -175,6 +180,11 @@ def resolver_integrante(campo: str, ctx: FamiliaCtx, integrante: sqlite3.Row) ->
         d = desde_declarado(campo, ctx.declarado_integrante(pid, campo), id_origen=pid)
         return d if d is not None else Hecho(campo=campo, presente=False, id_origen=pid)
 
+    if campo in EAV_HOGAR:
+        # Dato de hogar pedido dentro de un binding de integrante (p. ej.
+        # ``cobertura_incompatible`` en GESTANTE_1, R00303): se resuelve en el
+        # hogar (base primero, declarado de hogar solo como respaldo).
+        return resolver_hogar(campo, ctx)
     if campo in CAMPOS_FALTANTES:
         d = desde_declarado(campo, ctx.declarado_integrante(pid, campo), id_origen=pid)
         return d if d is not None else Hecho(campo=campo, presente=False, id_origen=pid)

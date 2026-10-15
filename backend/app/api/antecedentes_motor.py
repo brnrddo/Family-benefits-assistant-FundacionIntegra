@@ -1,24 +1,28 @@
 """Puente entre la pantalla "Agregar información" y el motor determinista (B2).
 
-El endpoint ``POST /familias/{id}/antecedentes`` recibe hasta 18 campos
-declarados por la familia (``models_antecedentes.CAMPO_A_MISSING_CODE``). De
-esos, el ÚNICO que el motor de reglas puede convertir en elegibilidad hoy es la
-fecha del último control de salud del niño o niña: la regla ``R01203`` del
-subsistema SSyO (versión vigente ``V024``) compara ``dias_desde_control`` con
-un umbral (``LTE``). El resto de los campos no tiene un ``campo_dato`` del motor
-al que mapear (ver ``PROPUESTA_ANTECEDENTES.md``):
+El endpoint ``POST /familias/{id}/antecedentes`` recibe los 18 campos de
+``PreevaluationRequest`` más seis preguntas Sí/No (``CAMPOS_MOTOR``). Se
+traducen al motor (ver ``PROPUESTA_ANTECEDENTES.md``):
 
-- ``household_pregnancy`` llega como booleano; el motor pide ``semanas_gestacion``
-  (número). De un sí/no no se puede derivar un número de semanas sin inventar,
-  así que NO se mapea (seguiría solo resolviendo su ``missing_code``).
-- RSH, ingreso, Chile Crece Contigo y SSyO vienen de registros oficiales: no son
-  declarables por diseño.
-- Discapacidad, terapia, vivienda, empleo, agua y alimentación no existen como
-  ``campo_dato`` del motor.
+- ``last_child_health_control_date`` -> ``dias_desde_control`` (R01203, V024) del
+  niño o niña más joven.
+- ``household_pregnancy`` -> hogar ``gestacion_declarada`` (habilita la candidata
+  GESTANTE; ``False`` deja el beneficio de embarazo en NO).
+- ``rsh_band`` -> hogar ``tramo_rsh``; ``has_incompatible_coverage`` -> hogar
+  ``cobertura_incompatible`` (ambos solo como respaldo si la base no trae el dato).
+- ``pregnancy_weeks_at_least_threshold`` -> ``semanas_gestacion`` de la gestante
+  (Sí = N, No = N−1; N del parámetro de la regla vigente, nunca escrito aquí) y
+  ``pregnancy_public_prenatal_control`` -> ``control_prenatal_red_publica``.
+- ``pregnancy_public_network_delivery`` -> ``parto_red_publica`` y
+  ``age_record_current`` -> ``antecedente_edad_vigente`` del niño o niña más joven.
+- ``residence_requirement_met`` -> ``residencia_total_anios`` y
+  ``residencia_ultimos20_anios`` de la persona de referencia (umbrales vigentes).
 
-Este módulo es puro (sin FastAPI): convierte la fecha a días, elige al
-integrante al que corresponde el dato (el niño o niña MÁS JOVEN de la familia)
-y arma el dict ``declarados`` que consume ``engine.service.evaluar_familia``.
+El resto (ingreso, Chile Crece Contigo, SSyO, discapacidad, terapia, vivienda,
+empleo, agua, alimentación) no tiene ``campo_dato`` declarable en el motor.
+
+Este módulo es puro (sin FastAPI): elige al integrante al que corresponde cada
+dato y arma el dict ``declarados`` que consume ``engine.service.evaluar_familia``.
 Un hecho declarado nunca viene acreditado -> el beneficio puede dar SI pero solo
 como PRELIMINAR; nunca CONFIRMADO (lo garantiza el propio motor).
 """
@@ -26,6 +30,9 @@ from __future__ import annotations
 
 import datetime as dt
 import sqlite3
+
+from app.engine.evaluator import gestante_declarada
+from app.engine.facts import Repo, umbral_regla
 
 # Campo de la pantalla cuya fecha se convierte a ``dias_desde_control`` del motor.
 CAMPO_FECHA_CONTROL = "last_child_health_control_date"
@@ -89,6 +96,25 @@ def nino_mas_joven(conn: sqlite3.Connection, id_familia: str, fecha_eval: str) -
     return mejor_id
 
 
+def umbral_semanas_gestacion(conn: sqlite3.Connection, fecha_eval: str) -> int | None:
+    """N de "¿Tiene N semanas o más?": parámetro de la regla vigente de
+    ``semanas_gestacion`` (``R00301 -> P006-02``). ``None`` si no se puede leer."""
+    n = umbral_regla(conn, fecha_eval, "semanas_gestacion")
+    return n if isinstance(n, int) and not isinstance(n, bool) else None
+
+
+def _umbral_si_no(conn: sqlite3.Connection, fecha_eval: str, campo: str, cumple: bool):
+    """Valor numérico que representa un Sí/No contra el umbral vigente de ``campo``.
+
+    ``True`` -> el umbral (cumple ``GTE``); ``False`` -> umbral − 1 (no cumple).
+    ``None`` si el umbral no se puede leer: el dato no se inyecta (sigue IND).
+    """
+    n = umbral_regla(conn, fecha_eval, campo)
+    if n is None:
+        return None
+    return n if cumple else n - 1
+
+
 def declarados_para_motor(
     conn: sqlite3.Connection,
     id_familia: str,
@@ -97,19 +123,67 @@ def declarados_para_motor(
 ) -> dict:
     """Dict ``declarados`` del motor a partir de los campos de la pantalla.
 
-    ``campos`` es el cuerpo declarado (sin ``data_classification``). Hoy solo se
-    traduce ``last_child_health_control_date`` -> ``dias_desde_control`` del niño
-    más joven. Devuelve ``{}`` si no hay nada que el motor pueda usar (p. ej. no
-    se declaró la fecha, es ilegible, o la familia no tiene menores): en ese caso
-    el llamador no debe reevaluar con el motor.
+    ``campos`` es el cuerpo declarado (sin ``data_classification``) con valores
+    conocidos ("No sé" ya omitido). Devuelve ``{"hogar": {...}, "integrante":
+    {pid: {...}}}`` con claves solo si hay datos, o ``{}`` si no hay nada que el
+    motor pueda usar.
     """
+    hogar: dict = {}
+    integrante: dict[str, dict] = {}
+
+    def poner(pid: str | None, campo: str, valor) -> None:
+        if pid is not None and valor is not None:
+            integrante.setdefault(pid, {})[campo] = valor
+
+    # Fecha del último control de salud -> días, del niño o niña más joven.
     fecha_control = campos.get(CAMPO_FECHA_CONTROL)
-    if not fecha_control:
-        return {}
-    dias = dias_desde_fecha(str(fecha_control), fecha_eval)
-    if dias is None:
-        return {}
-    pid = nino_mas_joven(conn, id_familia, fecha_eval)
-    if pid is None:
-        return {}
-    return {"integrante": {pid: {CAMPO_MOTOR_CONTROL: dias}}}
+    if fecha_control:
+        dias = dias_desde_fecha(str(fecha_control), fecha_eval)
+        if dias is not None:
+            poner(nino_mas_joven(conn, id_familia, fecha_eval), CAMPO_MOTOR_CONTROL, dias)
+
+    # Hogar.
+    if isinstance(campos.get("household_pregnancy"), bool):
+        hogar["gestacion_declarada"] = campos["household_pregnancy"]
+    if campos.get("rsh_band") is not None:
+        hogar["tramo_rsh"] = campos["rsh_band"]
+    if isinstance(campos.get("has_incompatible_coverage"), bool):
+        hogar["cobertura_incompatible"] = campos["has_incompatible_coverage"]
+
+    # Gestante: misma persona que elige el motor para el candidato GESTANTE.
+    semanas = campos.get("pregnancy_weeks_at_least_threshold")
+    prenatal = campos.get("pregnancy_public_prenatal_control")
+    if isinstance(semanas, bool) or isinstance(prenatal, bool):
+        gestante = gestante_declarada(Repo(conn, fecha_eval).integrantes(id_familia))
+        pid_g = gestante["id_integrante"] if gestante is not None else None
+        if isinstance(semanas, bool):
+            poner(pid_g, "semanas_gestacion",
+                  _umbral_si_no(conn, fecha_eval, "semanas_gestacion", semanas))
+        if isinstance(prenatal, bool):
+            poner(pid_g, "control_prenatal_red_publica", prenatal)
+
+    # Niño o niña más joven.
+    parto = campos.get("pregnancy_public_network_delivery")
+    edad_vigente = campos.get("age_record_current")
+    if isinstance(parto, bool) or isinstance(edad_vigente, bool):
+        pid_n = nino_mas_joven(conn, id_familia, fecha_eval)
+        if isinstance(parto, bool):
+            poner(pid_n, "parto_red_publica", parto)
+        if isinstance(edad_vigente, bool):
+            poner(pid_n, "antecedente_edad_vigente", edad_vigente)
+
+    # Residencia: persona de referencia, ambos umbrales vigentes.
+    residencia = campos.get("residence_requirement_met")
+    if isinstance(residencia, bool):
+        ref = next((i for i in Repo(conn, fecha_eval).integrantes(id_familia)
+                    if i["parentesco"] == "PERSONA_REFERENCIA"), None)
+        pid_r = ref["id_integrante"] if ref is not None else None
+        for campo in ("residencia_total_anios", "residencia_ultimos20_anios"):
+            poner(pid_r, campo, _umbral_si_no(conn, fecha_eval, campo, residencia))
+
+    declarados: dict = {}
+    if hogar:
+        declarados["hogar"] = hogar
+    if integrante:
+        declarados["integrante"] = integrante
+    return declarados
