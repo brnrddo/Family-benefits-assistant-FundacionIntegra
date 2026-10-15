@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:c1:salida-motor:v1",
+  "title": "C1 Salida determinista del motor v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data_classification", "id_familia", "id_beneficio", "id_version", "snapshot_id", "fecha_evaluacion", "eligibility_bundle_hash", "content_bundle_hash", "resultado", "nivel", "motivos", "datos_faltantes", "entidad_ganadora", "traza", "monto_estimado", "fuentes", "estado_acceso"],
+  "oneOf": [
+    {
+      "properties": {
+        "resultado": {"const": "SI"},
+        "nivel": {"enum": ["CONFIRMADO", "PRELIMINAR"]},
+        "estado_acceso": {"enum": ["ASIGNADO", "GESTION_EN_CURSO", "GESTION_RECHAZADA", "ELEGIBLE_SIN_ASIGNACION", "SIN_CUPO", "PENDIENTE_ANTECEDENTES"]}
+      }
+    },
+    {
+      "properties": {
+        "resultado": {"const": "INDETERMINADO"},
+        "nivel": {"const": null},
+        "estado_acceso": {"const": "INDETERMINADO"}
+      }
+    },
+    {
+      "properties": {
+        "resultado": {"enum": ["NO", "NO_APLICA"]},
+        "nivel": {"const": null},
+        "estado_acceso": {"const": "NO_APLICA"}
+      }
+    }
+  ],
+  "properties": {
+    "data_classification": {"const": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON"},
+    "id_familia": {"$ref": "#/$defs/id"},
+    "id_beneficio": {"$ref": "#/$defs/id"},
+    "id_version": {"$ref": "#/$defs/id"},
+    "snapshot_id": {"$ref": "#/$defs/id"},
+    "fecha_evaluacion": {"type": "string", "format": "date-time"},
+    "eligibility_bundle_hash": {"$ref": "#/$defs/hash"},
+    "content_bundle_hash": {"$ref": "#/$defs/hash"},
+    "resultado": {"enum": ["SI", "NO", "INDETERMINADO", "NO_APLICA"]},
+    "nivel": {"type": ["string", "null"], "enum": ["CONFIRMADO", "PRELIMINAR", null]},
+    "motivos": {"type": "array", "maxItems": 50, "items": {"type": "string", "pattern": "^[A-Z0-9_:.-]+$"}},
+    "datos_faltantes": {"type": "array", "maxItems": 50, "items": {"type": "string", "pattern": "^[a-z0-9_.-]+$"}},
+    "entidad_ganadora": {"type": "object", "maxProperties": 20, "additionalProperties": {"$ref": "#/$defs/id"}},
+    "traza": {"type": "array", "maxItems": 200, "items": {"$ref": "#/$defs/traza"}},
+    "monto_estimado": {"type": ["number", "null"], "minimum": 0},
+    "fuentes": {"type": "array", "uniqueItems": true, "maxItems": 20, "items": {"$ref": "#/$defs/id"}},
+    "estado_acceso": {"enum": ["ASIGNADO", "GESTION_EN_CURSO", "GESTION_RECHAZADA", "ELEGIBLE_SIN_ASIGNACION", "SIN_CUPO", "PENDIENTE_ANTECEDENTES", "INDETERMINADO", "NO_APLICA"]}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Z0-9][A-Z0-9_-]*$"},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "traza": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id_regla", "campo", "operador", "esperado", "observado", "resultado", "id_hecho"],
+      "properties": {
+        "id_regla": {"$ref": "#/$defs/id"},
+        "campo": {"type": "string", "minLength": 1, "maxLength": 120},
+        "operador": {"enum": ["EQ", "LT", "LTE", "GT", "GTE", "IN", "BETWEEN", "ACTIVE_ON_DATE", "RANGE_LOOKUP", "REF_EQ", "COUNT_REL_GTE", "NOT_EXISTS_WITHIN"]},
+        "esperado": {"type": ["boolean", "integer", "number", "string", "array", "null"], "items": {"type": ["boolean", "integer", "number", "string"]}},
+        "observado": {"type": ["boolean", "integer", "number", "string", "array", "null"], "items": {"type": ["boolean", "integer", "number", "string"]}},
+        "resultado": {"enum": ["CUMPLE", "NO_CUMPLE", "INDETERMINADO"]},
+        "id_hecho": {"oneOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]}
+      }
+    }
+  }
+}

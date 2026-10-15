@@ -52,7 +52,20 @@ Los 23 CSV de `data/publico/` son la fuente canónica. `data/publico/dataset_e3.
 
 ## Seguridad y privacidad
 
-- Copie `.env.example` a `.env` y complete valores solo localmente.
-- Nunca suba claves, contraseñas, `.env`, bases locales, dumps ni datos reales.
-- Nunca envíe a Bedrock nombres, RUT, folios RSH, teléfonos, diagnósticos o datos de salud.
-- Si se expone un secreto, avise inmediatamente para rotarlo.
+- ❌ **Nunca** subas claves, contraseñas o el archivo `.env`.
+- ❌ **Nunca** pegues una API key o secret dentro del código.
+- ✅ Todo secreto va en tu `.env` local (protegido por `.gitignore`).
+- ✅ Si vas a compartir una clave con el equipo, hazlo por mensaje privado, no por el repo.
+- 🚨 Si por error subes un secreto, **avisa de inmediato** para rotar/invalidar esa clave.
+
+---
+
+## 📚 Documentación del proyecto
+
+- [Índice navegable de Specs Kiro](./.kiro/specs/INDICE.md)
+- [Spec maestro del producto](./.kiro/specs/apoyo-inteligente-familias/requirements.md)
+- [Guía Kiro para el equipo](./docs/GUIA_KIRO_EQUIPO.md)
+- [Arquitectura AWS-first](./docs/ARQUITECTURA_AWS.md)
+- [Política de privacidad y anonimización](./docs/PRIVACIDAD_DEMO.md)
+- [Especificación funcional inmutable](./PROYECTO_3_ESPECIFICACION_v2.md)
+- [Documentación del dataset sintético](./data/README.md)

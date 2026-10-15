@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:assistant-request:v1",
+  "title": "AssistantRequestV1 — envelope interno",
+  "description": "Contrato interno construido por el servidor con pregunta filtrada, recuperación y prompt C4. El cliente público solo aporta la pregunta.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "question", "catalog_items", "prompt_template_id", "prompt_version", "output_schema_version"],
+  "properties": {
+    "operation": {"const": "CATALOG_ASSISTANT"},
+    "question": {"type": "string", "minLength": 1, "maxLength": 500},
+    "catalog_items": {"type": "array", "maxItems": 8, "items": {"type": "object", "additionalProperties": false, "required": ["benefit_id", "title", "description", "official_url", "source_ids"], "properties": {"benefit_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$"}, "title": {"type": "string", "minLength": 1, "maxLength": 100}, "description": {"type": "string", "minLength": 1, "maxLength": 500}, "official_url": {"type": "string", "format": "uri", "pattern": "^https://"}, "source_ids": {"type": "array", "maxItems": 20, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$"}}}}},
+    "prompt_template_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$", "maxLength": 80},
+    "prompt_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "output_schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
+  }
+}

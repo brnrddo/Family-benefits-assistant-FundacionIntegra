@@ -1,0 +1,27 @@
+# Glosario compartido
+
+- **C0–C4:** contratos documentales únicos entre roles; aún no son contratos runtime implementados.
+- **C0 / mapeo de ficha:** clasificación de campos sin valores personales. `permitido_llm` es metadato, no autorización runtime.
+- **C1 / salida del motor:** resultado determinista por familia sintética y beneficio, con nivel y traza.
+- **C2 / contexto familiar:** hechos tipados para motor/UI. No equivale al contexto permitido para IA.
+- **C3 / API:** OpenAPI versionada bajo `/api/v1`, con requests públicos mínimos y respuestas funcionales cerradas; autoridad para mocks y consumidores. Los envelopes Bedrock son internos y no son cuerpos públicos.
+- **C4 / contenido:** manifiesto versionado de pesos, equivalencias, preguntas, copy, prompts y accesibilidad.
+- **LlmContextV1:** única allowlist estructural de contexto que puede entrar a una operación Bedrock de texto.
+- **E-3:** dataset público y completamente sintético descrito en [`data/README.md`](../../../data/README.md).
+- **Resultado ternario:** `SI`, `NO` o `INDETERMINADO`; `NO_APLICA` representa ausencia de versión vigente.
+- **Nivel:** `CONFIRMADO` o `PRELIMINAR`, solo cuando el resultado es `SI`.
+- **U/B/V:** urgencia, beneficio para la familia y vulnerabilidad; ranking determinista y auditable.
+- **Snapshot:** conjunto inmutable de resultados y contenido identificado por hashes.
+- **`CONTROL/ACTIVE`:** único registro runtime autorizado para seleccionar snapshot y contenido activos; contiene seis campos indivisibles.
+- **Demo AWS viable:** perfil cloud reducido, sujeto a smoke tests de cuenta; si auth falla, la demo funcional queda en loopback.
+- **Escala Integra:** perfil objetivo para 85.000 familias y 1.200 jardines, sujeto a gobierno y aprobación de Integra.
+- **Fallback local:** FastAPI/Uvicorn, DuckDB, SQLite, PWA local y `TemplateProvider`; DuckDB no es datastore cloud.
+- **`DOCUMENTADO_NO_VERIFICADO`:** decisión local documentada sin prueba.
+- **`NO_VERIFICADO`:** componente AWS pendiente de prueba en cuenta y región efectivas.
+- **`VERIFICADO_EN_CUENTA`:** prueba fechada exitosa con evidencia sanitizada.
+- **`NO_DISPONIBLE`:** prueba fechada fallida por disponibilidad, permiso, cuota o compatibilidad.
+- **`VERIFICADO_LOCALMENTE`:** prueba local reproducible; no demuestra disponibilidad AWS.
+- **`DECLARADO_POR_EVENTO`:** procedencia documental del catálogo autenticado del 2026-10-14; no es estado de disponibilidad.
+- **`NO_MENCIONADO_REQUIERE_VERIFICACION`:** el catálogo copiado no enumeró el componente; no demuestra ausencia.
+- **Fixture sintético:** representación ficticia rotulada `SYNTHETIC_DEMO_NOT_A_REAL_PERSON` en JSON/YAML o con el banner Markdown exacto.
+- **Aviso referencial:** “Orientación referencial; no determina derechos. Confirmar en la institución.”

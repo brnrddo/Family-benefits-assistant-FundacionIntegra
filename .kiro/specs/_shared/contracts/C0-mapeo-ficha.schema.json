@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:c0:mapeo-ficha:v1",
+  "title": "C0 Mapeo de ficha v1",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["campo_origen", "nivel_privacidad", "campo_motor", "uso", "tipo", "permitido_llm", "justificacion", "responsable_revision"],
+    "properties": {
+      "campo_origen": {"type": "string", "minLength": 1, "maxLength": 120},
+      "nivel_privacidad": {"enum": ["PERMITIDO_MOTOR", "CONTEXTO_MINIMO_LLM", "LOCAL_TIA", "TOTALMENTE_EXCLUIDO"]},
+      "campo_motor": {"type": ["string", "null"], "maxLength": 120},
+      "uso": {"enum": ["MOTOR", "CONTEXTO_TIA", "FORMATO", "PREGUNTA", "EXCLUIDO"]},
+      "tipo": {"enum": ["BOOLEAN", "INTEGER", "NUMBER", "STRING", "DATE", "ENUM", "RANGE", "NONE"]},
+      "permitido_llm": {"type": "boolean", "description": "Metadato de revisión; no autoriza uso runtime."},
+      "justificacion": {"type": "string", "minLength": 1, "maxLength": 500},
+      "responsable_revision": {"type": "string", "minLength": 1, "maxLength": 80}
+    }
+  }
+}

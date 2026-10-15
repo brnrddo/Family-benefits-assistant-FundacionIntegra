@@ -1,0 +1,387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:c4:contenido-manifest:v1",
+  "title": "C4 Manifiesto de contenido v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "content_version", "content_bundle_hash", "files", "ranking", "kpi", "accessibility", "canonical_i18n"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "content_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "content_bundle_hash": {"$ref": "#/$defs/hash"},
+    "canonical_i18n": {"const": "content/i18n/es.json"},
+    "files": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/file"},
+      "allOf": [
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "WEIGHTS"}}}, "minContains": 1},
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "QUESTIONS"}}}, "minContains": 1},
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "BENEFITS"}}}, "minContains": 1},
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "PROMPT"}}}, "minContains": 1},
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "ACCESSIBILITY"}}}, "minContains": 1},
+        {"contains": {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "I18N"}}}, "minContains": 1}
+      ]
+    },
+    "ranking": {"$ref": "#/$defs/ranking"},
+    "kpi": {"$ref": "#/$defs/kpi"},
+    "accessibility": {"$ref": "#/$defs/accessibility"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Z0-9][A-Z0-9_-]*$"},
+    "score": {"type": "number", "minimum": 0, "maximum": 1},
+    "amount": {"type": "number", "minimum": 0},
+    "i18nKey": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[a-z0-9_.-]+$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "kind"],
+      "properties": {
+        "path": {"type": "string", "minLength": 9, "maxLength": 240, "pattern": "^content/[A-Za-z0-9_/-]+(?:\\.[A-Za-z0-9_-]+)?$"},
+        "sha256": {"$ref": "#/$defs/hash"},
+        "kind": {"enum": ["WEIGHTS", "QUESTIONS", "BENEFITS", "PROMPT", "ACCESSIBILITY", "I18N", "SYNTHETIC_ASSET_MANIFEST"]}
+      }
+    },
+    "axisWeights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["u", "b", "v"],
+      "properties": {
+        "u": {"$ref": "#/$defs/score"},
+        "b": {"$ref": "#/$defs/score"},
+        "v": {"$ref": "#/$defs/score"}
+      }
+    },
+    "fixedUrgencySignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score"],
+      "properties": {"score": {"$ref": "#/$defs/score"}}
+    },
+    "agedUrgencySignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benefit_id", "window_days", "calculation"],
+      "properties": {
+        "benefit_id": {"$ref": "#/$defs/id"},
+        "window_days": {"type": "integer", "minimum": 1, "maximum": 366},
+        "calculation": {"const": "LINEAR_ELAPSED_OVER_WINDOW"}
+      }
+    },
+    "urgency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregation", "use_window", "default_score", "recent_emergency", "newborn_expiry", "therapy_document_expiry", "limited_quota", "food_insecurity", "precarious_housing", "application_windows"],
+      "properties": {
+        "aggregation": {"const": "MAX"},
+        "use_window": {"type": "boolean", "default": false},
+        "default_score": {"$ref": "#/$defs/score"},
+        "recent_emergency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["benefit_id", "max_age_days", "score"],
+          "properties": {
+            "benefit_id": {"$ref": "#/$defs/id"},
+            "max_age_days": {"type": "integer", "minimum": 1, "maximum": 366},
+            "score": {"$ref": "#/$defs/score"}
+          }
+        },
+        "newborn_expiry": {"$ref": "#/$defs/agedUrgencySignal"},
+        "therapy_document_expiry": {"$ref": "#/$defs/agedUrgencySignal"},
+        "limited_quota": {"$ref": "#/$defs/fixedUrgencySignal"},
+        "food_insecurity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum_index", "score"],
+          "properties": {
+            "minimum_index": {"type": "number", "minimum": 0},
+            "score": {"$ref": "#/$defs/score"}
+          }
+        },
+        "precarious_housing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["housing_types", "score"],
+          "properties": {
+            "housing_types": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"enum": ["CAMP_OR_OCCUPATION", "ROOM_IN_OTHER_HOME"]}
+            },
+            "score": {"$ref": "#/$defs/score"}
+          }
+        },
+        "application_windows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["maximum_days_remaining", "score"],
+            "properties": {
+              "maximum_days_remaining": {"type": "integer", "minimum": 0, "maximum": 366},
+              "score": {"$ref": "#/$defs/score"}
+            }
+          }
+        }
+      }
+    },
+    "benefitImpact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annualization_multipliers", "max_income_share_for_full_score", "default_monthly_household_income", "garden_income_medians", "service_equivalences"],
+      "properties": {
+        "annualization_multipliers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["MENSUAL", "ANUAL", "UNICA"],
+          "properties": {
+            "MENSUAL": {"type": "number", "exclusiveMinimum": 0},
+            "ANUAL": {"type": "number", "exclusiveMinimum": 0},
+            "UNICA": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "max_income_share_for_full_score": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "default_monthly_household_income": {"type": "number", "exclusiveMinimum": 0},
+        "garden_income_medians": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["garden_id", "monthly_household_income"],
+            "properties": {
+              "garden_id": {"$ref": "#/$defs/id"},
+              "monthly_household_income": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "service_equivalences": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["benefit_id", "annual_equivalent_amount"],
+            "properties": {
+              "benefit_id": {"$ref": "#/$defs/id"},
+              "annual_equivalent_amount": {"$ref": "#/$defs/amount"}
+            }
+          }
+        }
+      }
+    },
+    "vulnerability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unknown_signals_excluded", "component_weights", "rsh_scores", "income_band_scores", "health_coverage_scores", "cse", "female_head_program_score", "possible_child_disability_score"],
+      "properties": {
+        "unknown_signals_excluded": {"const": true},
+        "component_weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rsh", "income", "health_coverage", "cse", "female_head_program", "possible_child_disability"],
+          "properties": {
+            "rsh": {"$ref": "#/$defs/score"},
+            "income": {"$ref": "#/$defs/score"},
+            "health_coverage": {"$ref": "#/$defs/score"},
+            "cse": {"$ref": "#/$defs/score"},
+            "female_head_program": {"$ref": "#/$defs/score"},
+            "possible_child_disability": {"$ref": "#/$defs/score"}
+          }
+        },
+        "rsh_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["band_40", "band_50", "band_60", "band_70", "band_80", "band_90", "band_100", "no_rsh"],
+          "properties": {
+            "band_40": {"$ref": "#/$defs/score"},
+            "band_50": {"$ref": "#/$defs/score"},
+            "band_60": {"$ref": "#/$defs/score"},
+            "band_70": {"$ref": "#/$defs/score"},
+            "band_80": {"$ref": "#/$defs/score"},
+            "band_90": {"$ref": "#/$defs/score"},
+            "band_100": {"$ref": "#/$defs/score"},
+            "no_rsh": {"$ref": "#/$defs/score"}
+          }
+        },
+        "income_band_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["UNDER_110K", "110K_250K", "250K_400K", "OVER_400K"],
+          "properties": {
+            "UNDER_110K": {"$ref": "#/$defs/score"},
+            "110K_250K": {"$ref": "#/$defs/score"},
+            "250K_400K": {"$ref": "#/$defs/score"},
+            "OVER_400K": {"$ref": "#/$defs/score"}
+          }
+        },
+        "health_coverage_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["FONASA_A", "NO_COVERAGE"],
+          "properties": {
+            "FONASA_A": {"$ref": "#/$defs/score"},
+            "NO_COVERAGE": {"$ref": "#/$defs/score"}
+          }
+        },
+        "cse": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["comparison", "threshold", "score"],
+          "properties": {
+            "comparison": {"enum": ["LTE", "GTE"]},
+            "threshold": {"type": "integer", "minimum": 0, "maximum": 34},
+            "score": {"$ref": "#/$defs/score"}
+          }
+        },
+        "female_head_program_score": {"$ref": "#/$defs/score"},
+        "possible_child_disability_score": {"$ref": "#/$defs/score"}
+      }
+    },
+    "opportunityScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_weights", "action_bonus", "resolvable_question_limit"],
+      "properties": {
+        "state_weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ELEGIBLE_SIN_ASIGNACION", "GESTION_RECHAZADA", "PENDIENTE_ANTECEDENTES", "INDETERMINADO", "GESTION_EN_CURSO", "SIN_CUPO", "ASIGNADO"],
+          "properties": {
+            "ELEGIBLE_SIN_ASIGNACION": {"type": "number", "minimum": 0},
+            "GESTION_RECHAZADA": {"type": "number", "minimum": 0},
+            "PENDIENTE_ANTECEDENTES": {"type": "number", "minimum": 0},
+            "INDETERMINADO": {"type": "number", "minimum": 0},
+            "GESTION_EN_CURSO": {"type": "number", "minimum": 0},
+            "SIN_CUPO": {"type": "number", "minimum": 0},
+            "ASIGNADO": {"type": "number", "minimum": 0}
+          }
+        },
+        "action_bonus": {"type": "number", "minimum": 0},
+        "resolvable_question_limit": {"type": "integer", "minimum": 1, "maximum": 20}
+      }
+    },
+    "familyPriority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["top_opportunity_count", "vulnerability_multiplier", "not_informed_bonus", "new_family_bonus", "new_family_max_age_days"],
+      "properties": {
+        "top_opportunity_count": {"type": "integer", "minimum": 1, "maximum": 20},
+        "vulnerability_multiplier": {"type": "number", "minimum": 0},
+        "not_informed_bonus": {"type": "number", "minimum": 0},
+        "new_family_bonus": {"type": "number", "minimum": 0},
+        "new_family_max_age_days": {"type": "integer", "minimum": 1, "maximum": 366}
+      }
+    },
+    "ranking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axis_weights", "urgency", "benefit_impact", "vulnerability", "opportunity_score", "family_priority"],
+      "properties": {
+        "axis_weights": {"$ref": "#/$defs/axisWeights"},
+        "urgency": {"$ref": "#/$defs/urgency"},
+        "benefit_impact": {"$ref": "#/$defs/benefitImpact"},
+        "vulnerability": {"$ref": "#/$defs/vulnerability"},
+        "opportunity_score": {"$ref": "#/$defs/opportunityScore"},
+        "family_priority": {"$ref": "#/$defs/familyPriority"}
+      }
+    },
+    "kpi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_cell_size", "max_query_days"],
+      "properties": {
+        "min_cell_size": {"type": "integer", "minimum": 1},
+        "max_query_days": {"type": "integer", "minimum": 1, "maximum": 366}
+      }
+    },
+    "evidenceState": {"enum": ["NO_VERIFICADO", "NO_DISPONIBLE", "VERIFICADO_EN_CUENTA"]},
+    "smokeEvidenceId": {"type": ["string", "null"], "pattern": "^[A-Z0-9][A-Z0-9_.-]{0,119}$"},
+    "polly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "evidence_state", "smoke_test_evidence_id", "allowed_voices", "max_output_characters", "fallback_label_key"],
+      "properties": {
+        "enabled": {"type": "boolean", "default": false},
+        "evidence_state": {"$ref": "#/$defs/evidenceState"},
+        "smoke_test_evidence_id": {"$ref": "#/$defs/smokeEvidenceId"},
+        "allowed_voices": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["voice_id", "language_code"],
+            "properties": {
+              "voice_id": {"type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9_-]+$"},
+              "language_code": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$", "maxLength": 5}
+            }
+          }
+        },
+        "max_output_characters": {"type": "integer", "minimum": 1, "maximum": 3000},
+        "fallback_label_key": {"$ref": "#/$defs/i18nKey"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"enabled": {"const": true}}, "required": ["enabled"]},
+          "then": {
+            "properties": {
+              "evidence_state": {"const": "VERIFICADO_EN_CUENTA"},
+              "smoke_test_evidence_id": {"type": "string", "minLength": 1},
+              "allowed_voices": {"minItems": 1}
+            }
+          },
+          "else": {"properties": {"allowed_voices": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "translate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "evidence_state", "smoke_test_evidence_id", "source_language", "allowed_target_languages", "max_output_characters", "fallback_label_key"],
+      "properties": {
+        "enabled": {"type": "boolean", "default": false},
+        "evidence_state": {"$ref": "#/$defs/evidenceState"},
+        "smoke_test_evidence_id": {"$ref": "#/$defs/smokeEvidenceId"},
+        "source_language": {"const": "es"},
+        "allowed_target_languages": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$", "maxLength": 5, "not": {"const": "es"}}
+        },
+        "max_output_characters": {"type": "integer", "minimum": 1, "maximum": 3000},
+        "fallback_label_key": {"$ref": "#/$defs/i18nKey"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"enabled": {"const": true}}, "required": ["enabled"]},
+          "then": {
+            "properties": {
+              "evidence_state": {"const": "VERIFICADO_EN_CUENTA"},
+              "smoke_test_evidence_id": {"type": "string", "minLength": 1},
+              "allowed_target_languages": {"minItems": 1}
+            }
+          },
+          "else": {"properties": {"allowed_target_languages": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "accessibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_spanish_label_key", "polly", "translate"],
+      "properties": {
+        "canonical_spanish_label_key": {"$ref": "#/$defs/i18nKey"},
+        "polly": {"$ref": "#/$defs/polly"},
+        "translate": {"$ref": "#/$defs/translate"}
+      }
+    }
+  }
+}
