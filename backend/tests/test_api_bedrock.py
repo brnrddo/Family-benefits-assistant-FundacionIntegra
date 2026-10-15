@@ -373,18 +373,67 @@ def test_salida_estructurada_con_campo_extra_degrada(monkeypatch, caplog):
 
 # --- (j, k) datos que no habilitan el camino Bedrock ------------------------
 
-def test_benefit_id_que_no_es_oportunidad_degrada(monkeypatch, caplog):
+def test_benefit_id_que_no_es_oportunidad_responde_422(monkeypatch):
+    """DEC-060 corta antes del camino Bedrock: 422 sin eco y sin tocar el modelo."""
     cliente = _inyectar(monkeypatch, _cliente_ok())
-    with caplog.at_level(logging.DEBUG):
-        r = _post(["BEN-005"], family_id=FAM_SIMPLE)
+    r = _post(["BEN-005"], family_id=FAM_SIMPLE)
+
+    assert r.status_code == 422
+    assert "BEN-005" not in r.text
+    assert cliente.llamadas == []
+
+
+def test_redaccion_sin_resultado_del_motor_falla_cerrada(monkeypatch):
+    """Defensa en profundidad de la capa de redacción, ya inalcanzable por HTTP.
+
+    El router valida contra las oportunidades de la familia (DEC-060), así que
+    esta invariante se ejercita llamando a la capa directamente.
+    """
+    monkeypatch.setenv("E3_LLM_PROVIDER", "bedrock")
+    cliente = _cliente_ok()
+    with pytest.raises(redaccion.RedaccionError) as exc:
+        redaccion.redactar_guion(
+            ["BEN-005"], mock_data.FAMILIAS[FAM_SIMPLE],
+            request_id="REQ-sintetico-0002",
+            provider=BedrockProvider(cliente=cliente),
+        )
+
+    assert exc.value.motivo == redaccion.MOTIVO_SIN_RESULTADO_MOTOR
+    assert cliente.llamadas == []
+
+
+def test_beneficio_asignado_no_viaja_al_modelo(monkeypatch):
+    """DEC-060 en el camino Bedrock: lo que la familia ya tiene no se redacta.
+
+    El motor excluye los ``ASIGNADO`` antes de armar el envelope, así que el
+    modelo nunca ve ese ``benefit_id`` ni puede contradecir el estado de acceso
+    determinista.
+    """
+    familias = copy.deepcopy(dict(mock_data.FAMILIAS))
+    for opp in familias[FAM]["opportunities"]:
+        if opp["benefit_id"] == "BEN-012":
+            opp["access_state"] = "ASIGNADO"
+    monkeypatch.setattr(mock_data, "FAMILIAS", familias)
+    cliente = _inyectar(monkeypatch, _cliente_ok())
+    r = _post(IDS)
 
     assert r.status_code == 200
-    _degradado(r.json())
-    assert cliente.llamadas == []
-    assert f"motivo={redaccion.MOTIVO_SIN_RESULTADO_MOTOR}" in caplog.text
+    body = r.json()
+    validar("ScriptGenerationEnvelope", body)
+    assert body["provider"] == "BEDROCK"
+    assert body["warnings"] == [runtime.WARNING_ASIGNADO_OMITIDO]
+    assert body["content"]["benefit_ids"] == ["BEN-001"]
+    assert "BEN-012" not in _prompt_enviado(cliente)
+    assert "BEN-012" not in r.text
 
 
-def test_beneficio_sin_cita_c4_degrada(monkeypatch, caplog):
+def test_beneficio_sin_cita_c4_degrada(monkeypatch, caplog, catalogo):
+    """BEN-018/019/020 no entran a Bedrock (DEC-062): el request cae a plantilla."""
+    for bid in ("BEN-018", "BEN-019", "BEN-020"):
+        with pytest.raises(redaccion.RedaccionError) as exc:
+            redaccion.catalog_items(catalogo.entradas, [bid])
+        assert exc.value.motivo == redaccion.MOTIVO_SIN_CITA_C4
+
     cliente = _inyectar(monkeypatch, _cliente_ok())
     with caplog.at_level(logging.DEBUG):
         r = _post(["BEN-018"])

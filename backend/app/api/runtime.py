@@ -13,6 +13,11 @@
 - Un ``benefit_id`` sin respaldo en el catálogo responde 422 y nunca se
   sustituye por otro beneficio (DEC-056). Si el catálogo no valida, la
   respuesta falla cerrada sin 500 (DEC-058).
+- Guion y mensaje validan antes contra las oportunidades de la familia
+  (DEC-060): un ID ajeno responde 422 sin eco; ASIGNADO se omite con
+  ``BENEFICIO_ASIGNADO_OMITIDO`` (422 si no queda ninguno).
+- ``meta`` de guion y mensaje declara la versión y el hash del bundle
+  ``content/`` del catálogo (DEC-062); sin catálogo, los placeholders.
 - La integración del motor (FEAT-001 priority + FEAT-002 filtro) vive detrás de
   la bandera ``E3_MOCK``. Por defecto (``E3_MOCK=1``) todo es mock. Con
   ``E3_MOCK=0`` se intenta tocar la DB; si falta, se degrada a mocks con un
@@ -34,6 +39,7 @@ from app.genai import (
     redaccion,
 )
 from app.genai.template_provider import (
+    ESTADO_ASIGNADO,
     GUION_SIN_CATALOGO,
     WARNING_SIN_CATALOGO,
 )
@@ -46,11 +52,14 @@ _provider: TemplateProvider | None = None
 _provider_lock = threading.Lock()
 
 WARNING_SECCION_OMITIDA = "SECCION_SIN_FUENTE_OMITIDA"
+WARNING_ASIGNADO_OMITIDO = "BENEFICIO_ASIGNADO_OMITIDO"
 # El camino Bedrock falló de forma recuperable y respondió la plantilla (API-008).
 WARNING_GENAI_DEGRADADO = "GENAI_DEGRADADO_A_PLANTILLA"
 
 _RAZON_DESCONOCIDO = "Beneficio sin respaldo en el catálogo C4."
 _RAZON_SIN_FUENTE = "Beneficio sin fuente oficial para la tarjeta."
+_RAZON_FUERA_DE_FAMILIA = "Beneficio fuera de las oportunidades de la familia."
+_RAZON_ASIGNADO = "Beneficio que la familia ya tiene."
 
 
 def _log_sin_catalogo(motivo: str) -> None:
@@ -80,7 +89,10 @@ def get_provider() -> TemplateProvider | None:
             except content_catalog.ContenidoInvalido as exc:
                 _log_sin_catalogo(exc.codigo)
                 return None
-            _provider = TemplateProvider(cat.entradas, cat.plantillas)
+            _provider = TemplateProvider(
+                cat.entradas, cat.plantillas,
+                procedencia=(cat.content_version, cat.content_bundle_hash),
+            )
     return _provider
 
 
@@ -99,10 +111,33 @@ def _exigir_conocidos(provider: TemplateProvider, benefit_ids: list[str]) -> Non
         raise ApiError(status_code=422, details=detalles, retryable=False)
 
 
+def _validar_para_familia(
+    benefit_ids: list[str], estados: dict[str, str]
+) -> tuple[list[str], list[str]]:
+    """IDs a redactar y warnings, según las oportunidades de la familia (DEC-060).
+
+    - Un ID que no es oportunidad de la familia → 422 por índice, sin eco.
+    - ASIGNADO (la familia ya lo tiene) se omite con ``WARNING_ASIGNADO_OMITIDO``.
+    - Si todos son ASIGNADO → 422 por índice.
+
+    Va antes del catálogo: vale también si ``content/`` no carga.
+    """
+    detalles = _detalles(benefit_ids, _RAZON_FUERA_DE_FAMILIA, lambda b: b not in estados)
+    if detalles:
+        raise ApiError(status_code=422, details=detalles, retryable=False)
+    ids = [b for b in benefit_ids if estados[b] != ESTADO_ASIGNADO]
+    if not ids:
+        detalles = _detalles(benefit_ids, _RAZON_ASIGNADO, lambda b: True)
+        raise ApiError(status_code=422, details=detalles, retryable=False)
+    return ids, [WARNING_ASIGNADO_OMITIDO] if len(ids) < len(benefit_ids) else []
+
+
 def _envelope(request_id: str, content: dict, warnings: list[str],
+              procedencia: tuple[str, str] | None,
               provider: str = TemplateProvider.provider) -> dict:
+    """``procedencia``: bundle ``content/`` del texto (DEC-062) o ``None``."""
     return {
-        "meta": construir_meta(request_id),
+        "meta": construir_meta(request_id, contenido=procedencia),
         "provider": provider,
         "warnings": warnings,
         "content": content,
@@ -127,45 +162,54 @@ def _vista_familia_llm(family_id: str | None) -> dict | None:
     return mock_data.FAMILIAS.get(family_id)
 
 
-def _guion_sin_catalogo(benefit_ids: list[str], request_id: str) -> dict:
-    """Guion fijo sin nombre de ningún beneficio (DEC-058)."""
+def _guion_sin_catalogo(benefit_ids: list[str], request_id: str,
+                        warnings: list[str]) -> dict:
+    """Guion fijo sin nombre de ningún beneficio (DEC-058); ``meta`` con placeholders."""
     content = {
         "benefit_ids": list(dict.fromkeys(benefit_ids))[:3],
         "script": f"{GUION_SIN_CATALOGO} {DISCLAIMER}",
     }
-    return _envelope(request_id, content, [WARNING_SIN_CATALOGO])
+    return _envelope(request_id, content, [*warnings, WARNING_SIN_CATALOGO], None)
 
 
-def generar_guion(benefit_ids: list[str], request_id: str,
+def generar_guion(benefit_ids: list[str], request_id: str, estados: dict[str, str],
                   family_id: str | None = None) -> dict:
     """Arma el ``ScriptGenerationEnvelope`` C3 (PLANTILLA o BEDROCK).
 
-    Con ``E3_LLM_PROVIDER=bedrock`` se intenta redactar con el modelo; ante
-    cualquier fallo del camino Bedrock se degrada a la plantilla determinista
-    con HTTP 200 y un warning de código fijo (API-008). Sin esa bandera el
-    comportamiento es exactamente el de antes.
+    ``estados`` son las oportunidades de la familia (``{benefit_id:
+    access_state}``): se valida contra ellas antes que contra el catálogo.
+
+    Con ``E3_LLM_PROVIDER=bedrock`` se intenta redactar con el modelo, siempre
+    sobre los IDs que sobrevivieron a ``_validar_para_familia`` (DEC-060);
+    ante cualquier fallo del camino Bedrock se degrada a la plantilla
+    determinista con HTTP 200 y un warning de código fijo (API-008). Sin esa
+    bandera el comportamiento es exactamente el de antes.
     """
+    ids, warnings = _validar_para_familia(benefit_ids, estados)
     provider = get_provider()
     if provider is None:
-        return _guion_sin_catalogo(benefit_ids, request_id)
+        return _guion_sin_catalogo(ids, request_id, warnings)
     _exigir_conocidos(provider, benefit_ids)
-    warnings: list[str] = []
     if redaccion.bedrock_seleccionado():
+        # La ficha se resuelve FUERA del try: así un fallo inesperado del
+        # snapshot no se confunde con un fallo del camino Bedrock.
+        vista = _vista_familia_llm(family_id)
         try:
-            content = redaccion.redactar_guion(
-                benefit_ids, _vista_familia_llm(family_id), request_id=request_id
+            content = redaccion.redactar_guion(ids, vista, request_id=request_id)
+            return _envelope(
+                request_id, content, warnings, provider.procedencia,
+                provider=redaccion.PROVIDER_BEDROCK,
             )
-            return _envelope(request_id, content, [], provider=redaccion.PROVIDER_BEDROCK)
         except redaccion.RedaccionError as exc:
             _log_genai_degradado(exc.motivo)
-            warnings = [WARNING_GENAI_DEGRADADO]
+            warnings = [*warnings, WARNING_GENAI_DEGRADADO]
     try:
-        content = provider.generar_guion(benefit_ids)
+        content = provider.generar_guion(ids, estados={b: estados[b] for b in ids})
     except TemplateError:
         # Invariante roto tras validar: se responde sin texto de beneficios.
         _log_sin_catalogo("INVARIANTE_PLANTILLA")
-        return _guion_sin_catalogo(benefit_ids, request_id)
-    return _envelope(request_id, content, warnings)
+        return _guion_sin_catalogo(ids, request_id, warnings)
+    return _envelope(request_id, content, warnings, provider.procedencia)
 
 
 def _warnings_mensaje(content: dict) -> list[str]:
@@ -174,45 +218,48 @@ def _warnings_mensaje(content: dict) -> list[str]:
     return [WARNING_SECCION_OMITIDA] if omitidas else []
 
 
-def generar_mensaje(benefit_ids: list[str], request_id: str,
+def generar_mensaje(benefit_ids: list[str], request_id: str, estados: dict[str, str],
                     family_id: str | None = None) -> dict:
     """Arma el ``MessageGenerationEnvelope`` C3 (PLANTILLA o BEDROCK).
 
-    Sin catálogo no hay tarjeta válida (C3 exige citas): 503. Los beneficios
-    sin fuente oficial (PREG-045) no llevan sección y se avisa con un warning;
-    si ninguno la tiene, 422 (DEC-057).
+    Valida contra las oportunidades de la familia (``estados``) igual que el
+    guion. Sin catálogo no hay tarjeta válida (C3 exige citas): 503. Los
+    beneficios sin fuente oficial (PREG-045) no llevan sección y se avisa con
+    un warning; si ninguno de los que quedan la tiene, 422 (DEC-057).
 
     Con ``E3_LLM_PROVIDER=bedrock`` el modelo escribe el preview y el
-    ``reason``/``action`` de cada sección; todo lo demás (orden, títulos,
-    lugares y citas) lo pone el servidor. Cualquier fallo degrada a la
-    plantilla con HTTP 200 y un warning de código fijo (API-008).
+    ``reason``/``action`` de cada sección de los IDs ya filtrados (DEC-060);
+    todo lo demás (orden, títulos, lugares y citas) lo pone el servidor.
+    Cualquier fallo degrada a la plantilla con HTTP 200 y un warning de código
+    fijo (API-008).
     """
+    ids, warnings = _validar_para_familia(benefit_ids, estados)
     provider = get_provider()
     if provider is None:
         raise ApiError(status_code=503)
     _exigir_conocidos(provider, benefit_ids)
-    if not any(provider.tiene_cita(bid) for bid in benefit_ids):
-        detalles = _detalles(benefit_ids, _RAZON_SIN_FUENTE, lambda b: True)
+    if not any(provider.tiene_cita(bid) for bid in ids):
+        detalles = _detalles(benefit_ids, _RAZON_SIN_FUENTE, lambda b: b in ids)
         raise ApiError(status_code=422, details=detalles, retryable=False)
-    warnings: list[str] = []
     if redaccion.bedrock_seleccionado():
+        vista = _vista_familia_llm(family_id)
         try:
-            content = redaccion.redactar_mensaje(
-                benefit_ids, _vista_familia_llm(family_id), request_id=request_id
-            )
+            content = redaccion.redactar_mensaje(ids, vista, request_id=request_id)
             return _envelope(
-                request_id, content, _warnings_mensaje(content),
-                provider=redaccion.PROVIDER_BEDROCK,
+                request_id, content, warnings + _warnings_mensaje(content),
+                provider.procedencia, provider=redaccion.PROVIDER_BEDROCK,
             )
         except redaccion.RedaccionError as exc:
             _log_genai_degradado(exc.motivo)
-            warnings = [WARNING_GENAI_DEGRADADO]
+            warnings = [*warnings, WARNING_GENAI_DEGRADADO]
     try:
-        content = provider.generar_mensaje(benefit_ids)
+        content = provider.generar_mensaje(ids, estados={b: estados[b] for b in ids})
     except TemplateError:
         _log_sin_catalogo("INVARIANTE_PLANTILLA")
         raise ApiError(status_code=503) from None
-    return _envelope(request_id, content, warnings + _warnings_mensaje(content))
+    return _envelope(
+        request_id, content, warnings + _warnings_mensaje(content), provider.procedencia
+    )
 
 
 def responder_asistente(question: str, request_id: str) -> dict:

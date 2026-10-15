@@ -8,9 +8,11 @@ y arma el catálogo del ``TemplateProvider``:
 - I18N (``content/i18n/es.json``): nombre visible ``benefit.<id>.name`` (debe
   ser igual a ``simple_title``), aviso ``notice.referential`` (debe ser igual
   al aviso de C3) y la etiqueta ``card_v1.where_label``.
-- PROMPT (``content/prompts/*.md``): versión de cada prompt y las frases marco
+- PROMPT (``content/prompts/*.md``): versión de cada prompt, las frases marco
   de la sección ``## Plantilla de respaldo`` (escritas por el Rol 4 para el
-  TemplateProvider).
+  TemplateProvider; el guion y el WhatsApp deben abrir con un saludo) y, para
+  guion y mensaje, la frase por estado de seguimiento de la instrucción 5 de
+  ``## Instrucciones`` (DEC-060).
 
 Validación cerrada, en orden y con códigos fijos (``ContenidoInvalido.codigo``):
 schema C4 cerrado, rutas dentro de ``content/``, sha256 de cada archivo sobre
@@ -25,15 +27,17 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 from urllib.parse import urlparse
 
 import yaml
 from jsonschema import Draft202012Validator
 
-from app.genai.template_provider import (DISCLAIMER, PH_INSTITUCION,
-                                         PH_TITULOS, CatalogEntry,
-                                         PlantillasTexto, contiene_promesa,
-                                         es_texto_plano)
+from app.genai.template_provider import (DISCLAIMER, ESTADOS_SEGUIMIENTO,
+                                         PH_INSTITUCION, PH_TITULOS,
+                                         CatalogEntry, PlantillasTexto,
+                                         contiene_promesa, es_texto_plano,
+                                         saludo_de)
 
 REPO_DIR = Path(__file__).resolve().parents[3]
 DEFAULT_MANIFEST = REPO_DIR / "content" / "manifest.yaml"
@@ -50,7 +54,12 @@ _RE_ID = re.compile(r"^[A-Z0-9][A-Z0-9_-]*$")
 _RE_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 _RE_PLACEHOLDER = re.compile(r"\{\{[^{}]*\}\}")
 _RE_RESPALDO = re.compile(r"^## Plantilla de respaldo[ \t]*$", re.MULTILINE)
+_RE_INSTRUCCIONES = re.compile(r"^## Instrucciones[ \t]*$", re.MULTILINE)
 _RE_SIGUIENTE_SECCION = re.compile(r"^## ", re.MULTILINE)
+# Instrucción 5 de los prompts: "- `access_state` ESTADO( o ESTADO)*: frase".
+_RE_FRASE_ESTADO = re.compile(
+    r"^\s*- `access_state` ([A-Z_]+(?: o [A-Z_]+)*): (.+?)\s*$", re.MULTILINE
+)
 
 _CLAVES_BENEFITS = frozenset({"content_version", "estado", "beneficios"})
 _CLAVES_BENEFICIO = frozenset({
@@ -404,6 +413,58 @@ def _plantilla(valor: str, placeholder: str | None = None, con_aviso: bool = Fal
     return texto
 
 
+def _frase_estado(texto: str) -> str:
+    """Frase de la instrucción 5 lista para el texto: '; ' -> '. ' y mayúscula.
+
+    "el trámite ya está en curso; vale la pena esperar la respuesta." pasa a
+    "El trámite ya está en curso. Vale la pena esperar la respuesta." (igual que
+    REF-01 de ``content/demo/salidas_referencia_prompts.json``).
+    """
+    partes = [p.strip().rstrip(".").strip() for p in texto.split(";")]
+    if not all(partes):
+        raise ContenidoInvalido("C4_PROMPT_INVALIDO")
+    frase = ". ".join(p[0].upper() + p[1:] for p in partes) + "."
+    if (not es_texto_plano(frase) or contiene_promesa(frase)
+            or "`" in frase or "{{" in frase):
+        raise ContenidoInvalido("C4_PROMPT_INVALIDO")
+    return frase
+
+
+def _frases_estado(cuerpo: str) -> MappingProxyType:
+    """Frase por estado de seguimiento, desde ``## Instrucciones`` del prompt (DEC-060).
+
+    Exige GESTION_EN_CURSO, GESTION_RECHAZADA y SIN_CUPO exactamente una vez;
+    los demás estados de la instrucción 5 no se usan como frase.
+    """
+    inicio = _RE_INSTRUCCIONES.search(cuerpo)
+    if inicio is None:
+        raise ContenidoInvalido("C4_PROMPT_INVALIDO")
+    seccion = cuerpo[inicio.end():]
+    siguiente = _RE_SIGUIENTE_SECCION.search(seccion)
+    if siguiente is not None:
+        seccion = seccion[:siguiente.start()]
+
+    frases: dict[str, str] = {}
+    vistos: list[str] = []
+    for m in _RE_FRASE_ESTADO.finditer(seccion):
+        estados = m.group(1).split(" o ")
+        vistos.extend(estados)
+        for estado in estados:
+            if estado in ESTADOS_SEGUIMIENTO:
+                frases[estado] = _frase_estado(m.group(2))
+    if any(vistos.count(estado) != 1 for estado in ESTADOS_SEGUIMIENTO):
+        raise ContenidoInvalido("C4_PROMPT_INVALIDO")
+    return MappingProxyType({estado: frases[estado] for estado in ESTADOS_SEGUIMIENTO})
+
+
+def _con_saludo(marco: str) -> str:
+    """El marco debe abrir con un saludo de texto plano y sin promesas."""
+    saludo = saludo_de(marco)
+    if not saludo or not es_texto_plano(saludo) or contiene_promesa(saludo):
+        raise ContenidoInvalido("C4_PROMPT_INVALIDO")
+    return marco
+
+
 def _leer_plantillas(prompts: dict[str, PromptC4], etiqueta_donde_ir: str) -> PlantillasTexto:
     guion = _bloques_respaldo(prompts[PROMPT_GUION].cuerpo)
     mensaje = _bloques_respaldo(prompts[PROMPT_MENSAJE].cuerpo)
@@ -411,8 +472,10 @@ def _leer_plantillas(prompts: dict[str, PromptC4], etiqueta_donde_ir: str) -> Pl
     individual = ("intent", "REQUIRES_DETERMINISTIC_EVALUATION")
     catalogo = ("intent", "CATALOG_INFO")
     return PlantillasTexto(
-        guion=_plantilla(_valor(guion, "script"), PH_TITULOS, con_aviso=True),
-        whatsapp=_plantilla(_valor(mensaje, "whatsapp_preview"), PH_TITULOS, con_aviso=True),
+        guion=_con_saludo(_plantilla(_valor(guion, "script"), PH_TITULOS, con_aviso=True)),
+        whatsapp=_con_saludo(
+            _plantilla(_valor(mensaje, "whatsapp_preview"), PH_TITULOS, con_aviso=True)
+        ),
         tarjeta_titulo=_plantilla(_valor(mensaje, "printable_card.title")),
         tarjeta_introduccion=_plantilla(_valor(mensaje, "printable_card.introduction")),
         seccion_razon=_plantilla(_valor(mensaje, "printable_card.sections[].reason")),
@@ -426,4 +489,6 @@ def _leer_plantillas(prompts: dict[str, PromptC4], etiqueta_donde_ir: str) -> Pl
             _valor(asistente, "answer", catalogo), PH_TITULOS, con_aviso=True
         ),
         etiqueta_donde_ir=etiqueta_donde_ir,
+        frases_estado_guion=_frases_estado(prompts[PROMPT_GUION].cuerpo),
+        frases_estado_mensaje=_frases_estado(prompts[PROMPT_MENSAJE].cuerpo),
     )

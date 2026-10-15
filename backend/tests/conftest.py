@@ -44,6 +44,12 @@ def db_motor_path(db_path: Path, tmp_path_factory) -> Path:
 
 
 @pytest.fixture(autouse=True)
+def _e3_mock_por_defecto(monkeypatch):
+    """Cada test parte del default ``E3_MOCK=1``; los tests de modo real hacen setenv."""
+    monkeypatch.delenv("E3_MOCK", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _runtime_sin_db_local(monkeypatch, tmp_path_factory):
     """Aísla los tests de un ``backend/e3.db`` local del desarrollador.
 

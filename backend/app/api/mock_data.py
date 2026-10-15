@@ -91,7 +91,7 @@ def _opp(
 
 _OPORTUNIDADES_FAM1: list[dict] = [
     _opp(
-        "BEN-001", "Subsidio Único Familiar", "SI", "CONFIRMADO",
+        "BEN-001", "Subsidio Familiar", "SI", "CONFIRMADO",
         "ELEGIBLE_SIN_ASIGNACION", 0.1, 0.42, 0.78, 0.56, 1,
         250000.0, False, "FAMILY_ACTION",
         "Califica y nunca lo pidió; vale la pena postular.",
@@ -108,7 +108,7 @@ _OPORTUNIDADES_FAM1: list[dict] = [
         "Centro de salud familiar (CESFAM).",
     ),
     _opp(
-        "BEN-018", "Programa con cupo limitado", "INDETERMINADO", None,
+        "BEN-018", "Canasta familiar (programa de demostración)", "INDETERMINADO", None,
         "INDETERMINADO", 0.7, 0.0, 0.78, 0.27, 3,
         None, False, "ASK_FIRST",
         "Falta un dato para saber si corresponde.",
@@ -120,7 +120,7 @@ _OPORTUNIDADES_FAM1: list[dict] = [
 
 _OPORTUNIDADES_FAM2: list[dict] = [
     _opp(
-        "BEN-001", "Subsidio Único Familiar", "SI", "PRELIMINAR",
+        "BEN-001", "Subsidio Familiar", "SI", "PRELIMINAR",
         "GESTION_RECHAZADA", 0.1, 0.42, 0.40, 0.30, 1,
         250000.0, False, "FOLLOW_UP",
         "Cumple pero la gestión fue rechazada; conviene revisar.",
@@ -320,7 +320,7 @@ def flyer_draft(synthetic_asset_id: str) -> dict:
 def preevaluacion_resultado(family_id: str) -> dict:
     """PreevaluationResult SIEMPRE PRELIMINAR, sin mapa EAV ni gate de ingreso."""
     opp = _opp(
-        "BEN-001", "Subsidio Único Familiar", "SI", "PRELIMINAR",
+        "BEN-001", "Subsidio Familiar", "SI", "PRELIMINAR",
         "PENDIENTE_ANTECEDENTES", 0.1, 0.42, 0.5, 0.37, 1,
         250000.0, False, "ASK_FIRST",
         "Según lo ingresado, podría corresponder; falta acreditar.",
