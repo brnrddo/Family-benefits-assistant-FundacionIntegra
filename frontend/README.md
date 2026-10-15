@@ -31,7 +31,7 @@ npm run test:e2e     # smoke Playwright a 360 px (construye `build:e2e` y lo sir
 
 Para ver la app como celular, use el modo dispositivo del navegador a 360 px. Sin `content/i18n/es.json` (rama `contenido`) la consola de Vite avisa `copy MOCK_LOCAL` y `C4 MISSING`: es lo esperado en la rama `front`.
 
-Vistas: Mi jardín (`/`, familias en orden neutro con sus acciones prioritarias, DEC-037), Ficha (`/familias/:id`, con nombre de trato local DEC-038 y beneficios en dos grupos), Guion, Mensaje e impresión, Marcar conversado (`/familias/:id/conversacion`, 3 toques), Agregar información (`/familias/:id/agregar-informacion`, operación propuesta fuera de C3, solo con mocks salvo `VITE_PROPOSAL_ADD_INFO=true`; ver `docs/PROPUESTA_C3_agregar_informacion.md`, DEC-039), Familia nueva (`/familia-nueva`, no existe en `escala`), Avance (`/avance`) y Preguntar (`/preguntar`). Los mocks aceptan escenarios con `?mock=` al cargar (p. ej. `conv503`, `kpiSuppressed`, `assistantDeterministic`; lista en `src/mocks/scenarios.ts`).
+Vistas: Mi jardín (`/`, familias en orden neutro con sus acciones prioritarias, DEC-037), Ficha (`/familias/:id`, con nombre de trato local DEC-038, solo los beneficios relevantes en dos grupos DEC-070 y, con `VITE_PROPOSAL_TERRITORIAL`, chip "Disponible en su comuna" y rótulo "Solo demo" desde la operación propuesta `GET /catalogo/alcance`, fuera de C3, texto provisional en `src/api/proposals/territorial.ts`; DEC-072, PREG-070), Guion, Mensaje e impresión, Marcar conversado (`/familias/:id/conversacion`, 3 toques), Agregar información (`/familias/:id/agregar-informacion`, operación propuesta fuera de C3, solo con mocks salvo `VITE_PROPOSAL_ADD_INFO=true`; ver `docs/PROPUESTA_C3_agregar_informacion.md`, DEC-039), Familia nueva (`/familia-nueva`, no existe en `escala`), Avance (`/avance`) y Preguntar (`/preguntar`). Los mocks aceptan escenarios con `?mock=` al cargar (p. ej. `conv503`, `kpiSuppressed`, `assistantDeterministic`; lista en `src/mocks/scenarios.ts`).
 
 | Script | Para qué |
 |---|---|
@@ -75,6 +75,8 @@ Las `VITE_*` quedan embebidas en el JS del build, así que **nunca** llevan secr
 | Ensayo Demo estático (sin API) | `demo` | `true` | — | `none` | `SYNTHETIC_DEMO_NOT_A_REAL_PERSON` |
 | Demo con API cloud | `demo` | `false` | `https://<api>/api/v1` | `cognito` + `VITE_COGNITO_*` | `SYNTHETIC_DEMO_NOT_A_REAL_PERSON` |
 | Escala (piloto Integra) | `escala` | `false` | `https://<api>/api/v1` | `cognito` + `VITE_COGNITO_*` | — (sin caché ni cola) |
+
+Las propuestas fuera de C3 se activan aparte: `VITE_PROPOSAL_ADD_INFO` (DEC-039) y `VITE_PROPOSAL_TERRITORIAL` (DEC-072). Vacías: solo con mocks; `true`: también con API real; `false`: ocultas; nunca en `escala`. Para la demo B2 con el backend real, compile o levante con `VITE_PROPOSAL_TERRITORIAL=true`.
 
 Cognito solo entra cuando la PWA habla con una API cloud: el ensayo estático con mocks y el fallback loopback no lo usan, y una API fuera de loopback **sin** Cognito no arranca (DEC-032). El ensayo estático se construye con `npm run build:demo-rehearsal` (ya fija las variables de la primera fila). Un build `demo` o `escala` real exige el copy canónico de Rol 4 en `../content` (o `BRUJULA_CONTENT_DIR`); con copy provisional el build falla a propósito.
 

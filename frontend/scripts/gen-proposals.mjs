@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Genera el validador Ajv standalone de las operaciones PROPUESTAS del frontend (fuera de C3,
 // DEC-039). Mismo runtime y mismas guardas que scripts/gen-contract.mjs (DEC-031): sin require,
-// eval ni new Function. La respuesta de la propuesta reutiliza FamiliaDetailEnvelope de C3, así que
-// aquí solo se compila el schema de request. Rutas con fileURLToPath: la ruta del repo tiene espacios.
+// eval ni new Function. "Agregar información" reutiliza FamiliaDetailEnvelope de C3 como respuesta
+// (solo se compila su request); "alcance territorial" (DEC-072) compila su envelope de respuesta.
+// Rutas con fileURLToPath: la ruta del repo tiene espacios.
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -14,7 +15,11 @@ import * as runtime from '../src/api/contract/runtime.js';
 
 const proposalsDir = fileURLToPath(new URL('../src/api/proposals/', import.meta.url));
 const outDir = path.join(proposalsDir, 'generated');
-const SCHEMAS = { validateAddFamilyInfoRequestV1: 'AddFamilyInfoRequestV1.schema.json' };
+/** Validador → [schema en src/api/proposals/, tipo exportado por src/api/proposals/types.ts]. */
+const SCHEMAS = {
+  validateAddFamilyInfoRequestV1: ['AddFamilyInfoRequestV1.schema.json', 'AddFamilyInfoRequestV1'],
+  validateCatalogScopeEnvelopeV1: ['CatalogScopeEnvelopeV1.schema.json', 'CatalogScopeEnvelopeV1'],
+};
 
 function fail(message) {
   console.error(`gen:proposals FALLA: ${message}`);
@@ -31,7 +36,7 @@ const ajv = new Ajv2020({
 
 const mapping = {};
 const hashes = {};
-for (const [name, file] of Object.entries(SCHEMAS)) {
+for (const [name, [file]] of Object.entries(SCHEMAS)) {
   const text = readFileSync(path.join(proposalsDir, file), 'utf8').replace(/\r\n/g, '\n');
   const schema = JSON.parse(text);
   if (typeof schema.$id !== 'string' || schema.$id === '') fail(`schema sin $id: ${file}`);
@@ -50,12 +55,13 @@ for (const forbidden of ['require(', 'eval(', 'new Function']) {
   if (code.includes(forbidden)) fail(`validators.gen.js contiene ${forbidden}`);
 }
 
+const entries = Object.entries(SCHEMAS);
 const dts = [
   '// GENERADO por scripts/gen-proposals.mjs. No editar.',
   "import type { ValidateFn } from '../../generated/validators.gen.js';",
-  "import type { AddFamilyInfoRequestV1 } from '../types';",
+  `import type { ${entries.map(([, [, type]]) => type).join(', ')} } from '../types';`,
   '',
-  'export declare const validateAddFamilyInfoRequestV1: ValidateFn<AddFamilyInfoRequestV1>;',
+  ...entries.map(([name, [, type]]) => `export declare const ${name}: ValidateFn<${type}>;`),
   '',
 ].join('\n');
 

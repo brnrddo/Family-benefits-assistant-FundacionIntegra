@@ -1,7 +1,8 @@
 // Agrupación de PRESENTACIÓN de los beneficios de una ficha (cambio 3, DEC-037). Usa los
 // `benefit_results`/`top_opportunities` de C3 TAL COMO VIENEN: solo los separa por enums que ya
 // entrega C3 (result/access_state) y no infiere elegibilidad, no reordena ni filtra por puntaje
-// (FE-003). NO/NO_APLICA no se muestran aquí (siguen en el detalle técnico).
+// (FE-003). La ficha ya no trae NO/NO_APLICA (DEC-070, solo lo relevante); si llegaran, aquí no se
+// muestran. El detalle técnico de cada tarjeta solo muestra su propio resultado (siempre SI/IND).
 import type { AccessState, BenefitResultValue, FamilyDetail, Level, Opportunity } from '../api/types';
 
 export interface BenefitRow {

@@ -5,7 +5,7 @@ type Schemas = components['schemas'];
 
 export type OperationId = keyof operations;
 /** Operaciones PROPUESTAS por el frontend que aún NO están en C3 (src/api/proposals, DEC-039). */
-export type ProposalOperationId = 'addFamiliaAntecedentes';
+export type ProposalOperationId = 'addFamiliaAntecedentes' | 'getCatalogoAlcance';
 /** Lo que acepta el transporte: una operación C3 o una propuesta explícita. */
 export type AnyOperationId = OperationId | ProposalOperationId;
 

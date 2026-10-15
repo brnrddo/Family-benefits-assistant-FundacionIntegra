@@ -2,6 +2,10 @@
 // estado de acceso y nivel CONFIRMADO/PRELIMINAR) y "Falta información" (INDETERMINADO o pendiente de
 // antecedentes, con el dato que falta en lenguaje simple y la pregunta sugerida de C3). Solo
 // presentación de lo que entrega C3 (domain/benefitGroups.ts); no infiere elegibilidad (FE-003).
+// DEC-072 (propuesta fuera de C3): `scopes` agrega el chip "Disponible en su comuna" (LOCAL) y, si el
+// beneficio es SOLO DEMO, su nombre desde la propuesta y el rótulo "Solo demo".
+import { TERRITORIAL_COPY } from '../../api/proposals/territorial';
+import type { CatalogScopeItem } from '../../api/proposals/types';
 import type { FamilyDetail, MissingCode, Opportunity } from '../../api/types';
 import { groupBenefits, type BenefitRow } from '../../domain/benefitGroups';
 import { accessPresentation, ACCESS_STATE_KEY, LEVEL_KEY, MISSING_CODE_KEY } from '../../domain/presentation';
@@ -17,7 +21,14 @@ function missingLabels(codes: readonly string[]): string[] {
   return [...new Set(codes.map((code) => (isMissingCode(code) ? t(MISSING_CODE_KEY[code]) : t('family.missing_generic'))))];
 }
 
-function RowChips({ row }: { readonly row: BenefitRow }) {
+type Scope = CatalogScopeItem | undefined;
+
+/** Nombre: el de la propuesta solo para el ejemplo SOLO DEMO; si no, el de C3/copy como siempre. */
+function rowName(row: BenefitRow, scope: Scope): string {
+  return scope?.demo === true ? scope.simple_title : benefitName(row.benefitId, row.simpleTitle);
+}
+
+function RowChips({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
   const group = accessPresentation(row.accessState);
   return (
     <div className="flex flex-wrap gap-2">
@@ -25,16 +36,18 @@ function RowChips({ row }: { readonly row: BenefitRow }) {
       {row.level !== null && (
         <Chip icon={row.level === 'CONFIRMADO' ? 'check' : 'info'} tone={row.level === 'CONFIRMADO' ? 'neutral' : 'other'} label={t(LEVEL_KEY[row.level])} />
       )}
+      {scope?.scope === 'LOCAL' && <Chip icon="home" tone="neutral" label={TERRITORIAL_COPY.localChip} />}
+      {scope?.demo === true && <Chip icon="info" tone="other" label={TERRITORIAL_COPY.demoLabel} />}
     </div>
   );
 }
 
-function AppliesItem({ row }: { readonly row: BenefitRow }) {
+function AppliesItem({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
   const pending = missingLabels(row.missingCodes);
   return (
     <li className={`${CARD_CLASS} space-y-2`}>
-      <h3 className="c3-text">{benefitName(row.benefitId, row.simpleTitle)}</h3>
-      <RowChips row={row} />
+      <h3 className="c3-text">{rowName(row, scope)}</h3>
+      <RowChips row={row} scope={scope} />
       <p className="text-ink-muted">{t(ACCESS_STATE_KEY[row.accessState])}</p>
       {pending.length > 0 && (
         <p>
@@ -45,12 +58,12 @@ function AppliesItem({ row }: { readonly row: BenefitRow }) {
   );
 }
 
-function MissingItem({ row }: { readonly row: BenefitRow }) {
+function MissingItem({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
   const missing = missingLabels(row.missingCodes);
   return (
     <li className={`${CARD_CLASS} space-y-2`}>
-      <h3 className="c3-text">{benefitName(row.benefitId, row.simpleTitle)}</h3>
-      <RowChips row={row} />
+      <h3 className="c3-text">{rowName(row, scope)}</h3>
+      <RowChips row={row} scope={scope} />
       <div>
         <p className="font-semibold">{t('family.missing_data_label')}</p>
         <ul className="list-disc pl-6">
@@ -75,7 +88,16 @@ function MissingItem({ row }: { readonly row: BenefitRow }) {
   );
 }
 
-export function BenefitGroups({ detail, opportunities }: { readonly detail: FamilyDetail; readonly opportunities: readonly Opportunity[] }) {
+export function BenefitGroups({
+  detail,
+  opportunities,
+  scopes,
+}: {
+  readonly detail: FamilyDetail;
+  readonly opportunities: readonly Opportunity[];
+  /** Alcance por benefit_id (propuesta DEC-072); vacío o ausente = sin chips territoriales. */
+  readonly scopes?: ReadonlyMap<string, CatalogScopeItem>;
+}) {
   const { applies, missing } = groupBenefits(detail, opportunities);
   return (
     <>
@@ -86,7 +108,7 @@ export function BenefitGroups({ detail, opportunities }: { readonly detail: Fami
         ) : (
           <ul className="space-y-3">
             {applies.map((row) => (
-              <AppliesItem key={row.benefitId} row={row} />
+              <AppliesItem key={row.benefitId} row={row} scope={scopes?.get(row.benefitId)} />
             ))}
           </ul>
         )}
@@ -98,7 +120,7 @@ export function BenefitGroups({ detail, opportunities }: { readonly detail: Fami
         ) : (
           <ul className="space-y-3">
             {missing.map((row) => (
-              <MissingItem key={row.benefitId} row={row} />
+              <MissingItem key={row.benefitId} row={row} scope={scopes?.get(row.benefitId)} />
             ))}
           </ul>
         )}

@@ -323,7 +323,7 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
   si regeneras la DB, el siguiente request lo toma. Un cursor de paginación
   emitido antes de regenerar la DB responde 422 (lleva una huella del build).
 - **Endpoints reales:** `GET /jardines`, `GET /jardines/{id}/familias`,
-  `GET /familias/{id}` (los 20 `benefit_results` con traza),
+  `GET /familias/{id}` (`benefit_results` con traza, solo `SI`/`INDETERMINADO`),
   `GET /familias/{id}/contexto` y `GET /familias/{id}/oportunidades`.
   `POST /conversaciones`, `/guion` y `/mensaje` validan contra los IDs reales
   (`FAM-SIM-E3-00001`…; los IDs mock como `FAM-SIM-0001` dan 404); `/guion` y
@@ -388,6 +388,35 @@ $env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
 > rutas, cambia el resto por `{id}` y descarta la query. No hace falta
 > `--no-access-log`. Otros loggers (p. ej. errores de uvicorn) quedan fuera de
 > ese filtro.
+
+### B2 — Beneficio territorial SOLO DEMO
+
+Los datos del Rol 1 no traen beneficios por comuna. Para mostrar que importa
+**dónde vive la familia**, `BEN-DEMO-LOCAL-01` ("Programa Municipal Sintético de
+Apoyo Familiar (solo demo)") es un beneficio **inventado** que solo aplica a
+quienes viven en `COM-001` con tramo RSH ≤ 60. Va en
+`fixtures/demo_territorial/` (sin fuente ni URL) y el motor del Rol 1 lo evalúa
+sin cambios. Detalle en `app/api/PROPUESTA_ALCANCE.md`.
+
+```powershell
+# Desde backend/
+py -3.11 -m app.loader.load --force
+py -3.11 -m app.demo_territorial.cargar     # idempotente
+py -3.11 -m app.db.build_views
+$env:E3_MOCK='0'; py -3.11 -m uvicorn app.api.app:app --port 8000
+```
+
+- **Familias de contraste:** `FAM-SIM-E3-00001` (vive en COM-001) da `SI`;
+  `FAM-SIM-E3-00051` (COM-011) da `NO` y no lo ve; `FAM-SIM-E3-00261` (sin RSH,
+  jardín `JAR-SIM-E3-00011`) da `INDETERMINADO`. Ese jardín está en COM-011 y
+  5 de sus familias viven en COM-001.
+- **Volver al dataset original:** `py -3.11 -m app.loader.load --force` y
+  `py -3.11 -m app.db.build_views`.
+- **Ficha solo relevante (propuesta DEC-070):** en ambos modos
+  `GET /familias/{id}` y `POST /antecedentes` ya no listan `NO`/`NO_APLICA`; el
+  snapshot y el motor conservan todo.
+- **Alcance (propuesta DEC-072):** `GET /api/v1/catalogo/alcance` marca cada
+  beneficio `NACIONAL` o `LOCAL`, fuera de C3 1.0.2.
 
 ---
 
