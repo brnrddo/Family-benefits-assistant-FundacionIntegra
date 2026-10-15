@@ -555,6 +555,35 @@ def test_guion_y_mensaje_con_id_real(ruta: str, schema: str):
     validar_error(r404.json())
 
 
+@pytest.mark.parametrize("ruta,schema", [("guion", "ScriptGenerationEnvelope"),
+                                         ("mensaje", "MessageGenerationEnvelope")])
+def test_guion_y_mensaje_con_top_real_no_sustituyen_beneficios(ruta: str, schema: str):
+    """Con el top real de una familia, el texto habla de esos beneficios y no de otro.
+
+    Regresión: con el catálogo mock de tres beneficios, BEN-011 (fuera del mock)
+    recibía el texto de BEN-001 con ``FALLBACK_TEMPLATE``.
+    """
+    import yaml
+
+    top = [o["benefit_id"] for o in _get(f"/familias/{_FAMILIA}")["data"]["top_opportunities"]]
+    assert top, "la familia de prueba debe tener oportunidades"
+    with (BACKEND_DIR.parent / "content" / "beneficios.yaml").open(encoding="utf-8") as fh:
+        titulos = {b["benefit_id"]: b["simple_title"] for b in yaml.safe_load(fh)["beneficios"]}
+
+    r = client.post(f"/api/v1/familias/{_FAMILIA}/{ruta}", json={"benefit_ids": top})
+    assert r.status_code == 200
+    body = r.json()
+    validar(schema, body)
+    assert body["content"]["benefit_ids"] == top
+    assert "FALLBACK_TEMPLATE" not in body["warnings"]
+    texto = body["content"]["script"] if ruta == "guion" else body["content"]["whatsapp_preview"]
+    for bid in top:
+        assert titulos[bid] in texto
+    for bid, titulo in titulos.items():
+        if bid not in top:
+            assert titulo not in texto
+
+
 def test_antecedentes_real_404_y_503():
     import uuid
 
