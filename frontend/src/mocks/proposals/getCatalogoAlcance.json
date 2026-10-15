@@ -1,0 +1,27 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "getCatalogoAlcance",
+  "proposal": "DEC-072: GET /catalogo/alcance (fuera de C3 v1.0.2). SOLO DEMO: BEN-DEMO-LOCAL-01 es un beneficio inventado; no existe.",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0501",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "items": [
+      { "benefit_id": "BEN-001", "scope": "NACIONAL", "simple_title": "Aporte mensual por hijo", "demo": false },
+      { "benefit_id": "BEN-002", "scope": "NACIONAL", "simple_title": "Bono de invierno", "demo": false },
+      { "benefit_id": "BEN-003", "scope": "NACIONAL", "simple_title": "Control de salud infantil", "demo": false },
+      { "benefit_id": "BEN-004", "scope": "NACIONAL", "simple_title": "Asignación escolar", "demo": false },
+      { "benefit_id": "BEN-005", "scope": "NACIONAL", "simple_title": "Subsidio para el agua", "demo": false },
+      { "benefit_id": "BEN-006", "scope": "NACIONAL", "simple_title": "Apoyo de alimentación", "demo": false },
+      { "benefit_id": "BEN-007", "scope": "NACIONAL", "simple_title": "Pensión de apoyo al hogar", "demo": false },
+      { "benefit_id": "BEN-008", "scope": "NACIONAL", "simple_title": "Bono por control al día", "demo": false },
+      { "benefit_id": "BEN-009", "scope": "NACIONAL", "simple_title": "Taller de apoyo escolar", "demo": false },
+      { "benefit_id": "BEN-DEMO-LOCAL-01", "scope": "LOCAL", "simple_title": "Programa Municipal Sintético de Apoyo Familiar (solo demo)", "demo": true }
+    ]
+  }
+}

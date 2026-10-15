@@ -119,9 +119,22 @@ describe('resolveProfile — matriz de capacidades §5.2', () => {
       newFamily: false,
       localNames: false,
       addInfo: false,
+      territorial: false,
       syntheticBanner: false,
       cacheTtlHours: 12,
     });
+  });
+
+  it('DEC-072 VITE_PROPOSAL_TERRITORIAL: vacío solo con mocks, true/false explícitos, inválido oculto, nunca escala', () => {
+    expect(okConfig({ VITE_USE_MOCKS: 'true' }).capabilities.territorial).toBe(true);
+    expect(okConfig({ VITE_PROFILE: 'local', VITE_API_BASE_URL: '/api/v1' }).capabilities.territorial).toBe(false);
+    expect(okConfig({ VITE_PROFILE: 'local', VITE_API_BASE_URL: '/api/v1', VITE_PROPOSAL_TERRITORIAL: 'true' }).capabilities.territorial).toBe(true);
+    expect(okConfig({ VITE_USE_MOCKS: 'true', VITE_PROPOSAL_TERRITORIAL: 'false' }).capabilities.territorial).toBe(false);
+    const invalid = okConfig({ VITE_USE_MOCKS: 'true', VITE_PROPOSAL_TERRITORIAL: 'si' });
+    expect(invalid.capabilities.territorial).toBe(false);
+    expect(invalid.warnings).toContain('territorial_flag_invalid');
+    const escala = okConfig({ VITE_PROFILE: 'escala', VITE_API_BASE_URL: CLOUD_API, ...COGNITO, VITE_PROPOSAL_TERRITORIAL: 'true' });
+    expect(escala.capabilities.territorial).toBe(false);
   });
 
 

@@ -1,14 +1,16 @@
 // Ficha familia (design.md §9.2, FE-001/FE-003/FE-004): arriba las acciones prioritarias (top tres en
-// el orden de C3, chips, “por qué”, detalle expandible), luego TODOS los beneficios en dos grupos
-// ("Beneficios que aplica" / "Falta información", tal como vienen de C3), preguntas, datos por
+// el orden de C3, chips, “por qué”, detalle expandible), luego los beneficios relevantes en dos grupos
+// ("Beneficios que aplica" / "Falta información", tal como vienen de C3; la ficha ya no trae NO/NO_APLICA,
+// DEC-070), con chip "Disponible en su comuna"/"Solo demo" si hay alcance (DEC-072), preguntas, datos por
 // confirmar, aviso y fuentes. El cambio de orden pide a C3; el cliente no reordena. Señales de
 // urgencia/vulnerabilidad del contexto no se muestran (SUP-032). El título es el nombre de trato
 // local (DEC-038) o un genérico con el ID corto; la URL y los requests usan el family_id de C3.
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
+import type { CatalogScopeItem } from '../../api/proposals/types';
 import type { FamilyContextView, FamilyDetail, Opportunity, OpportunityOrder } from '../../api/types';
 import { runtimeConfig } from '../../config/profile';
-import { useContexto, useFamilia, useOportunidades } from '../../data/queries';
+import { useCatalogoAlcance, useContexto, useFamilia, useOportunidades } from '../../data/queries';
 import { familyMissingCodes } from '../../domain/benefitGroups';
 import { familyDisplayName } from '../../domain/familyName';
 import { formatInteger } from '../../domain/format';
@@ -33,6 +35,7 @@ import { familyRoutes } from './routes';
 const ORDERS: readonly OpportunityOrder[] = ['prioridad', 'urgencia', 'beneficio'];
 const MAX_CARDS = 3;
 const NO_NAMES: ReadonlyMap<string, string> = new Map();
+const NO_SCOPES: ReadonlyMap<string, CatalogScopeItem> = new Map();
 
 function parseOrder(raw: string | null): OpportunityOrder {
   return ORDERS.find((order) => order === raw) ?? 'prioridad';
@@ -118,6 +121,13 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   const prioridad = useOportunidades(familyId, 'prioridad', ficha.isSuccess);
   const ordered = useOportunidades(familyId, order, ficha.isSuccess && order !== 'prioridad');
   const contexto = useContexto(familyId, ficha.isSuccess);
+  // DEC-072: sin flag, o si la propuesta falla, la ficha se ve igual (nunca bloquea).
+  const alcance = useCatalogoAlcance(capabilities.territorial && ficha.isSuccess);
+  const alcanceItems = capabilities.territorial ? alcance.data?.body.items : undefined;
+  const scopes = useMemo(
+    () => (alcanceItems === undefined ? NO_SCOPES : new Map(alcanceItems.map((item) => [item.benefit_id, item]))),
+    [alcanceItems],
+  );
   // Estado de navegación en memoria (nunca en la URL): vuelve de "Agregar información" con éxito.
   const addInfoDone = (location.state as { addInfoDone?: unknown } | null)?.addInfoDone === true;
 
@@ -217,7 +227,7 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
         )}
       </section>
 
-      <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} />
+      <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} scopes={scopes} />
 
       <ContextSections cards={cards} context={contexto.data?.body.data ?? null} />
 

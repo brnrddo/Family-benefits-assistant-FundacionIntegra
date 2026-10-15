@@ -17,6 +17,11 @@ import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import AddInfoPage from '../add-info/AddInfoPage';
 import FamilyPage from './FamilyPage';
 
+// DEC-072: texto provisional del módulo de propuesta (literal: es lo que ve la tía).
+const DEMO_TITLE = 'Programa Municipal Sintético de Apoyo Familiar (solo demo)';
+const LOCAL_CHIP = 'Disponible en su comuna';
+const DEMO_LABEL = 'Solo demo';
+
 function renderFamily(familyId = 'FAM-SIM-E3-00001') {
   return renderWithProviders(
     <Routes>
@@ -72,7 +77,7 @@ describe('FamilyPage', () => {
     const ficha = fichaBrecha().data;
     const prioridad = payloadOf<OpportunityListEnvelope>('listOportunidades.FAM-SIM-E3-00001.prioridad').items;
     const title = (id: string) => benefitName(id, [...prioridad, ...ficha.top_opportunities].find((o) => o.benefit_id === id)?.simple_title);
-    // BEN-001/002/004 son SI; BEN-003 INDETERMINADO; BEN-010 NO no se muestra.
+    // BEN-001/002/004 son SI; BEN-003 INDETERMINADO (DEC-070: la ficha ya no trae NO/NO_APLICA).
     await waitFor(() => expect(titles(applies)).toEqual([title('BEN-001'), title('BEN-002'), title('BEN-004')]));
     expect(titles(missing)).toEqual([title('BEN-003')]);
     expect(within(applies).getAllByText(t('level.confirmado'))).toHaveLength(2);
@@ -94,12 +99,57 @@ describe('FamilyPage', () => {
     expect(screen.getByRole('link', { name: t('family.actions.add_info') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00002/agregar-informacion');
   });
 
+  it('DEC-072: el ejemplo solo demo muestra su nombre, "Disponible en su comuna" y "Solo demo"; lo nacional no lleva chip', async () => {
+    renderFamily('FAM-SIM-E3-00005');
+    const heading = await screen.findByRole('heading', { level: 3, name: DEMO_TITLE });
+    const card = heading.closest('li') as HTMLElement;
+    expect(card.closest('[data-benefit-group]')).toHaveAttribute('data-benefit-group', 'applies');
+    expect(within(card).getByText(LOCAL_CHIP)).toBeInTheDocument();
+    expect(within(card).getByText(DEMO_LABEL)).toBeInTheDocument();
+    expect(screen.getAllByText(LOCAL_CHIP)).toHaveLength(1);
+    expect(screen.getAllByText(DEMO_LABEL)).toHaveLength(1);
+
+    cleanup();
+    renderFamily('FAM-SIM-E3-00001');
+    await screen.findByRole('heading', { name: t('family.applies_title') });
+    expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
+    expect(screen.queryByText(DEMO_LABEL)).toBeNull();
+  });
+
   it('404 al cargar la ficha → mensaje seguro sin el texto del servidor', async () => {
     server.use(overrideOperation('getFamilia', () => HttpResponse.json(payloadOf('error.404'), { status: 404 })));
     renderFamily();
     const alert = await screen.findByRole('alert');
     expect(within(alert).getByText(t('error.not_found'))).toBeInTheDocument();
     expect(alert.textContent).not.toContain('Recurso inexistente');
+  });
+});
+
+describe('FamilyPage con VITE_PROPOSAL_TERRITORIAL=false (DEC-072)', () => {
+  beforeEach(() => {
+    installTestRuntime();
+    const off = resolveProfile({ VITE_PROFILE: 'local', VITE_USE_MOCKS: 'true', VITE_PROPOSAL_TERRITORIAL: 'false' }, { isSecureContext: true });
+    if (!off.ok) throw new Error('territorial_off_config');
+    configureRuntime(off.config);
+  });
+  afterEach(() => {
+    server.events.removeAllListeners();
+    cleanup();
+    resetTestRuntime();
+  });
+
+  it('no muestra chip ni rótulo y no pide /catalogo/alcance', async () => {
+    const paths: string[] = [];
+    server.events.on('request:start', ({ request }) => {
+      paths.push(new URL(request.url).pathname);
+    });
+    renderFamily('FAM-SIM-E3-00005');
+    const applies = (await screen.findByRole('heading', { name: t('family.applies_title') })).closest('section') as HTMLElement;
+    // BEN-001/002/004 y el ejemplo BEN-DEMO-LOCAL-01 (sin nombre de la propuesta: queda su ID).
+    await waitFor(() => expect(within(applies).getAllByRole('heading', { level: 3 })).toHaveLength(4));
+    expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
+    expect(screen.queryByText(DEMO_LABEL)).toBeNull();
+    expect(paths.some((p) => p.endsWith('/catalogo/alcance'))).toBe(false);
   });
 });
 

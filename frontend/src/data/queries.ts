@@ -11,6 +11,7 @@ import {
   validateOpportunityListEnvelope,
   type ValidateFn,
 } from '../api/generated/validators.gen.js';
+import { getCatalogoAlcance } from '../api/proposals/territorial';
 import { snapshotIdOf, snapshotStore } from '../api/snapshot';
 import type { C3Ok, FamiliaDetailEnvelope, FamiliaListEnvelope, OpportunityOrder } from '../api/types';
 import { readCache, writeCache, type CacheKey } from '../offline/demoCache';
@@ -18,6 +19,7 @@ import { isOnline } from '../offline/network';
 import type { ReadResult } from './queryClient';
 
 const GENERATION_GC_MS = 30 * 60_000;
+const ALCANCE_STALE_MS = 5 * 60_000;
 
 export const queryKeys = {
   jardines: () => ['jardines'] as const,
@@ -28,6 +30,7 @@ export const queryKeys = {
   guion: (familyId: string, benefitIds: readonly string[]) => ['guion', familyId, ...benefitIds] as const,
   mensaje: (familyId: string, benefitIds: readonly string[]) => ['mensaje', familyId, ...benefitIds] as const,
   kpi: (params: client.KpiParams) => ['kpi', params.nivel, params.id ?? null, params.desde ?? null, params.hasta ?? null] as const,
+  alcance: () => ['alcance'] as const,
 };
 
 interface CachePlan<T> {
@@ -129,6 +132,19 @@ export function useOportunidades(familyId: string, orden: OpportunityOrder, enab
         () => client.listOportunidades({ familyId, orden }, { signal }),
         orden === 'prioridad' ? { key: `oportunidades:${familyId}:prioridad`, validate: validateOpportunityListEnvelope } : null,
       ),
+  });
+}
+
+/**
+ * Alcance territorial por beneficio (operación PROPUESTA DEC-072, fuera de C3): solo memoria, nivel
+ * catálogo. Solo se pide con `capabilities.territorial`; si falla, la ficha se ve igual sin chips.
+ */
+export function useCatalogoAlcance(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.alcance(),
+    enabled,
+    staleTime: ALCANCE_STALE_MS,
+    queryFn: ({ signal }) => readThrough(() => getCatalogoAlcance({ signal }), null),
   });
 }
 

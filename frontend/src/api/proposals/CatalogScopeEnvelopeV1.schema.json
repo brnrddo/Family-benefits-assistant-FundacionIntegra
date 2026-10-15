@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brujula:proposal:catalog-scope-envelope:v1",
+  "title": "CatalogScopeEnvelopeV1",
+  "description": "PROPUESTA (DEC-072). NO es parte de C3 v1.0.2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "items"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "snapshot_id", "eligibility_bundle_hash", "content_bundle_hash", "content_version"],
+      "properties": {
+        "request_id": {"type": "string", "minLength": 1, "maxLength": 80},
+        "snapshot_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$", "maxLength": 80},
+        "eligibility_bundle_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_bundle_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
+      }
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["benefit_id", "scope", "simple_title", "demo"],
+        "properties": {
+          "benefit_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]*$", "maxLength": 80},
+          "scope": {"enum": ["NACIONAL", "LOCAL"]},
+          "simple_title": {"type": "string", "minLength": 1, "maxLength": 100},
+          "demo": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

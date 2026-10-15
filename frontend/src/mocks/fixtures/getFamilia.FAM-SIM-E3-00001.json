@@ -192,21 +192,6 @@
               "result": "CUMPLE"
             }
           ]
-        },
-        {
-          "benefit_id": "BEN-010",
-          "result": "NO",
-          "level": null,
-          "access_state": "NO_APLICA",
-          "missing_codes": [],
-          "trace": [
-            {
-              "rule_id": "R-BEN-010-01",
-              "field": "household_has_adult_over_65",
-              "operator": "EQ",
-              "result": "NO_CUMPLE"
-            }
-          ]
         }
       ],
       "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."

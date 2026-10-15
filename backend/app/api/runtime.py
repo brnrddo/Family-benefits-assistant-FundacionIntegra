@@ -30,6 +30,7 @@ import threading
 
 from app.api.deps import DISCLAIMER, construir_meta, mock_habilitado
 from app.api.errors import ApiError
+from app.catalog import territorial
 from app.config import DB_PATH
 from app.genai import (
     TemplateError,
@@ -89,6 +90,7 @@ def get_provider() -> TemplateProvider | None:
             except content_catalog.ContenidoInvalido as exc:
                 _log_sin_catalogo(exc.codigo)
                 return None
+            cat = territorial.catalogo_texto(cat, DB_PATH)  # B2 solo demo
             _provider = TemplateProvider(
                 cat.entradas, cat.plantillas,
                 procedencia=(cat.content_version, cat.content_bundle_hash),

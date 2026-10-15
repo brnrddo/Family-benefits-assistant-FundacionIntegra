@@ -116,8 +116,12 @@ def test_ficha_real_valida_c3(family_id: str, motor_conn):
         "SELECT id_jardin FROM familias WHERE id_familia = ?", (family_id,)
     ).fetchone()[0]
     assert data["garden_id"] == jardin
-    n_beneficios = motor_conn.execute("SELECT COUNT(*) FROM beneficios").fetchone()[0]
-    assert len(data["benefit_results"]) == n_beneficios
+    n_relevantes = motor_conn.execute(
+        "SELECT COUNT(*) FROM evaluaciones WHERE id_familia = ? "
+        "AND resultado IN ('SI', 'INDETERMINADO')", (family_id,)
+    ).fetchone()[0]
+    assert len(data["benefit_results"]) == n_relevantes
+    assert not {b["result"] for b in data["benefit_results"]} & {"NO", "NO_APLICA"}
     assert [b["benefit_id"] for b in data["benefit_results"]] == sorted(
         b["benefit_id"] for b in data["benefit_results"]
     )
@@ -141,6 +145,9 @@ def _comparar_con_motor(family_id: str, resultados_motor) -> None:
     esperadas = set()
     for acc in resultados_motor:
         elig = acc.elegibilidad
+        if elig["resultado"] in ("NO", "NO_APLICA"):
+            assert acc.id_beneficio not in por_id  # DEC-070: la ficha no los lista
+            continue
         br = por_id[acc.id_beneficio]
         assert br["result"] == elig["resultado"]
         assert br["level"] == elig["nivel"]

@@ -21,24 +21,7 @@
       "rsh_band": 90,
       "informed": false,
       "top_opportunities": [],
-      "benefit_results": [
-        {
-          "benefit_id": "BEN-001",
-          "result": "NO",
-          "level": null,
-          "access_state": "NO_APLICA",
-          "missing_codes": [],
-          "trace": [{ "rule_id": "R-BEN-001-01", "field": "rsh_band", "operator": "LTE", "result": "NO_CUMPLE" }]
-        },
-        {
-          "benefit_id": "BEN-003",
-          "result": "NO_APLICA",
-          "level": null,
-          "access_state": "NO_APLICA",
-          "missing_codes": [],
-          "trace": []
-        }
-      ],
+      "benefit_results": [],
       "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
     }
   }

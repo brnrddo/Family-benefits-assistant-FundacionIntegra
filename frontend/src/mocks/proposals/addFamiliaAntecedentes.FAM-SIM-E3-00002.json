@@ -160,14 +160,6 @@
               "result": "CUMPLE"
             }
           ]
-        },
-        {
-          "benefit_id": "BEN-001",
-          "result": "NO_APLICA",
-          "level": null,
-          "access_state": "NO_APLICA",
-          "missing_codes": [],
-          "trace": []
         }
       ],
       "disclaimer": "Orientación referencial; no determina derechos. Confirmar en la institución."
