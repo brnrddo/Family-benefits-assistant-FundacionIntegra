@@ -1,0 +1,77 @@
+name: CI
+
+# CI del backend (Rol 1): lint con ruff + suite de pytest.
+#
+# Los tests construyen su propia DB SQLite efímera desde los CSV reales de
+# data/publico/ (ver backend/tests/conftest.py), así que no necesitan e3.db
+# precalculada; sí necesitan el checkout del repo (que incluye data/publico/).
+#
+# El job es resiliente a la migración a `uv` en curso: si existe
+# backend/pyproject.toml usa `uv`; si no, cae a pip + requirements-dev.txt.
+
+on:
+  push:
+    branches: ["main", "rol1/**", "rol2/**", "rol3/**", "rol4/**"]
+  pull_request:
+    branches: ["main"]
+
+# Cancela ejecuciones viejas de la misma rama/PR cuando llega un push nuevo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f pyproject.toml ]; then
+            echo "pyproject.toml detectado -> instalando con uv"
+            python -m pip install uv
+            # Instala el proyecto + extras de dev si el lock/pyproject los define.
+            uv sync --dev || uv pip install --system -e ".[dev]" || uv pip install --system -e .
+            # Garantiza las herramientas de CI aunque no estén en el extra dev.
+            python -m pip install "pytest>=8" "ruff>=0.8"
+          else
+            echo "sin pyproject.toml -> instalando con pip + requirements-dev.txt"
+            pip install -r requirements-dev.txt
+          fi
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff, informativo)
+        # No bloqueante por ahora: el formato aún no está normalizado en todo el
+        # repo (y hay una migración a `uv`/3.14 en curso). Se puede volver
+        # bloqueante quitando `continue-on-error` cuando se corra `ruff format .`
+        # sobre todo backend/.
+        continue-on-error: true
+        run: ruff format --check .
+
+      - name: Run tests
+        run: python -m pytest -q

@@ -21,8 +21,6 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-import pytest
-
 from app.context.context_filter import filtrar_para_llm
 
 # Raíz del repo: backend/tests -> backend -> repo.
