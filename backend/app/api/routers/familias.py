@@ -138,7 +138,7 @@ def create_guion(
 ) -> dict:
     if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
         raise ApiError(status_code=404)
-    return generar_guion(body.benefit_ids, request.state.request_id)
+    return generar_guion(body.benefit_ids, request.state.request_id, family_id=id)
 
 
 @router.post("/familias/{id}/mensaje", tags=["genai"])

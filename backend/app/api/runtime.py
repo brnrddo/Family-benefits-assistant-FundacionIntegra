@@ -1,9 +1,13 @@
 """Capa de servicio: genai por plantilla e integración opcional del motor (FEAT-003).
 
-- La generación de texto (guion/mensaje/asistente) usa SIEMPRE el
+- La generación de texto (guion/mensaje/asistente) usa por defecto el
   ``TemplateProvider`` determinista de FEAT-002 (``provider='PLANTILLA'``),
   construido desde el catálogo C4 de ``content/`` (Rol 4, DEC-055). El cliente
   nunca envía contexto, catálogo ni prompt (API-007).
+- Solo el guion tiene camino Bedrock, detrás de ``E3_LLM_PROVIDER=bedrock`` y
+  delegado completo a ``app.genai.redaccion`` (allowlist, envelope interno,
+  Guardrails y postvalidación). Ante cualquier fallo se degrada a la plantilla
+  con HTTP 200 y ``warnings=['GENAI_DEGRADADO_A_PLANTILLA']`` (API-008).
 - Un ``benefit_id`` sin respaldo en el catálogo responde 422 y nunca se
   sustituye por otro beneficio (DEC-056). Si el catálogo no valida, la
   respuesta falla cerrada sin 500 (DEC-058).
@@ -25,6 +29,7 @@ from app.genai import (
     TemplateProvider,
     asistente_sin_catalogo,
     content_catalog,
+    redaccion,
 )
 from app.genai.template_provider import (
     GUION_SIN_CATALOGO,
@@ -39,6 +44,8 @@ _provider: TemplateProvider | None = None
 _provider_lock = threading.Lock()
 
 WARNING_SECCION_OMITIDA = "SECCION_SIN_FUENTE_OMITIDA"
+# El camino Bedrock falló de forma recuperable y respondió la plantilla (API-008).
+WARNING_GENAI_DEGRADADO = "GENAI_DEGRADADO_A_PLANTILLA"
 
 _RAZON_DESCONOCIDO = "Beneficio sin respaldo en el catálogo C4."
 _RAZON_SIN_FUENTE = "Beneficio sin fuente oficial para la tarjeta."
@@ -47,6 +54,12 @@ _RAZON_SIN_FUENTE = "Beneficio sin fuente oficial para la tarjeta."
 def _log_sin_catalogo(motivo: str) -> None:
     # Solo el código fijo: sin rutas, IDs, preguntas ni textos.
     logger.warning("catalogo_c4_no_disponible: motivo=%s", motivo)
+
+
+def _log_genai_degradado(motivo: str) -> None:
+    # Misma convención que motor_real ``runtime_degradado_a_mock``: solo el
+    # código fijo, nunca el prompt, la salida del modelo ni valores.
+    logger.warning("genai_degradado_a_plantilla: motivo=%s", motivo)
 
 
 def get_provider() -> TemplateProvider | None:
@@ -84,14 +97,32 @@ def _exigir_conocidos(provider: TemplateProvider, benefit_ids: list[str]) -> Non
         raise ApiError(status_code=422, details=detalles, retryable=False)
 
 
-def _envelope(request_id: str, content: dict, warnings: list[str]) -> dict:
+def _envelope(request_id: str, content: dict, warnings: list[str],
+              provider: str = TemplateProvider.provider) -> dict:
     return {
         "meta": construir_meta(request_id),
-        "provider": TemplateProvider.provider,
+        "provider": provider,
         "warnings": warnings,
         "content": content,
         "disclaimer": DISCLAIMER,
     }
+
+
+def _vista_familia_llm(family_id: str | None) -> dict | None:
+    """Ficha de la familia (motor real o mock) para armar el contexto del LLM.
+
+    Solo lectura: con ``E3_MOCK=0`` es el snapshot compartido e inmutable. El
+    import es diferido porque ``motor_real`` importa este módulo y a nivel de
+    módulo sería circular.
+    """
+    if family_id is None:
+        return None
+    from app.api import mock_data, motor_real
+
+    snap = motor_real.obtener_snapshot()
+    if snap is not None:
+        return snap.familias.get(family_id)
+    return mock_data.FAMILIAS.get(family_id)
 
 
 def _guion_sin_catalogo(benefit_ids: list[str], request_id: str) -> dict:
@@ -103,19 +134,36 @@ def _guion_sin_catalogo(benefit_ids: list[str], request_id: str) -> dict:
     return _envelope(request_id, content, [WARNING_SIN_CATALOGO])
 
 
-def generar_guion(benefit_ids: list[str], request_id: str) -> dict:
-    """Arma el ``ScriptGenerationEnvelope`` C3 (provider=PLANTILLA)."""
+def generar_guion(benefit_ids: list[str], request_id: str,
+                  family_id: str | None = None) -> dict:
+    """Arma el ``ScriptGenerationEnvelope`` C3 (PLANTILLA o BEDROCK).
+
+    Con ``E3_LLM_PROVIDER=bedrock`` se intenta redactar con el modelo; ante
+    cualquier fallo del camino Bedrock se degrada a la plantilla determinista
+    con HTTP 200 y un warning de código fijo (API-008). Sin esa bandera el
+    comportamiento es exactamente el de antes.
+    """
     provider = get_provider()
     if provider is None:
         return _guion_sin_catalogo(benefit_ids, request_id)
     _exigir_conocidos(provider, benefit_ids)
+    warnings: list[str] = []
+    if redaccion.bedrock_seleccionado():
+        try:
+            content = redaccion.redactar_guion(
+                benefit_ids, _vista_familia_llm(family_id), request_id=request_id
+            )
+            return _envelope(request_id, content, [], provider=redaccion.PROVIDER_BEDROCK)
+        except redaccion.RedaccionError as exc:
+            _log_genai_degradado(exc.motivo)
+            warnings = [WARNING_GENAI_DEGRADADO]
     try:
         content = provider.generar_guion(benefit_ids)
     except TemplateError:
         # Invariante roto tras validar: se responde sin texto de beneficios.
         _log_sin_catalogo("INVARIANTE_PLANTILLA")
         return _guion_sin_catalogo(benefit_ids, request_id)
-    return _envelope(request_id, content, [])
+    return _envelope(request_id, content, warnings)
 
 
 def generar_mensaje(benefit_ids: list[str], request_id: str) -> dict:

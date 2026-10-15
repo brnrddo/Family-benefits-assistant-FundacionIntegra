@@ -23,7 +23,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -68,6 +68,22 @@ class ContenidoInvalido(Exception):
 
 
 @dataclass(frozen=True)
+class PromptC4:
+    """Prompt del Rol 4 tal como vino de ``content/prompts/*.md``.
+
+    ``meta`` es el front matter completo (ya validado solo en
+    ``prompt_template_id`` y ``prompt_version``) y ``cuerpo`` es el Markdown
+    posterior, SIN tocar. Quien lo use (``app.genai.redaccion``) valida lo que
+    necesite al usarlo: así un prompt futuro sin ``variables`` degrada el camino
+    Bedrock en vez de invalidar todo el bundle C4.
+    """
+    template_id: str
+    version: str
+    meta: dict
+    cuerpo: str
+
+
+@dataclass(frozen=True)
 class CatalogoContenido:
     """Catálogo validado (orden de ``beneficios.yaml``)."""
     content_version: str
@@ -75,6 +91,8 @@ class CatalogoContenido:
     entradas: dict[str, CatalogEntry]
     plantillas: PlantillasTexto
     prompt_versions: dict[str, str]
+    # Aditivo: prompts completos por ``prompt_template_id`` (camino Bedrock).
+    prompts: dict[str, PromptC4] = field(default_factory=dict)
 
 
 def cargar_catalogo_contenido(manifest_path: str | Path | None = None) -> CatalogoContenido:
@@ -112,7 +130,8 @@ def _cargar(manifest_path: Path) -> CatalogoContenido:
         content_bundle_hash=manifest["content_bundle_hash"],
         entradas=entradas,
         plantillas=plantillas,
-        prompt_versions={pid: version for pid, (version, _) in prompts.items()},
+        prompt_versions={pid: p.version for pid, p in prompts.items()},
+        prompts=prompts,
     )
 
 
@@ -183,7 +202,7 @@ def _clases(manifest: dict, archivos: dict[str, bytes]) -> tuple[str, str, dict]
     if len(benefits) != 1 or len(i18n) != 1:
         raise ContenidoInvalido("C4_CLASE_FALTANTE")
 
-    prompts: dict[str, tuple[str, str]] = {}
+    prompts: dict[str, PromptC4] = {}
     for f in files:
         if f["kind"] != "PROMPT":
             continue
@@ -192,7 +211,9 @@ def _clases(manifest: dict, archivos: dict[str, bytes]) -> tuple[str, str, dict]
         pid = meta["prompt_template_id"]
         if pid in prompts:
             raise ContenidoInvalido("C4_PROMPT_INVALIDO")
-        prompts[pid] = (meta["prompt_version"], cuerpo)
+        prompts[pid] = PromptC4(
+            template_id=pid, version=meta["prompt_version"], meta=meta, cuerpo=cuerpo,
+        )
     if any(pid not in prompts for pid in _PROMPTS_REQUERIDOS):
         raise ContenidoInvalido("C4_CLASE_FALTANTE")
     return benefits[0], i18n[0], prompts
@@ -301,6 +322,8 @@ def _leer_beneficio(b: object) -> CatalogEntry:
         where_to_go=where,
         source_id=source_id,
         source_url=url,
+        actions=tuple(actions),
+        source_ids=tuple(source_ids),
     )
 
 
@@ -381,10 +404,10 @@ def _plantilla(valor: str, placeholder: str | None = None, con_aviso: bool = Fal
     return texto
 
 
-def _leer_plantillas(prompts: dict[str, tuple[str, str]], etiqueta_donde_ir: str) -> PlantillasTexto:
-    guion = _bloques_respaldo(prompts[PROMPT_GUION][1])
-    mensaje = _bloques_respaldo(prompts[PROMPT_MENSAJE][1])
-    asistente = _bloques_respaldo(prompts[PROMPT_ASISTENTE][1])
+def _leer_plantillas(prompts: dict[str, PromptC4], etiqueta_donde_ir: str) -> PlantillasTexto:
+    guion = _bloques_respaldo(prompts[PROMPT_GUION].cuerpo)
+    mensaje = _bloques_respaldo(prompts[PROMPT_MENSAJE].cuerpo)
+    asistente = _bloques_respaldo(prompts[PROMPT_ASISTENTE].cuerpo)
     individual = ("intent", "REQUIRES_DETERMINISTIC_EVALUATION")
     catalogo = ("intent", "CATALOG_INFO")
     return PlantillasTexto(

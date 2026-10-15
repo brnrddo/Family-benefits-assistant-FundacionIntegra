@@ -58,6 +58,19 @@ def _runtime_sin_db_local(monkeypatch, tmp_path_factory):
     )
 
 
+@pytest.fixture(autouse=True)
+def _genai_sin_bandera_local(monkeypatch):
+    """Aísla la suite de un ``E3_LLM_PROVIDER`` exportado en la terminal.
+
+    Sin esto, un desarrollador con la bandera puesta vería la API intentando
+    Bedrock en tests que esperan el camino de plantilla.
+    """
+    from app.genai import redaccion
+
+    monkeypatch.delenv("E3_LLM_PROVIDER", raising=False)
+    redaccion.reiniciar_proveedor()
+
+
 @pytest.fixture()
 def conn(db_path: Path):
     """Conexión SQLite de solo lectura a la DB de prueba."""
