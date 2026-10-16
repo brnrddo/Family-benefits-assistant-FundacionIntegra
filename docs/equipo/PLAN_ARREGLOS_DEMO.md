@@ -167,17 +167,26 @@ Después de la tarea 7: orden visual de beneficios (A).
 
 ## 5. Casos de la demo
 
-Lo completa B en la tarea 5.
+Completado por B (tarea 5). **Un login, una tía, un jardín y una familia estrella** (más una de
+respaldo): reemplaza la idea de cubrir todos los casos en 2–3 jardines. Tía: **Tía Carmen**
+(`TIA-SIM-DEMO-001`). Jardín: **Jardín Infantil Los Aromos** (`JAR-SIM-E3-00014`, urbano, 10
+familias). Los nombres viven en `frontend/src/offline/localNamesSeed.json` (`demo_session`,
+`SYNTHETIC_DEMO_NOT_A_REAL_PERSON`). Estados verificados con el backend local (`E3_MOCK=0`) el
+2026-10-15 en `GET /familias/FAM-SIM-E3-00364/oportunidades` y `GET /kpi?nivel=jardin&id=JAR-SIM-E3-00014`.
 
 | Caso | Jardín | Familia | Nombre ficticio |
 |---|---|---|---|
-| SI CONFIRMADO | | | |
-| SI PRELIMINAR | | | |
-| Falta embarazo → se responde y aplica | | | |
-| SIN_CUPO | | | |
-| ASIGNADO | | | |
-| Discapacidad | | | |
-| Brecha | | | |
+| SI CONFIRMADO (BEN-005 por presentar; BEN-009/010/015 automáticos) | Los Aromos | FAM-SIM-E3-00364 | Antonella C. · Familia Contreras Araya |
+| SI PRELIMINAR (BEN-001, BEN-012: faltan antecedentes) | Los Aromos | FAM-SIM-E3-00364 | Antonella C. · Familia Contreras Araya |
+| Falta embarazo → se responde y aplica (BEN-003 INDETERMINADO, "Agregar información") | Los Aromos | FAM-SIM-E3-00364 | Antonella C. · Familia Contreras Araya |
+| SIN_CUPO (BEN-018; según la consulta SQL, no verificado en la API: en la API la estrella no muestra BEN-018) | Los Aromos | FAM-SIM-E3-00114 (respaldo) | Isidora M. · Familia Muñoz Contreras |
+| ASIGNADO (BEN-016) | Los Aromos | FAM-SIM-E3-00364 | Antonella C. · Familia Contreras Araya |
+| Discapacidad (BEN-006 ASIGNADO) | Los Aromos | FAM-SIM-E3-00364 | Antonella C. · Familia Contreras Araya |
+| Brecha | Los Aromos | FAM-SIM-E3-00114 (respaldo) | Isidora M. · Familia Muñoz Contreras |
+
+Estadísticas del jardín en Inicio (`/kpi`): 10 familias, 0 % informadas; lo que más se repite:
+Aporte Familiar Permanente, Apoyo al recién nacido y Apoyo al desarrollo infantil (10 familias cada uno).
+Con "Ya le informé" el % sube en vivo durante el pitch.
 
 ## 6. Riesgos
 
@@ -208,7 +217,7 @@ sigue congelado en 1.0.2.
 | 3 | Tarjeta "Datos del hogar" con "Datos por confirmar" y "Agregar información" | Igual | Sin cambios: Tareas 1–3. | A |
 | 4 | Tía ficticia, nombres y familias elegidas | Datos poco dinámicos; mostrar estadísticas al entrar junto al chat | Se mantiene la Tarea 5 y se exige que las familias elegidas tengan progreso visible (brechas, PRELIMINAR, SIN_CUPO). **Inicio** muestra arriba un bloque de estadísticas del jardín desde `/kpi` (familias, % informadas, top 3 brechas) y el acceso al chat; luego búsqueda y lista. | B (`features/home/`) |
 | 5 | Orden visual de beneficios, al final | Agente primero, lista secundaria | En la ficha el orden queda: preguntas tipo + agente → "Datos del hogar" → lista de beneficios plegada ("Ver todos los beneficios"). El orden de la lista lo sigue dando el motor. | A (orden de bloques), después de la Tarea 7 |
-| * | Encabezado con la profe; selector muestra solo jardines demo | **Sin elegir jardín:** el usuario queda asignado a su jardín | Se **quita el selector de jardín**. La sesión demo asigna un jardín fijo a la tía desde la semilla local. La asignación no usa el correo ni el `sub` de Cognito en el repo: la semilla dice "Tía X → jardín J". Si un solo jardín no cubre todos los casos de la sección 5, se crean 2 o 3 tías demo, una por jardín. | B (`features/demo-session/`, `localNamesSeed.json`) |
+| * | Encabezado con la profe; selector muestra solo jardines demo | **Sin elegir jardín:** el usuario queda asignado a su jardín | Se **quita el selector de jardín**. La sesión demo asigna un jardín fijo a la tía desde la semilla local. La asignación no usa el correo ni el `sub` de Cognito en el repo: la semilla dice "Tía X → jardín J". Si un solo jardín no cubre todos los casos de la sección 5, se crean 2 o 3 tías demo, una por jardín. **Hecho:** una tía y un jardín (sección 5). El selector desaparece también en Avance, vía `useSelectedGarden`, y la pestaña Avance sale del menú: las estadísticas quedan en Inicio. | B (`features/demo-session/`, `localNamesSeed.json`) |
 | 6, 7, 8 | Quitar guion/mensaje, búsqueda de niño, quitar "Familia nueva" | Igual | Sin cambios. | A / B |
 
 ### 7.2 Lo que NO entra así, y por qué

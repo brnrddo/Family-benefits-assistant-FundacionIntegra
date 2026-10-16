@@ -8,6 +8,7 @@ import { t } from '../../i18n/copy';
 import { useQueueSummary } from '../../offline/conversationQueue';
 import { useLocalNames } from '../../offline/localNames';
 import { Button } from '../../ui/Button';
+import { clearDemoSession } from '../demo-session/session';
 
 export function LogoutButton() {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -20,6 +21,7 @@ export function LogoutButton() {
   const confirm = async () => {
     setBusy(true);
     try {
+      clearDemoSession();
       await performLogout(queryClient);
     } finally {
       setBusy(false);

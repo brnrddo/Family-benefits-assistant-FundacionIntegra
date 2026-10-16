@@ -307,6 +307,15 @@ export function readViteEnv(): RawEnv {
   };
 }
 
+/**
+ * "Entrar como Tía X (demo)": sesión demo con nombres ficticios. Solo con nombres locales (persistencia
+ * sintética), nunca en `escala`; en `local` solo sin mocks (ensayo loopback), así las pruebas con mocks
+ * siguen con la semilla de siempre. Complementa Cognito, no lo reemplaza.
+ */
+export function demoSessionEnabled(config: ResolvedConfig): boolean {
+  const { profile, capabilities } = config;
+  return profile !== 'escala' && capabilities.localNames && (profile === 'demo' || !capabilities.mocks);
+}
 // --- Configuración activa del proceso (se fija una sola vez en main.tsx) ---
 
 let active: ResolvedConfig | null = null;
