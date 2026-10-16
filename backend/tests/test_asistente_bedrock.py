@@ -120,6 +120,26 @@ def test_bedrock_ok_responde_catalog_info_con_aviso_y_solo_citas_permitidas(
     assert TEXTO_MODELO not in caplog.text
 
 
+def test_guardrail_input_evalua_solo_la_pregunta_no_el_prompt(monkeypatch):
+    """INPUT recibe la pregunta exacta; el prompt completo solo va a Converse.
+
+    Medido en la cuenta: las instrucciones del servidor evaluadas como entrada
+    disparaban PROMPT_ATTACK/MISCONDUCT y el chat siempre degradaba.
+    """
+    cliente = _inyectar(monkeypatch, ClienteFalso(respuesta_converse=respuesta_tooluse(
+        {"answer": TEXTO_MODELO, "benefit_ids": ["BEN-005"]}
+    )))
+    body = _preguntar(PREGUNTA_AGUA)
+
+    assert body["provider"] == "BEDROCK"
+    entradas = [kw for op, kw in cliente.llamadas
+                if op == "apply_guardrail" and kw["source"] == "INPUT"]
+    assert len(entradas) == 1
+    assert entradas[0]["content"] == [{"text": {"text": PREGUNTA_AGUA}}]
+    prompt = cliente.llamadas[1][1]["messages"][0]["content"][0]["text"]
+    assert prompt != PREGUNTA_AGUA and PREGUNTA_AGUA in prompt
+
+
 @pytest.mark.parametrize(("cliente", "motivo"), [
     (lambda: ClienteFalso(error_converse=RuntimeError("simulado")),
      redaccion.MOTIVO_BEDROCK_ERROR),

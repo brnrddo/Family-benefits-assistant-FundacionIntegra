@@ -97,6 +97,12 @@ class LLMProvider(ABC):
     `request_id` es opcional y solo se usa para CORRELACIONAR logs con la
     petición C3 que los originó (campo permitido por PRIVACIDAD_DEMO §"Logs y
     evidencia"); nunca viaja al modelo.
+
+    `texto_guardrail_input` es opcional: si viene, el Guardrail INPUT evalúa
+    SOLO ese texto (la entrada no confiable: pregunta del usuario o datos del
+    envelope) en vez del prompt completo. Las instrucciones del servidor son
+    confiables y, evaluadas como entrada, disparaban PROMPT_ATTACK/MISCONDUCT.
+    Sin él se conserva el comportamiento previo (INPUT sobre ``prompt``).
     """
 
     nombre = "abstract"
@@ -105,7 +111,8 @@ class LLMProvider(ABC):
     def generar(self, prompt: str, *, system: str | None = None,
                 json_schema: dict | None = None, temperatura: float = 0.2,
                 max_tokens: int = 1024,
-                request_id: str | None = None) -> LLMResponse:
+                request_id: str | None = None,
+                texto_guardrail_input: str | None = None) -> LLMResponse:
         ...
 
 
@@ -121,7 +128,8 @@ class StubProvider(LLMProvider):
 
     def generar(self, prompt: str, *, system=None, json_schema=None,
                 temperatura: float = 0.2, max_tokens: int = 1024,
-                request_id: str | None = None) -> LLMResponse:
+                request_id: str | None = None,
+                texto_guardrail_input: str | None = None) -> LLMResponse:
         if json_schema is not None:
             esqueleto = _esqueleto_desde_schema(json_schema)
             return LLMResponse(
@@ -338,7 +346,8 @@ class BedrockProvider(LLMProvider):
 
     def generar(self, prompt: str, *, system=None, json_schema=None,
                 temperatura: float = 0.2, max_tokens: int = 1024,
-                request_id: str | None = None) -> LLMResponse:
+                request_id: str | None = None,
+                texto_guardrail_input: str | None = None) -> LLMResponse:
         """Genera prosa o JSON estructurado entre las dos barreras Guardrail.
 
         Con ``json_schema`` se fuerza salida estructurada vía ``toolConfig``
@@ -347,10 +356,19 @@ class BedrockProvider(LLMProvider):
 
         ``request_id`` solo correlaciona los logs con la petición C3; no viaja
         al modelo ni se incorpora al prompt.
+
+        ``texto_guardrail_input``: si viene, el Guardrail INPUT evalúa solo ese
+        texto (la entrada no confiable). Medido en la cuenta: el prompt completo
+        (instrucciones del servidor + catálogo + reglas) dispara PROMPT_ATTACK y
+        MISCONDUCT, mientras que la pregunta sola pasa. Las instrucciones son
+        del servidor y ya pasaron la inspección integral de egreso (primera
+        barrera); a Converse sigue viajando ``prompt`` completo. Sin el
+        parámetro, INPUT evalúa ``prompt`` como antes. OUTPUT no cambia.
         """
         inicio = time.monotonic()
-        # barrera 1: ANTES de Converse
-        self._guardrail(prompt, "INPUT", inicio=inicio, request_id=request_id)
+        # barrera 1: ANTES de Converse, sobre la entrada no confiable
+        entrada = prompt if texto_guardrail_input is None else texto_guardrail_input
+        self._guardrail(entrada, "INPUT", inicio=inicio, request_id=request_id)
 
         kwargs: dict = {
             "modelId": self.model_id,

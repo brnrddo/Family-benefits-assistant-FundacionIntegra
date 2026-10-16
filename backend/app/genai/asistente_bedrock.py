@@ -256,7 +256,7 @@ def _responder(question, entradas, *, request_id, provider, inicio) -> dict:
         prompt_renderizado, prompt,
         provider=provider, json_schema=SCHEMA_ASISTENTE,
         max_tokens=MAX_TOKENS_ASISTENTE, request_id=request_id,
-        system=SYSTEM_ASISTENTE,
+        system=SYSTEM_ASISTENTE, texto_guardrail_input=question,
     )
     texto = datos.get("answer")
     if not isinstance(texto, str):

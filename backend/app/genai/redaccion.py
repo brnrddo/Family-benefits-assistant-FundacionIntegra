@@ -581,11 +581,13 @@ def redactar_guion(
 
 def _preparar_envio(
     operacion: str, prompt_id: str, benefit_ids: list[str], familia: dict | None
-) -> tuple[list[str], CatalogoContenido, PromptC4, str]:
+) -> tuple[list[str], CatalogoContenido, PromptC4, str, str]:
     """Barreras 1 a 3, idénticas para guion y mensaje.
 
     Devuelve los ``benefit_ids`` normalizados, el catálogo C4, el prompt del
-    Rol 4 y el prompt renderizado ya inspeccionado.
+    Rol 4, el prompt renderizado ya inspeccionado y el texto que evalúa el
+    Guardrail INPUT: la serialización canónica de los DATOS del envelope
+    (``context`` + ``catalog_items``), sin las instrucciones del servidor.
     """
     if familia is None:
         raise RedaccionError(MOTIVO_SIN_FAMILIA)
@@ -623,7 +625,11 @@ def _preparar_envio(
     # Barrera 3: inspección del payload de egreso completo.
     prompt_renderizado = renderizar_prompt(prompt, envelope)
     _exigir_payload_limpio(prompt_renderizado, _family_id(familia))
-    return ids, catalogo, prompt, prompt_renderizado
+    datos_guardrail = json.dumps(
+        {"context": envelope["context"], "catalog_items": envelope["catalog_items"]},
+        ensure_ascii=False, sort_keys=True,
+    )
+    return ids, catalogo, prompt, prompt_renderizado, datos_guardrail
 
 
 def _invocar_modelo(
@@ -635,11 +641,17 @@ def _invocar_modelo(
     max_tokens: int,
     request_id: str,
     system: str = SYSTEM,
+    texto_guardrail_input: str | None = None,
 ) -> dict:
     """Barrera 4: resuelve el proveedor, genera y devuelve sus datos tipados.
 
     ``system`` permite que el asistente demo (``asistente_bedrock``) use su
     propio mensaje de sistema; guion y mensaje usan ``SYSTEM``.
+
+    ``texto_guardrail_input`` es la entrada no confiable (pregunta o datos del
+    envelope) que evalúa el Guardrail INPUT. Las instrucciones del servidor son
+    confiables y, evaluadas como entrada, disparaban PROMPT_ATTACK; el prompt
+    completo ya pasó ``_exigir_payload_limpio`` (primera barrera).
     """
     # La CONSTRUCCIÓN del proveedor también puede fallar cerrada (sin
     # E3_GUARDRAIL_ID o sin boto3): va dentro del try, no solo la llamada.
@@ -659,6 +671,7 @@ def _invocar_modelo(
             temperatura=_temperatura(prompt),
             max_tokens=max_tokens,
             request_id=request_id,
+            texto_guardrail_input=texto_guardrail_input,
         )
     except GuardrailIntervino:
         raise RedaccionError(MOTIVO_GUARDRAIL_INTERVINO) from None
@@ -683,13 +696,14 @@ def _redactar_guion(
     provider: LLMProvider | None,
     inicio: float,
 ) -> dict:
-    ids, _catalogo, prompt, prompt_renderizado = _preparar_envio(
+    ids, _catalogo, prompt, prompt_renderizado, datos_guardrail = _preparar_envio(
         OPERACION_GUION, PROMPT_GUION, benefit_ids, familia
     )
     datos = _invocar_modelo(
         prompt_renderizado, prompt,
         provider=provider, json_schema=SCHEMA_GUION,
         max_tokens=MAX_TOKENS_GUION, request_id=request_id,
+        texto_guardrail_input=datos_guardrail,
     )
 
     # Barrera 5: postvalidación del copy. ``benefit_ids`` los pone el servidor.
@@ -814,13 +828,14 @@ def _redactar_mensaje(
     provider: LLMProvider | None,
     inicio: float,
 ) -> dict:
-    ids, catalogo, prompt, prompt_renderizado = _preparar_envio(
+    ids, catalogo, prompt, prompt_renderizado, datos_guardrail = _preparar_envio(
         OPERACION_MENSAJE, PROMPT_MENSAJE, benefit_ids, familia
     )
     datos = _invocar_modelo(
         prompt_renderizado, prompt,
         provider=provider, json_schema=SCHEMA_MENSAJE,
         max_tokens=MAX_TOKENS_MENSAJE, request_id=request_id,
+        texto_guardrail_input=datos_guardrail,
     )
     content = fusionar_mensaje(ids, catalogo, datos)
     _log_ok(OPERACION_MENSAJE, request_id, inicio)
