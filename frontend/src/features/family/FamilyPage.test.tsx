@@ -171,6 +171,7 @@ describe('FamilyPage con VITE_PROPOSAL_TERRITORIAL=false (DEC-072)', () => {
     // BEN-001/002 y el ejemplo BEN-DEMO-LOCAL-01 (sin nombre de la propuesta: queda su ID); BEN-004
     // ASIGNADO va a "Ya postuló o sin cupo".
     await waitFor(() => expect(within(applies).getAllByRole('heading', { level: 3 })).toHaveLength(3));
+    expect(within(applies).getByRole('button', { name: FAMILY_COPY.shareButton })).toBeEnabled();
     expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
     expect(screen.queryByText(DEMO_LABEL)).toBeNull();
     expect(paths.some((p) => p.endsWith('/catalogo/alcance'))).toBe(false);
@@ -208,6 +209,7 @@ describe('FamilyPage en perfil escala (DEC-038, DEC-039)', () => {
     expect(document.querySelector('[data-name-editor]')).toBeNull();
     expect(screen.queryByLabelText(t('family.name.title'))).toBeNull();
     expect(screen.queryByRole('link', { name: t('family.actions.add_info') })).toBeNull();
+    expect(screen.queryByRole('button', { name: FAMILY_COPY.shareButton })).toBeNull();
     expect(screen.getByRole('link', { name: t('family.actions.mark') })).toBeInTheDocument();
   });
 });

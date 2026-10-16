@@ -42,4 +42,8 @@ export const FAMILY_COPY = {
   planDeliver: (names: string) => `Entréguele la información de: ${names}`,
   /** family.plan.none */
   planNone: 'Esta familia no tiene acciones pendientes.',
+  /** family.share_button (solo demo: no envía nada) */
+  shareButton: 'Compartir beneficios',
+  /** family.share_done (solo demo) */
+  shareDone: 'Beneficios compartidos',
 } as const;

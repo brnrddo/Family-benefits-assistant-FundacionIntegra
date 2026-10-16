@@ -124,7 +124,7 @@ function HouseholdCard({
 }
 
 function FamilyView({ familyId }: { readonly familyId: string }) {
-  const { capabilities } = runtimeConfig();
+  const { capabilities, profile } = runtimeConfig();
   const location = useLocation();
   const names = useLocalNames();
   const ficha = useFamilia(familyId);
@@ -202,7 +202,8 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
         addInfoHref={showAddInfo ? addInfoHref : null}
       />
 
-      <BenefitSections sections={sections} scopes={scopes} />
+      {/* "Compartir beneficios" es solo para la demo: oculto en `escala` (mismo criterio que Familia nueva). */}
+      <BenefitSections sections={sections} scopes={scopes} showShare={profile !== 'escala'} />
 
       <ActionPlanSection plan={plan} addInfoHref={addInfoHref} />
 

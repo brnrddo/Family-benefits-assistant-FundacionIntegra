@@ -22,6 +22,7 @@ import { SourceLink } from '../../ui/SourceLink';
 import { EmptyState } from '../../ui/states';
 import { rowMissingTexts, rowName, type ActionPlan as Plan, type Scopes } from './actionPlan';
 import { FAMILY_COPY } from './familyCopy';
+import { ShareBenefitsButton } from './ShareBenefitsButton';
 
 type Scope = CatalogScopeItem | undefined;
 
@@ -128,7 +129,16 @@ function RowList({ rows, section, scopes }: { readonly rows: readonly BenefitRow
   );
 }
 
-export function BenefitSections({ sections, scopes }: { readonly sections: Sections; readonly scopes: Scopes }) {
+export function BenefitSections({
+  sections,
+  scopes,
+  showShare = false,
+}: {
+  readonly sections: Sections;
+  readonly scopes: Scopes;
+  /** Botón "Compartir beneficios" (solo demo; nunca en `escala`). */
+  readonly showShare?: boolean;
+}) {
   const [filter, setFilter] = useState<BenefitFilter>('all');
   const baseId = useId();
   const count = (section: BenefitSection) => formatInteger(sections[section].length);
@@ -159,6 +169,8 @@ export function BenefitSections({ sections, scopes }: { readonly sections: Secti
             ) : (
               list
             )}
+            {/* Sin beneficios que puede postular ahora no hay nada que compartir: el botón se oculta. */}
+            {section === 'apply' && showShare && sections.apply.length > 0 && <ShareBenefitsButton />}
           </section>
         );
       })}
