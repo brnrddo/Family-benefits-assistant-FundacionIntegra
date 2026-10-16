@@ -7,6 +7,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import c3Meta from './src/api/generated/c3.meta.json' with { type: 'json' };
 import { COPY_CATALOG } from './src/i18n/catalog.ts';
+import { APP_NAME } from './src/brand.ts';
 import { MOCK_COPY } from './src/i18n/es.mock.ts';
 import { brujulaContent, type Profile } from './vite-plugins/brujula-content.ts';
 import { cspPlugin, isLoopbackHttpUrl } from './vite-plugins/csp.ts';
@@ -107,6 +108,8 @@ export default defineConfig(({ command, mode }) => {
         allowMock,
         mocks: env.VITE_USE_MOCKS === 'true',
       }),
+      // Marca visible en el <title> de index.html (src/brand.ts).
+      { name: 'marca-html', transformIndexHtml: (html: string) => html.replace('%APP_NAME%', APP_NAME) },
       react(),
       tailwindcss(),
       cspPlugin({
@@ -121,8 +124,8 @@ export default defineConfig(({ command, mode }) => {
         registerType: 'prompt',
         injectRegister: null,
         manifest: {
-          name: MOCK_COPY['app.name'],
-          short_name: MOCK_COPY['app.name'],
+          name: APP_NAME,
+          short_name: APP_NAME,
           description: MOCK_COPY['app.tagline'],
           lang: 'es-CL',
           start_url: '/',

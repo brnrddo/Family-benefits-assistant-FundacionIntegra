@@ -3,10 +3,11 @@
 // `content/i18n/es.json` de Rol 4 ni deriva de él: solo se usa en perfil `local` o en `demo` con
 // BRUJULA_ALLOW_MOCK_COPY=true, siempre con la insignia `app.copy_mock_badge` visible.
 // `notice.referential` es idéntico al `disclaimer` const de C3.
+import { APP_NAME } from '../brand.ts';
 import type { CopyKey } from './catalog.ts';
 
 export const MOCK_COPY = {
-  'app.name': 'Brújula Familiar',
+  'app.name': APP_NAME,
   'app.tagline': 'Apoyos para conversar con cada familia',
   'app.skip_to_content': 'Saltar al contenido',
   'app.synthetic_banner': 'Datos de prueba: estas familias no son personas reales.',

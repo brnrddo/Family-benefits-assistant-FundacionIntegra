@@ -5,6 +5,7 @@ import { NavLink, Outlet, useSearchParams } from 'react-router';
 import { copySource } from 'virtual:brujula-content';
 import { useSnapshotState } from '../../api/snapshot';
 import { RequireSession } from '../../auth/RequireSession';
+import { APP_NAME } from '../../brand';
 import { runtimeConfig } from '../../config/profile';
 import { t } from '../../i18n/copy';
 import { useOnline } from '../../offline/network';
@@ -63,7 +64,7 @@ export default function AppShell() {
           <NavLink to="/" className="flex min-h-12 min-w-0 items-center gap-2 font-bold text-primary">
             <Icon name="compass" className="size-7 shrink-0" />
             <span className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate">{t('app.name')}</span>
+              <span className="truncate">{APP_NAME}</span>
               {demo.active && demo.seed !== null && (
                 <span className="truncate text-[0.85rem] font-semibold text-ink-muted">
                   {headerLabel(demo.seed.tia.display_name, demo.seed.garden.name)}
