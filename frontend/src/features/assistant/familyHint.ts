@@ -1,8 +1,8 @@
 // Pista corta por familia (guion de demo 2026-10-16): una línea que le recuerda a la tía la historia
 // de la familia y el porqué del apoyo, porque atiende a 20–30 niños. Determinista y solo con lo que
 // C3 ya entrega y está permitido al LLM (LlmContextV1): composición (roles/edades), tramo RSH y el
-// estado del apoyo (`access_state`, `missing_codes`). Las señales de urgencia/vulnerabilidad del
-// contexto NO se usan (salud y situación sensible: fuera de LlmContextV1 y no se muestran en la ficha).
+// estado del apoyo (`access_state`, `missing_codes`). Las señales de `/contexto` no se usan aquí: podrían
+// mostrarse en pantalla (DEC-092), pero nunca deben ir en el texto que se envía a `/asistente`.
 // En pantalla puede llevar el primer nombre de trato local; lo que se envía usa `who = null`.
 // Sin códigos internos ni promesas: el motor decide, la pista solo recuerda. Puro: sin red ni logs.
 import type { CompositionMember, Opportunity } from '../../api/types';

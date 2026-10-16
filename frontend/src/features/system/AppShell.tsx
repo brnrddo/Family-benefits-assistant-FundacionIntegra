@@ -59,8 +59,11 @@ export default function AppShell() {
   const online = useOnline();
   const snapshot = useSnapshotState();
   const demo = useDemoSession();
-  // Escritorio: Inicio usa el ancho útil (2 columnas); las vistas de una columna, un ancho legible.
-  const wide = useMatch({ path: '/', end: true }) !== null;
+  // Escritorio: Inicio y la ficha (con el chat en columna lateral) usan el ancho útil (2 columnas);
+  // las vistas de una columna, un ancho legible.
+  const home = useMatch({ path: '/', end: true }) !== null;
+  const ficha = useMatch({ path: '/familias/:familyId', end: true }) !== null;
+  const wide = home || ficha;
   return (
     <div className="flex min-h-dvh flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-3">
