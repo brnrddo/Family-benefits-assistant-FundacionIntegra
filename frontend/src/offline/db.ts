@@ -1,6 +1,6 @@
 // IndexedDB Demo (design.md §12.2, versión simplificada). Único punto de apertura: falla cerrado
 // si el perfil no permite persistencia (Escala o sin clasificación sintética), así Escala nunca
-// abre IndexedDB. El logout borra la BD completa (caché, cola, meta y nombres de trato).
+// abre IndexedDB. El logout borra la BD completa (caché, cola, meta, nombres de trato y acciones hechas).
 import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { ConversationRequest } from '../api/types';
 import { runtimeConfig, SYNTHETIC_CLASSIFICATION } from '../config/profile';
@@ -44,11 +44,24 @@ export interface NameRecord {
   readonly data_classification: typeof SYNTHETIC_CLASSIFICATION;
 }
 
+/**
+ * Memoria de la "acción del día" (DEC-091): con qué familia ya habló la tía en ESTE equipo. Solo IDs
+ * sintéticos y fecha; nunca va a la API, logs ni prompts. `SIMULADO_DEMO` = sembrada por la sesión demo.
+ */
+export interface DoneActionRecord {
+  readonly family_id: string;
+  readonly benefit_id: string | null;
+  readonly done_at: string;
+  readonly origin: 'TIA' | 'SIMULADO_DEMO';
+  readonly data_classification: typeof SYNTHETIC_CLASSIFICATION;
+}
+
 interface DemoSchema extends DBSchema {
   cache: { key: string; value: CacheRecord };
   queue: { key: string; value: QueueRecord };
   meta: { key: string; value: string };
   names: { key: string; value: NameRecord };
+  actions: { key: string; value: DoneActionRecord };
 }
 
 export type DemoDb = IDBPDatabase<DemoSchema>;
@@ -65,7 +78,7 @@ export function persistenceEnabled(): boolean {
 
 export function openDemoDb(): Promise<DemoDb> {
   if (!persistenceEnabled()) return Promise.reject(new Error('persistence_disabled'));
-  dbPromise ??= openDB<DemoSchema>(DEMO_DB_NAME, 2, {
+  dbPromise ??= openDB<DemoSchema>(DEMO_DB_NAME, 3, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         db.createObjectStore('cache', { keyPath: 'key' });
@@ -74,6 +87,8 @@ export function openDemoDb(): Promise<DemoDb> {
       }
       // v2 (DEC-038): nombres de trato locales.
       if (oldVersion < 2) db.createObjectStore('names', { keyPath: 'family_id' });
+      // v3 (DEC-091): memoria local de la acción del día.
+      if (oldVersion < 3) db.createObjectStore('actions', { keyPath: 'family_id' });
     },
     // Otra pestaña borra la BD (logout): soltar la conexión para no bloquearla.
     blocking() {

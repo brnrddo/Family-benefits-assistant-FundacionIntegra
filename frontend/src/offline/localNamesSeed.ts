@@ -7,6 +7,7 @@ import { SYNTHETIC_CLASSIFICATION } from '../config/profile';
 import { isSyntheticId } from '../domain/ids';
 import { nowMs } from '../lib/now';
 import { openDemoDb } from './db';
+import type { DoneActionSeed } from './doneActions';
 import { cutLocalName, localNamesEnabled } from './localNames';
 import seedFile from './localNamesSeed.json';
 
@@ -20,6 +21,8 @@ export interface DemoSessionSeed {
   readonly tia: { readonly tia_id: string; readonly display_name: string };
   readonly garden: { readonly garden_id: string; readonly name: string };
   readonly families: readonly DemoSessionFamily[];
+  /** Acciones previas ficticias (DEC-091): la demo arranca con "Ya habló con… (ayer)". */
+  readonly memory?: readonly DoneActionSeed[];
 }
 export interface LocalNamesSeed {
   readonly data_classification: string;

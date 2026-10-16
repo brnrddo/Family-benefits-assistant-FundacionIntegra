@@ -10,6 +10,7 @@ import type { ConversationRequest, PreevaluationRequest } from '../api/types';
 import { getSession } from '../auth/session';
 import { runtimeConfig } from '../config/profile';
 import { classifyConversationError, discardEntry, enqueue, queueStatusFor } from '../offline/conversationQueue';
+import { recordDoneAction } from '../offline/doneActions';
 import { invalidateAfterConversation } from './queryClient';
 import { primeFamilia, queryKeys } from './queries';
 
@@ -69,6 +70,10 @@ export function useSubmitConversation() {
   return useMutation({
     mutationFn: submitConversation,
     onSuccess: async (outcome, input) => {
+      // DEC-091: memoria local de la acción del día (confirmada o ya guardada en la cola del equipo).
+      if (outcome === 'confirmed' || outcome === 'queued' || outcome === 'paused_auth') {
+        await recordDoneAction(input.familyId, input.body.benefit_ids[0] ?? null);
+      }
       if (outcome === 'confirmed') {
         // Un reintento manual confirmado deja de estar pendiente en este equipo (misma clave).
         await discardEntry(input.idempotencyKey).catch(() => undefined);

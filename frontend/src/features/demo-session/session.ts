@@ -6,6 +6,7 @@
 import { useSyncExternalStore } from 'react';
 import { demoSessionEnabled, runtimeConfig, SYNTHETIC_CLASSIFICATION } from '../../config/profile';
 import { log } from '../../lib/log';
+import { seedDoneActions } from '../../offline/doneActions';
 import { refreshLocalNames } from '../../offline/localNames';
 import type { DemoSessionSeed } from '../../offline/localNamesSeed';
 
@@ -81,6 +82,8 @@ export async function enterDemoSession(): Promise<void> {
   const { seedDemoSessionNames } = await import('../../offline/localNamesSeed');
   await seedDemoSessionNames(seed.families);
   await refreshLocalNames();
+  // DEC-091: la demo arranca con una acción previa ficticia para que se vea la memoria.
+  await seedDoneActions(seed.memory ?? []);
   try {
     window.sessionStorage.setItem(STORAGE_KEY, seed.tia.tia_id);
   } catch {

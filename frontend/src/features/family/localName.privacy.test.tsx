@@ -20,6 +20,7 @@ import { seedLocalNames } from '../../offline/localNamesSeed';
 import { createTestQueryClient } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import { routes } from '../../router';
+import { listOpen } from '../demo-session/demoCopy';
 import { familyRoutes } from './routes';
 
 // Router real con páginas diferidas (lazy): la primera carga de cada vista tarda más en jsdom.
@@ -100,7 +101,8 @@ describe('nombre de trato: nunca sale del equipo', () => {
       </QueryClientProvider>,
     );
 
-    // Inicio → ficha (tarjeta con nombre genérico)
+    // Inicio → ficha (tarjeta con nombre genérico; la lista viene plegada, DEC-091)
+    await user.click(await screen.findByRole('button', { name: listOpen(8) }));
     await user.click(await screen.findByRole('link', { name: new RegExp(t('family.generic_name', { short_id: '00002' })) }));
     await screen.findByRole('heading', { level: 1, name: t('family.generic_name', { short_id: '00002' }) });
 

@@ -8,6 +8,7 @@ import { mockServer, server } from '../../test/mswServer';
 import { renderWithProviders } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import HomePage from '../home/HomePage';
+import { listOpen } from '../demo-session/demoCopy';
 import { QUICK_INFORM_COPY } from './QuickInform';
 
 const FAMILY = 'FAM-SIM-E3-00002';
@@ -33,6 +34,8 @@ describe('QuickInformButton', () => {
         </Routes>,
         { route: '/' },
       );
+      // La lista viene plegada (DEC-091).
+      await user.click(await screen.findByRole('button', { name: listOpen(8) }));
       const link = await screen.findByRole('link', { name: new RegExp(t('family.generic_name', { short_id: '00002' })) });
       const row = link.closest('li') as HTMLElement;
       // Una familia ya conversada no ofrece el botón.
