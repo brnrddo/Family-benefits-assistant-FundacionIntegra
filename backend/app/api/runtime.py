@@ -286,6 +286,8 @@ def responder_asistente(question: str, request_id: str) -> dict:
             )
         except redaccion.RedaccionError as exc:
             _log_genai_degradado(exc.motivo)
+        except Exception:  # noqa: BLE001 - el chat siempre responde (plantilla)
+            _log_genai_degradado("ASISTENTE_ERROR_INESPERADO")
     return provider.responder_asistente(request_id, question)
 
 
