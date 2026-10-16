@@ -38,6 +38,7 @@ import { isValidId } from '../domain/ids';
 import { hasFixture, payloadOf } from './fixtureStore';
 import addInfoFixture from './proposals/addFamiliaAntecedentes.FAM-SIM-E3-00002.json';
 import alcanceFixture from './proposals/getCatalogoAlcance.json';
+import antecedentesFixture from './proposals/getFamiliaAntecedentes.FAM-SIM-E3-00002.json';
 import type { ScenarioId } from './scenarios';
 import { messageWithHttpCitation } from './variants';
 
@@ -312,6 +313,15 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
         });
       }
       return ok(detailEnvelope(record));
+    }),
+
+    // Operación PROPUESTA (DEC-081, fuera de C3): umbral de semanas de embarazo para la pregunta Sí/No.
+    http.get(`${API}/familias/:id/antecedentes`, ({ params }) => {
+      const familyId = String(params.id);
+      if (!isValidId(familyId) || !state.families.has(familyId)) return fail(404);
+      const body = structuredClone(antecedentesFixture.payload);
+      body.data.family_id = familyId;
+      return ok(body);
     }),
 
     // Operación PROPUESTA (DEC-039, fuera de C3): datos declarados → ficha re-evaluada (PRELIMINAR).

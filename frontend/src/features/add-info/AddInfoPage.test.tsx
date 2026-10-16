@@ -6,7 +6,7 @@ import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
-import { addInfoEngineCodes as engineCodes } from '../../api/proposals/testFixtures';
+import { getAntecedentesFixture as antecedentesFixture, addInfoEngineCodes as engineCodes } from '../../api/proposals/testFixtures';
 import { t } from '../../i18n/copy';
 import { server, TEST_API_BASE } from '../../test/mswServer';
 import { overrideOperation } from '../../test/operations';
@@ -96,6 +96,22 @@ describe('AddInfoPage', () => {
     await user.click(within(pregnancy).getByRole('radio', { name: t('common.yes') }));
     expect(await screen.findByRole('group', { name: ADD_INFO_COPY.optionalSensitive(ADD_INFO_COPY.pregnancyWeeksN('20')) })).toBeInTheDocument();
     expect(new Set(legends()).size).toBe(legends().length);
+  });
+
+  it('modo mock: la pregunta de semanas muestra N del handler MSW', async () => {
+    const user = userEvent.setup();
+    // Sin override del GET: responde el handler MSW de GET /familias/:id/antecedentes.
+    server.use(overrideOperation('getFamilia', () => HttpResponse.json(engineCodes.ficha)));
+    renderWithProviders(
+      <Routes>
+        <Route path="/familias/:familyId/agregar-informacion" element={<AddInfoPage />} />
+      </Routes>,
+      { route: `/familias/${FAMILY}/agregar-informacion` },
+    );
+    const pregnancy = await screen.findByRole('group', { name: ADD_INFO_COPY.optionalSensitive(t('new_family.q.household_pregnancy')) });
+    await user.click(within(pregnancy).getByRole('radio', { name: t('common.yes') }));
+    const weeks = String(antecedentesFixture.payload.data.pregnancy_weeks_threshold);
+    expect(await screen.findByRole('group', { name: ADD_INFO_COPY.optionalSensitive(ADD_INFO_COPY.pregnancyWeeksN(weeks)) })).toBeInTheDocument();
   });
 
   it('sin umbral (GET /antecedentes falla): la pregunta de semanas no lleva número', async () => {
