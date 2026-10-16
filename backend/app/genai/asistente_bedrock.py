@@ -7,7 +7,7 @@ datos personales por el router y las entradas del catálogo C4 que eligió el
 cualquier ``RedaccionError``.
 
 Todo el mundo de la demo es ficticio (familias, jardines y beneficios). El
-prompt C4 (1.2.0) solo deja nombrar apoyos de ``catalog_items`` o de su lista
+prompt C4 (1.2.1) solo deja nombrar apoyos de ``catalog_items`` o de su lista
 fija "Programas de referencia"; nunca inventar programas. Si nada calza, el
 modelo propone acciones genéricas (revisar la ficha, conversar con la familia,
 ir a la municipalidad) para que ninguna pregunta termine en un callejón sin
@@ -24,8 +24,11 @@ Barreras, en orden (PRIVACIDAD_DEMO §"Barrera previa y GenAI"):
 3. Render del prompt C4 + inspección de TODO el payload de egreso.
 4. Guardrails INPUT -> Converse -> Guardrails OUTPUT -> schema (``BedrockProvider``,
    vía ``redaccion._invocar_modelo``).
-5. Postvalidación del copy (``redaccion._texto_modelo``: sin promesas, cifras
-   ni markup, con el aviso exacto) y citas SOLO a entradas enviadas.
+5. Normalización determinista de la prosa (``normalizar_prosa``: ';', '**',
+   '#', viñetas y frases con montos) y después postvalidación del copy
+   (``redaccion._texto_modelo``: sin promesas, cifras ni markup, con el aviso
+   exacto); el rechazo se loguea con submotivo fijo. Citas SOLO a entradas
+   enviadas.
 
 Los logs llevan solo operación, estado, motivo, request_id y latencia; nunca la
 pregunta, la respuesta ni el prompt.
@@ -204,6 +207,69 @@ def sin_codigos_internos(
     return limpio
 
 
+# --- Normalización determinista de la prosa del modelo --------------------------
+
+# Submotivos de POSTVALIDACION: códigos fijos, únicos valores que se loguean.
+SUB_PROMESA = "PROMESA"
+SUB_MARKUP = "MARKUP"
+SUB_LARGO = "LARGO"
+SUB_CODIGO = "CODIGO"
+SUB_VACIO = "VACIO"
+
+_RE_ENCABEZADO = re.compile(r"^\s*#{1,6}\s*")
+_RE_VINETA = re.compile(r"^\s*(?:[-*•]|\d{1,2}[.)])\s+")
+_RE_ENFASIS = re.compile(r"\*\*|__")
+_RE_FIN_FRASE = re.compile(r"[.!?:]$")
+_RE_CORTE_FRASE = re.compile(r"(?<=[.!?])\s+")
+# Montos: signo peso, números de 4+ dígitos o con separador de miles.
+_RE_MONTO = re.compile(r"\$|\b\d{4,}\b|\b\d{1,3}(?:\.\d{3})+\b")
+
+
+class PostvalidacionAsistente(RedaccionError):
+    """``POSTVALIDACION`` con submotivo de código fijo (nunca el texto)."""
+
+    def __init__(self, sub: str):
+        super().__init__(redaccion.MOTIVO_POSTVALIDACION)
+        self.sub = sub
+
+
+def normalizar_prosa(texto: str) -> str:
+    """Convierte la prosa habitual de Claude en frases planas, sin decidir nada.
+
+    ';' pasa a '.', se quitan '**'/'__', '#' de encabezados y marcadores de
+    viñeta al inicio de línea; cada línea queda como frase y se colapsan los
+    espacios. Después se eliminan las frases con montos ('$', cifras largas)
+    si queda al menos una frase útil. No toca promesas, URLs ni markup: esos
+    los sigue rechazando la postvalidación.
+    """
+    frases_linea: list[str] = []
+    for linea in texto.replace(";", ".").splitlines():
+        linea = _RE_ENFASIS.sub("", _RE_VINETA.sub("", _RE_ENCABEZADO.sub("", linea)))
+        linea = " ".join(linea.split())
+        if not linea:
+            continue
+        frases_linea.append(linea if _RE_FIN_FRASE.search(linea) else f"{linea}.")
+    frases = [f for f in _RE_CORTE_FRASE.split(" ".join(frases_linea)) if f]
+    sin_montos = [f for f in frases if not _RE_MONTO.search(template_provider._normalizar(f))]
+    return " ".join(sin_montos if sin_montos else frases)
+
+
+def _submotivo(cuerpo: str, limite: int) -> str | None:
+    """Submotivo de rechazo con las mismas reglas de ``redaccion._exigir_copy_admisible``."""
+    if not cuerpo:
+        return SUB_VACIO
+    if not template_provider.es_texto_plano(cuerpo):
+        return SUB_MARKUP
+    normalizado = template_provider._normalizar(cuerpo)
+    if template_provider.contiene_promesa(cuerpo) or any(
+        f in normalizado for f in redaccion.FRASES_VETADAS
+    ):
+        return SUB_PROMESA
+    if len(cuerpo) > limite:
+        return SUB_LARGO
+    return None
+
+
 def _citas(benefit_ids: object, enviadas: dict[str, CatalogEntry]) -> list[dict]:
     """Citas solo de entradas enviadas al modelo; IDs desconocidos se ignoran.
 
@@ -238,7 +304,7 @@ def responder_asistente(
         return _responder(question, entradas, request_id=request_id,
                           provider=provider, inicio=inicio)
     except RedaccionError as exc:
-        _log_degradado(exc.motivo, request_id, inicio)
+        _log_degradado(exc.motivo, request_id, inicio, getattr(exc, "sub", "-"))
         raise
     except Exception:  # noqa: BLE001 — falla cerrada: nunca propagar detalles
         _log_degradado(redaccion.MOTIVO_ERROR_INESPERADO, request_id, inicio)
@@ -267,9 +333,23 @@ def _responder(question, entradas, *, request_id, provider, inicio) -> dict:
     )
     texto = datos.get("answer")
     if not isinstance(texto, str):
-        raise RedaccionError(redaccion.MOTIVO_POSTVALIDACION)
-    texto = sin_codigos_internos(texto, catalogo.entradas, enviadas)
-    answer = redaccion._texto_modelo(texto, LARGO_MAX_ANSWER)
+        raise PostvalidacionAsistente(SUB_VACIO)
+    try:
+        texto = sin_codigos_internos(texto, catalogo.entradas, enviadas)
+    except RedaccionError:
+        raise PostvalidacionAsistente(SUB_CODIGO) from None
+    # El aviso (trae ';') se recorta ANTES de normalizar, como en
+    # ``redaccion._texto_modelo``, para no deformarlo; el servidor lo vuelve a poner.
+    cuerpo = texto.strip()
+    if cuerpo.endswith(template_provider.DISCLAIMER):
+        cuerpo = cuerpo[: -len(template_provider.DISCLAIMER)].strip()
+    cuerpo = normalizar_prosa(cuerpo)
+    # Mismo límite que ``_texto_modelo``, solo para clasificar el submotivo; la
+    # política la sigue aplicando ``_texto_modelo``.
+    sub = _submotivo(cuerpo, LARGO_MAX_ANSWER - len(template_provider.DISCLAIMER) - 1)
+    if sub is not None:
+        raise PostvalidacionAsistente(sub)
+    answer = redaccion._texto_modelo(cuerpo, LARGO_MAX_ANSWER)
     citas = _citas(datos.get("benefit_ids"), enviadas)
 
     envelope_c3 = template_provider._envelope_asistente(
@@ -280,11 +360,11 @@ def _responder(question, entradas, *, request_id, provider, inicio) -> dict:
     return envelope_c3
 
 
-def _log_degradado(motivo: str, request_id: str, inicio: float) -> None:
-    # Solo campos sanitizados: nunca pregunta, respuesta ni prompt.
+def _log_degradado(motivo: str, request_id: str, inicio: float, sub: str = "-") -> None:
+    # Solo campos sanitizados (códigos fijos): nunca pregunta, respuesta ni prompt.
     logger.warning(
-        "genai_asistente: operacion=%s estado=DEGRADADO motivo=%s request_id=%s "
-        "latencia_ms=%d",
-        OPERACION_ASISTENTE, motivo, request_id or "-",
+        "genai_asistente: operacion=%s estado=DEGRADADO motivo=%s sub=%s "
+        "request_id=%s latencia_ms=%d",
+        OPERACION_ASISTENTE, motivo, sub, request_id or "-",
         int((time.monotonic() - inicio) * 1000),
     )
