@@ -1,0 +1,19 @@
+{
+  "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
+  "operationId": "addFamiliaAntecedentes",
+  "proposal": "DEC-039 / DEC-081: GET /familias/{id}/antecedentes (fuera de C3 v1.0.2). Fixture sintetico, valor de P006-02 en e3.db (data/publico/parametros_version.csv).",
+  "status": 200,
+  "payload": {
+    "meta": {
+      "request_id": "REQ-SIM-0601",
+      "snapshot_id": "SNAP-SIM-DEMO-001",
+      "eligibility_bundle_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "content_bundle_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "content_version": "1.0.0"
+    },
+    "data": {
+      "family_id": "FAM-SIM-E3-00002",
+      "pregnancy_weeks_threshold": 20
+    }
+  }
+}

@@ -104,7 +104,8 @@ existe: `engine/service.py`, `access/`, `context/` y `priority/`.
 
 - Si falta la base de datos, debe degradar a mocks con aviso, nunca romper.
 - No modificar nada de `backend/app/{engine,access,context,loader,db}`: solo
-  importarlo. Si encuentra un error ahí, repórtelo, no lo corrija.
+  importarlo. Si encuentra un error ahí, repórtelo, no lo corrija. Superada para
+  `engine/` y `access/` por DEC-081 (reevaluación con datos declarados, PR #31).
 
 Criterio de término: `GET /familias/{id}` y `GET /familias/{id}/oportunidades`
 devuelven resultados calculados por el motor, con su traza, y la suite sigue en
@@ -168,7 +169,7 @@ sugerida abajo quedó superada.
    cualquier edición rompe su build y su test de snapshot. Si una funcionalidad
    necesita un campo nuevo, se implementa en el servidor como propuesta y se
    documenta, igual que se hizo con el endpoint de antecedentes.
-2. **`backend/app/{engine,access,context,loader,db}`** (Rol 1): solo importar.
+2. **`backend/app/{engine,access,context,loader,db}`** (Rol 1): solo importar. Excepción: `engine/` y `access/` por DEC-081/DEC-082.
 3. **`content/`** (Rol 4): es el productor único del contenido C4.
 4. ~~Archivos bloqueados por la integración en curso.~~ **Ya se desbloquearon:**
    el PR #8 se fusionó a `main` el 2026-10-15. `backend/app/api/runtime.py`,
