@@ -24,6 +24,7 @@ export function DemoSessionGate({ children }: { readonly children: ReactNode }) 
     <div className="space-y-5">
       <PageTitle>{DEMO_COPY.gateTitle}</PageTitle>
       <p>{DEMO_COPY.gateIntro}</p>
+      <p className="text-[0.9rem] text-ink-muted">{DEMO_COPY.gateFictionNotice}</p>
       <Card className="flex items-center gap-4">
         <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-canvas text-primary">
           <Icon name="user" className="size-8" />

@@ -4,6 +4,7 @@
 export const DEMO_COPY = {
   gateTitle: 'Bienvenida',
   gateIntro: 'Entre a la demo como la educadora del jardín. Verá a sus familias, sus avances y el chat de situaciones.',
+  gateFictionNotice: 'Demo: personas, jardines y beneficios son ficticios.',
   gateGardenLabel: 'Jardín',
   homeChatCta: 'Cuénteme una situación y le muestro apoyos',
   statsTitle: 'Su jardín hoy',

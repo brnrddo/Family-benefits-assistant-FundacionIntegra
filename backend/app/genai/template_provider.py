@@ -257,12 +257,14 @@ PLANTILLAS_NEUTRAS = PlantillasTexto(
     seccion_razon="Según la revisión del jardín, este apoyo es para conversar con su familia.",
     seccion_accion=f"Consulte en {PH_INSTITUCION}.",
     asistente_individual=(
-        "Esta pregunta es sobre una familia en particular. El asistente no evalúa "
-        "casos individuales. Revise la ficha de la familia en la aplicación."
+        "Esta pregunta es sobre una familia en particular. Abra su ficha en la "
+        "aplicación: ahí verá los apoyos revisados y qué antecedentes faltan. Hoy "
+        "puede conversar con la familia y pedirle esos documentos."
     ),
     asistente_catalogo=(
-        "Por ahora no es posible responder con el asistente. Revise la información "
-        f"oficial de estos apoyos: {PH_TITULOS}."
+        "Para avanzar hoy: revise la ficha de la familia, converse con ella sobre "
+        "ingresos y documentos, y oriéntela a acercarse a la oficina municipal. "
+        f"Apoyos del catálogo para conversar: {PH_TITULOS}."
     ),
     etiqueta_donde_ir="Dónde ir",
     frases_estado_guion=_FRASES_ESTADO_NEUTRAS,
@@ -276,8 +278,8 @@ GUION_SIN_CATALOGO = (
     "Revise la ficha de la familia en la aplicación."
 )
 ASISTENTE_SIN_CATALOGO = (
-    "Por ahora no es posible responder con el asistente. Revise la información "
-    "oficial en la institución."
+    "Para avanzar hoy: revise la ficha de la familia, converse con ella sobre "
+    "ingresos y documentos, y oriéntela a acercarse a la oficina municipal."
 )
 WARNING_SIN_CATALOGO = "CATALOGO_C4_NO_DISPONIBLE"
 
@@ -538,6 +540,20 @@ class TemplateProvider:
             if patron.search(texto):
                 ids.extend(b for b in bids if b in self._catalogo and b not in ids)
         return [self._catalogo[b] for b in ids[:_MAX_SITUACION]]
+
+    def entradas_relevantes(self, question: str) -> list[CatalogEntry]:
+        """Entradas del catálogo ordenadas por relevancia para ``question``.
+
+        Determinista: primero las coincidencias por nombre, luego la tabla
+        ``SITUACIONES`` y al final el resto del catálogo en su orden, sin
+        duplicados. No filtra: el filtro de egreso hacia el modelo lo aplica
+        ``asistente_bedrock``.
+        """
+        vistas: dict[str, CatalogEntry] = {}
+        for e in [*self._coincidencias(question), *self._por_situacion(question),
+                  *self._catalogo.values()]:
+            vistas.setdefault(e.benefit_id, e)
+        return list(vistas.values())
 
     def _responder_situacion(self, request_id: str, question: str) -> dict | None:
         """Respuesta concreta y corta para una situación de la tabla cerrada.
