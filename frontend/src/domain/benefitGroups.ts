@@ -20,9 +20,9 @@ export interface BenefitRow {
 }
 
 export interface BenefitGroups {
-  /** result SI (salvo PENDIENTE_ANTECEDENTES). */
+  /** result SI (salvo PENDIENTE_ANTECEDENTES con códigos). */
   readonly applies: readonly BenefitRow[];
-  /** result INDETERMINADO o access_state PENDIENTE_ANTECEDENTES. */
+  /** result INDETERMINADO o access_state PENDIENTE_ANTECEDENTES con códigos. */
   readonly missing: readonly BenefitRow[];
 }
 
@@ -68,7 +68,8 @@ function benefitRows(detail: FamilyDetail, extra: readonly Opportunity[]): Benef
  */
 export function groupBenefits(detail: FamilyDetail, extra: readonly Opportunity[] = []): BenefitGroups {
   const rows = benefitRows(detail, extra);
-  const isMissing = (row: BenefitRow) => row.result === 'INDETERMINADO' || row.accessState === 'PENDIENTE_ANTECEDENTES';
+  const isMissing = (row: BenefitRow) =>
+    !isPendingWithoutCodes(row) && (row.result === 'INDETERMINADO' || row.accessState === 'PENDIENTE_ANTECEDENTES');
   return {
     applies: rows.filter((row) => row.result === 'SI' && !isMissing(row)),
     missing: rows.filter(isMissing),
@@ -87,8 +88,18 @@ export type BenefitSections = Readonly<Record<BenefitSection, readonly BenefitRo
 
 const DONE_STATES: ReadonlySet<AccessState> = new Set(['ASIGNADO', 'GESTION_EN_CURSO', 'GESTION_RECHAZADA', 'SIN_CUPO']);
 
+/**
+ * SI PENDIENTE_ANTECEDENTES sin `missing_codes`: la base no dice qué falta (supuestos del motor), así
+ * que no se pide nada (decisión del usuario, diagnostico-faltantes.md) y va a "Puede postular ahora".
+ * Con códigos reales sigue en "Falta información".
+ */
+export function isPendingWithoutCodes(row: BenefitRow): boolean {
+  return row.result === 'SI' && row.accessState === 'PENDIENTE_ANTECEDENTES' && row.missingCodes.length === 0;
+}
+
 /** Sección por enums de C3; null = no se muestra (NO/NO_APLICA). */
 export function sectionOf(row: BenefitRow): BenefitSection | null {
+  if (isPendingWithoutCodes(row)) return 'apply';
   if (row.result === 'INDETERMINADO' || row.accessState === 'PENDIENTE_ANTECEDENTES') return 'missing';
   if (row.result === 'SI' && row.accessState === 'ELEGIBLE_SIN_ASIGNACION') return 'apply';
   if (DONE_STATES.has(row.accessState)) return 'done';

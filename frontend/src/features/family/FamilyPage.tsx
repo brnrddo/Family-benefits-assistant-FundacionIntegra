@@ -1,5 +1,5 @@
-// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004), de arriba abajo: espacio reservado al agente
-// (Tarea 7, B); "Datos del hogar" plegada (quiénes viven, tramo, datos por confirmar concretos y
+// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004), de arriba abajo: "Preguntas tipo" del agente
+// (FamilyQuickQuestions de B, Tarea 7); "Datos del hogar" plegada (quiénes viven, tramo, datos por confirmar concretos y
 // "Agregar información"); filtro "Todos · Aplica · Falta info · Ya postuló o sin cupo" con conteos;
 // secciones "Puede postular ahora" y "Falta información" abiertas y "Ya postuló o sin cupo" plegada
 // (BenefitSections.tsx), con tarjetas que muestran solo el nombre y abren el detalle; y "Qué hacer
@@ -28,6 +28,7 @@ import { DataFreshness } from '../../ui/DataStatus';
 import { Icon } from '../../ui/icons';
 import { PageTitle } from '../../ui/PageTitle';
 import { Banner, ErrorState, ReferentialNotice, Skeleton } from '../../ui/states';
+import { FamilyQuickQuestions } from '../assistant/FamilyQuickQuestions';
 import { QuickInformButton } from '../conversation/QuickInform';
 import NotFoundPage from '../system/NotFoundPage';
 import { buildActionPlan, toConfirmItems } from './actionPlan';
@@ -176,8 +177,6 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   const addInfoHref = familyRoutes.agregarInformacion(familyId);
   const context = contexto.data?.body.data ?? null;
   const plan = buildActionPlan(sections, { canAddInfo: showAddInfo, scopes });
-  // Slot del agente: lo monta B (features/assistant/) en la Tarea 7
-  const assistantSlot = <div data-assistant-slot className="empty:hidden" />;
 
   return (
     <div className="space-y-5">
@@ -194,7 +193,7 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
       <DataFreshness result={ficha.data} />
 
       {/* Bloques de la ficha: agente → "Datos del hogar" → filtro y secciones → "Qué hacer ahora". */}
-      {assistantSlot}
+      <FamilyQuickQuestions familyId={familyId} />
 
       <HouseholdCard
         detail={detail}

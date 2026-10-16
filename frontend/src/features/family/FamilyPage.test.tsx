@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
 import type { OpportunityListEnvelope } from '../../api/types';
 import { configureRuntime, resolveProfile } from '../../config/profile';
+import { ACCESS_STATE_KEY, LEVEL_KEY } from '../../domain/presentation';
 import { benefitName, t } from '../../i18n/copy';
 import { clearDemoData } from '../../offline/db';
 import { clearLocalNamesMemory, currentLocalNames } from '../../offline/localNames';
@@ -85,23 +86,26 @@ describe('FamilyPage', () => {
     expect(screen.getByRole('link', { name: t('family.actions.mark') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00001/conversacion');
   });
 
-  it('bug C: SI pendiente de antecedentes sin códigos dice qué documento falta (nunca "Un dato del hogar")', async () => {
+  it('SI pendiente sin códigos va a "Puede postular ahora" (PRELIMINAR en el detalle) sin pedir nada', async () => {
     const user = userEvent.setup();
     const clon = structuredClone(fichaBrecha());
     clon.data.benefit_results.push({ benefit_id: 'BEN-012', result: 'SI', level: 'PRELIMINAR', access_state: 'PENDIENTE_ANTECEDENTES', missing_codes: [], trace: [] });
     server.use(overrideOperation('getFamilia', () => HttpResponse.json(clon)));
     renderFamily();
     const name = benefitName('BEN-012', null);
-    const missing = (await screen.findByRole('heading', { name: FAMILY_COPY.sectionMissing })).closest('section') as HTMLElement;
-    await user.click(await within(missing).findByRole('button', { name }));
-    expect(within(missing).getByText(FAMILY_COPY.pendingProofDetail)).toBeVisible();
+    const apply = (await screen.findByRole('heading', { name: FAMILY_COPY.sectionApply })).closest('section') as HTMLElement;
+    const toggle = await within(apply).findByRole('button', { name });
+    await user.click(toggle);
+    const card = toggle.closest('[data-benefit-card]') as HTMLElement;
+    expect(within(card).getByText(t(LEVEL_KEY.PRELIMINAR))).toBeVisible();
+    expect(within(card).queryByText(t(ACCESS_STATE_KEY.PENDIENTE_ANTECEDENTES))).toBeNull();
 
     await user.click(screen.getByRole('button', { name: ADD_INFO_COPY.householdTitle }));
     const household = document.querySelector('[data-household]') as HTMLElement;
-    expect(within(household).getByText(FAMILY_COPY.pendingProof(name))).toBeVisible();
     const plan = document.querySelector('[data-action-plan]') as HTMLElement;
-    expect(within(plan).getByText(FAMILY_COPY.pendingProof(name))).toBeInTheDocument();
-    expect(within(plan).getByRole('link', { name: t('family.actions.add_info') })).toBeInTheDocument();
+    expect(household.textContent).not.toContain(name);
+    expect(plan.querySelector('ul')?.textContent ?? '').not.toContain(name);
+    expect(document.body.textContent).not.toMatch(/documento que confirme/i);
     expect(screen.queryByText(t('family.missing_generic'))).toBeNull();
   });
 

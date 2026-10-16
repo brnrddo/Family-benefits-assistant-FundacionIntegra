@@ -7,7 +7,8 @@
 import { useId, useState } from 'react';
 import { TERRITORIAL_COPY } from '../../api/proposals/territorial';
 import type { CatalogScopeItem } from '../../api/proposals/types';
-import { visibleSections, type BenefitFilter, type BenefitRow, type BenefitSection, type BenefitSections as Sections } from '../../domain/benefitGroups';
+import type { AccessState } from '../../api/types';
+import { isPendingWithoutCodes, visibleSections, type BenefitFilter, type BenefitRow, type BenefitSection, type BenefitSections as Sections } from '../../domain/benefitGroups';
 import { formatInteger } from '../../domain/format';
 import { accessPresentation, ACCESS_STATE_KEY, knownMissingLabels, LEVEL_KEY } from '../../domain/presentation';
 import { t } from '../../i18n/copy';
@@ -30,8 +31,11 @@ const SECTION_TITLE: Readonly<Record<BenefitSection, string>> = {
   done: FAMILY_COPY.sectionDone,
 };
 
+/** Estado a presentar: un SI pendiente sin códigos se lee como "puede postular" (no se pide nada). */
+const shownState = (row: BenefitRow): AccessState => (isPendingWithoutCodes(row) ? 'ELEGIBLE_SIN_ASIGNACION' : row.accessState);
+
 function RowChips({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
-  const group = accessPresentation(row.accessState);
+  const group = accessPresentation(shownState(row));
   return (
     <div className="flex flex-wrap gap-2">
       {group !== null && <Chip icon={group.icon} tone={group.tone} label={t(group.labelKey)} />}
@@ -80,7 +84,7 @@ function BenefitCard({ row, section, scope }: { readonly row: BenefitRow; readon
       </h3>
       <div id={regionId} hidden={!open} className="mt-3 space-y-3">
         <RowChips row={row} scope={scope} />
-        <p className="text-ink-muted">{t(ACCESS_STATE_KEY[row.accessState])}</p>
+        <p className="text-ink-muted">{t(ACCESS_STATE_KEY[shownState(row)])}</p>
         {section === 'missing' && <TextList label={FAMILY_COPY.missingLabel} items={rowMissingTexts(row)} />}
         {section === 'missing' && row.questions.length > 0 && <TextList label={t('family.suggested_question_label')} items={row.questions} c3 />}
         {pending.length > 0 && (

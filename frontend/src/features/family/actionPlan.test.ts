@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { BenefitRow } from '../../domain/benefitGroups';
 import { knownMissingLabels } from '../../domain/presentation';
 import { benefitName, t } from '../../i18n/copy';
-import { buildActionPlan } from './actionPlan';
+import { buildActionPlan, toConfirmItems } from './actionPlan';
 import { FAMILY_COPY } from './familyCopy';
 
 function row(benefitId: string, over: Partial<BenefitRow> = {}): BenefitRow {
@@ -31,7 +31,6 @@ describe('buildActionPlan', () => {
       missing: [
         missing('BEN-003', { questions: ['¿Cuándo fue el último control?'] }),
         missing('BEN-005', { questions: ['¿cuándo fue el último control'] }),
-        row('BEN-012', { level: 'PRELIMINAR', accessState: 'PENDIENTE_ANTECEDENTES' }),
         missing('BEN-009', { missingCodes: ['semanas_gestacion'] }),
         missing('BEN-010', { missingCodes: ['tramo_rsh'] }),
       ],
@@ -40,13 +39,21 @@ describe('buildActionPlan', () => {
     const plan = buildActionPlan(sections, { canAddInfo: true, scopes: new Map() });
     expect(plan.ask).toEqual({
       withForm: true,
-      items: ['¿Cuándo fue el último control?', FAMILY_COPY.pendingProof(benefitName('BEN-012', null)), 'Semanas de embarazo'],
+      items: ['¿Cuándo fue el último control?', 'Semanas de embarazo', ...knownMissingLabels(['tramo_rsh'])],
     });
     expect(plan.deliver).toEqual(['BEN-001', 'BEN-002', 'BEN-006'].map((id) => benefitName(id, null)));
     expect(plan.none).toBe(false);
 
     const empty = buildActionPlan({ apply: [], missing: [], done: [row('BEN-004', { accessState: 'ASIGNADO' })] }, { canAddInfo: true, scopes: new Map() });
     expect(empty).toEqual({ ask: null, deliver: [], none: true });
+  });
+
+  it('guías sin campo: llevan el nombre del beneficio y el plan no manda al formulario', () => {
+    const sections = { apply: [], missing: [missing('BEN-007', { missingCodes: ['estado_acceso', 'vigencia'] })], done: [] };
+    const guide = FAMILY_COPY.benefitGuide(benefitName('BEN-007', null), knownMissingLabels(['estado_acceso', 'vigencia']));
+    expect(guide).toBe(`${benefitName('BEN-007', null)}: si ya recibe o tramita el apoyo · si el apoyo sigue vigente`);
+    expect(toConfirmItems(sections, null, new Map())).toEqual([guide]);
+    expect(buildActionPlan(sections, { canAddInfo: true, scopes: new Map() }).ask).toEqual({ withForm: false, items: [guide] });
   });
 
   it('todo código conocido del motor o de C3 tiene texto propio (nunca el genérico)', () => {

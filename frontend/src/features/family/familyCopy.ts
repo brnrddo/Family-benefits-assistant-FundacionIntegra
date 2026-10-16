@@ -27,10 +27,9 @@ export const FAMILY_COPY = {
   filterDone: (n: string) => `Ya postuló o sin cupo (${n})`,
   /** family.missing_label */
   missingLabel: 'Falta saber:',
-  /** family.pending_proof_detail */
-  pendingProofDetail: 'Un documento que confirme los datos registrados',
-  /** family.pending_proof {name} */
-  pendingProof: (name: string) => `Un documento que confirme los datos de ${name}`,
+  /** family.benefit_guide {name} {labels}: datos sin pregunta Sí/No, con el beneficio al que pertenecen. */
+  benefitGuide: (name: string, labels: readonly string[]) =>
+    `${name}: ${labels.map((label) => label.charAt(0).toLocaleLowerCase('es') + label.slice(1)).join(' · ')}`,
   /** family.unknown_detail: respaldo para INDETERMINADO sin códigos con texto. */
   unknownDetail: 'Un dato que la ficha todavía no registra',
   /** family.plan.title */
@@ -38,7 +37,7 @@ export const FAMILY_COPY = {
   /** family.plan.ask */
   planAsk: 'Toque Agregar información y pregúntele a la apoderada. Si usted ya lo sabe, respóndalo directamente.',
   /** family.plan.ask_no_form */
-  planAskNoForm: 'Pregúntele a la apoderada por estos datos.',
+  planAskNoForm: 'Pregúntele a la apoderada:',
   /** family.plan.deliver {names} */
   planDeliver: (names: string) => `Entréguele la información de: ${names}`,
   /** family.plan.none */
