@@ -1,6 +1,6 @@
 {
   "data_classification": "SYNTHETIC_DEMO_NOT_A_REAL_PERSON",
-  "uso": "Nombres de trato INVENTADOS para la demo (DEC-047). Solo se siembran en IndexedDB local; nunca se envian a la API ni a logs.",
+  "uso": "Nombres de trato INVENTADOS para la demo (DEC-047). Solo se siembran en IndexedDB local; nunca se envian a la API ni a logs. `names` cubre los mocks; `demo_session` trae la tia, el jardin y las familias ficticias de la sesion demo (JAR-SIM-E3-00014).",
   "names": [
     { "family_id": "FAM-SIM-E3-00001", "name": "Martina R." },
     { "family_id": "FAM-SIM-E3-00002", "name": "Benjamín T." },
@@ -11,5 +11,21 @@
     { "family_id": "FAM-SIM-E3-00007", "name": "Catalina V." },
     { "family_id": "FAM-SIM-E3-00008", "name": "Gaspar M." },
     { "family_id": "FAM-SIM-E3-00009", "name": "Josefa N." }
-  ]
+  ],
+  "demo_session": {
+    "tia": { "tia_id": "TIA-SIM-DEMO-001", "display_name": "Tía Carmen" },
+    "garden": { "garden_id": "JAR-SIM-E3-00014", "name": "Jardín Infantil Los Aromos" },
+    "families": [
+      { "family_id": "FAM-SIM-E3-00014", "family_name": "Familia Rojas Muñoz", "child_name": "Martina R." },
+      { "family_id": "FAM-SIM-E3-00064", "family_name": "Familia González Tapia", "child_name": "Benjamín G." },
+      { "family_id": "FAM-SIM-E3-00114", "family_name": "Familia Muñoz Contreras", "child_name": "Isidora M." },
+      { "family_id": "FAM-SIM-E3-00164", "family_name": "Familia Díaz Fuentes", "child_name": "Tomás D." },
+      { "family_id": "FAM-SIM-E3-00214", "family_name": "Familia Soto Vergara", "child_name": "Agustina S." },
+      { "family_id": "FAM-SIM-E3-00264", "family_name": "Familia Pérez Castillo", "child_name": "Mateo P." },
+      { "family_id": "FAM-SIM-E3-00314", "family_name": "Familia Silva Morales", "child_name": "Florencia S." },
+      { "family_id": "FAM-SIM-E3-00364", "family_name": "Familia Contreras Araya", "child_name": "Antonella C." },
+      { "family_id": "FAM-SIM-E3-00414", "family_name": "Familia Torres Reyes", "child_name": "Vicente T." },
+      { "family_id": "FAM-SIM-E3-00464", "family_name": "Familia Espinoza Rivera", "child_name": "Emilia E." }
+    ]
+  }
 }

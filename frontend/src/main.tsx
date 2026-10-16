@@ -9,9 +9,10 @@ import App from './App';
 import { createCognitoAdapter } from './auth/cognito';
 import { createNoneAdapter } from './auth/none';
 import { createSession, installSession } from './auth/session';
-import { configureRuntime, DEFAULT_REDIRECT_PATH, readViteEnv, resolveProfile } from './config/profile';
+import { configureRuntime, DEFAULT_REDIRECT_PATH, demoSessionEnabled, readViteEnv, resolveProfile } from './config/profile';
 import { createAppQueryClient } from './data/queryClient';
 import { startDataSync } from './data/sync';
+import { restoreDemoSession } from './features/demo-session/session';
 import { ConfigErrorPage } from './features/system/ConfigErrorPage';
 import { t } from './i18n/copy';
 import { log } from './lib/log';
@@ -67,10 +68,15 @@ async function bootstrap(): Promise<void> {
 
   // DEC-047: nombres de trato INVENTADOS precargados solo en Demo, directo a IndexedDB (sin red).
   // La condición estática sobre VITE_PROFILE deja el módulo y su JSON fuera del build `escala`.
+  // Con sesión demo ("Entrar como Tía X"), los nombres se siembran al entrar (features/demo-session).
   if (import.meta.env.VITE_PROFILE !== 'escala' && config.capabilities.localNames) {
     try {
-      const { seedLocalNames } = await import('./offline/localNamesSeed');
-      await seedLocalNames();
+      if (demoSessionEnabled(config)) {
+        await restoreDemoSession();
+      } else {
+        const { seedLocalNames } = await import('./offline/localNamesSeed');
+        await seedLocalNames();
+      }
     } catch {
       log.warn({ kind: 'local_names_seed_failed' });
     }

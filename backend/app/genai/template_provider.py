@@ -530,6 +530,48 @@ class TemplateProvider:
         ]
         return especificas[:_MAX_ASSISTANT_MATCHES]
 
+    def _por_situacion(self, question: str) -> list[CatalogEntry]:
+        """Beneficios de la tabla cerrada ``SITUACIONES`` presentes en el catálogo."""
+        texto = _normalizar(question or "")
+        ids: list[str] = []
+        for _nombre, patron, bids in SITUACIONES:
+            if patron.search(texto):
+                ids.extend(b for b in bids if b in self._catalogo and b not in ids)
+        return [self._catalogo[b] for b in ids[:_MAX_SITUACION]]
+
+    def _responder_situacion(self, request_id: str, question: str) -> dict | None:
+        """Respuesta concreta y corta para una situación de la tabla cerrada.
+
+        El texto solo nombra apoyos del catálogo C4 y dónde se consultan; no
+        afirma elegibilidad (el motor decide). Sin coincidencias o si el texto
+        trae una promesa, devuelve ``None`` y se usa la respuesta general.
+        """
+        entradas = self._por_situacion(question)
+        if not entradas:
+            return None
+        titulos = [self._titulo(e) for e in entradas]
+        lista = titulos[0] if len(titulos) == 1 else (
+            ", ".join(titulos[:-1]) + " y " + titulos[-1]
+        )
+        partes = [f"Por lo que cuenta, le recomiendo presentarles {lista}."]
+        for e in entradas:
+            parte = f"{self._titulo(e)}: {primera_frase(e.description)}"
+            if e.where_to_go:
+                parte += f" {self._plantillas.etiqueta_donde_ir}: {e.where_to_go}"
+            partes.append(parte)
+        partes.append("Revise la ficha de la familia para ver el detalle y el siguiente paso.")
+        answer = _con_aviso(" ".join(partes), _MAX_ANSWER)
+        if contiene_promesa(answer.replace(DISCLAIMER, "")):
+            return None
+        citas: list[dict] = []
+        for e in entradas:
+            cita = self._cita(e)
+            if cita is not None and cita.to_dict() not in citas:
+                citas.append(cita.to_dict())
+        return _envelope_asistente(
+            request_id, "CATALOG_INFO", answer, citas[:_MAX_CITATIONS], []
+        )
+
     def responder_asistente(self, request_id: str, question: str) -> dict:
         """``AssistantEnvelope``: catálogo general o derivación determinista.
 
@@ -543,6 +585,10 @@ class TemplateProvider:
             )
 
         coincidencias = self._coincidencias(question)
+        if not coincidencias:
+            situacion = self._responder_situacion(request_id, question)
+            if situacion is not None:
+                return situacion
         if coincidencias:
             partes: list[str] = []
             for e in coincidencias:
@@ -573,13 +619,14 @@ class TemplateProvider:
 
 
 # Palabras que delatan una consulta de elegibilidad individual (determinista).
+# Solo verbos de elegibilidad: "mi hijo" o "mi familia" describen una situación
+# y se responden con la tabla de situaciones (no deciden nada).
 _PATRONES_INDIVIDUAL = re.compile(
     r"\b("
-    r"califico|calificar|me corresponde|me toca|tengo derecho|puedo postular|"
-    r"puedo recibir|puedo acceder|mi familia|mi hijo|mi hija|mi caso|"
-    r"soy elegible|me dan|me darian|me darían|cumplo"
+    r"califico|calificar|califica|calificaria|me corresponde|le corresponde|"
+    r"les corresponde|tengo derecho|tiene derecho|soy elegible|es elegible|"
+    r"cumplo|cumple los requisitos"
     r")\b",
-    re.IGNORECASE,
 )
 
 
@@ -587,4 +634,41 @@ def es_pregunta_individual(question: str) -> bool:
     """Detecta determinísticamente una pregunta de elegibilidad individual."""
     if not isinstance(question, str):
         return False
-    return bool(_PATRONES_INDIVIDUAL.search(question))
+    return bool(_PATRONES_INDIVIDUAL.search(_normalizar(question)))
+
+
+# --- Situaciones (chat de la tía) ----------------------------------------------
+
+# Tabla cerrada situación → beneficios del catálogo C4, en orden de la tabla.
+# Se evalúa sobre texto normalizado (minúsculas, sin tildes). Solo se usan los
+# IDs presentes en el catálogo cargado.
+SITUACIONES: tuple[tuple[str, re.Pattern, tuple[str, ...]], ...] = (
+    ("embarazo", re.compile(r"embaraz|gestante|prenatal|espera (una )?guagua"),
+     ("BEN-003", "BEN-009")),
+    ("sin_trabajo", re.compile(
+        r"sin trabajo|sin pega|cesante|desemplead|perdio (el|su) trabajo"
+        r"|lo despidieron|la despidieron"), ("BEN-016", "BEN-017")),
+    ("discapacidad", re.compile(r"discapacidad|credencial|silla de ruedas"), ("BEN-006",)),
+    ("terapia", re.compile(r"terapia|rehabilitacion"), ("BEN-019",)),
+    ("adulto_mayor", re.compile(r"adulto mayor|abuel|tercera edad|mayor de 65"),
+     ("BEN-004", "BEN-011")),
+    ("agua", re.compile(r"\bagua\b|alcantarillado"), ("BEN-005",)),
+    ("alimentos", re.compile(r"comida|aliment|canasta|hambre"), ("BEN-007", "BEN-018")),
+    ("vivienda", re.compile(r"vivienda|arriendo|desalojo|incendio|allegad|emergencia"),
+     ("BEN-020",)),
+    ("recien_nacido", re.compile(r"recien nacid|nacio|guagua"), ("BEN-008", "BEN-012")),
+)
+_MAX_SITUACION = 4
+
+# Datos personales que nunca deben viajar en una pregunta (RUT, teléfono, correo).
+_RE_RUT = re.compile(r"\b\d{1,2}\.?\d{3}\.?\d{3}-?[\dkK]\b")
+_RE_TELEFONO = re.compile(r"(?:\+?56\s?)?9\s?\d{4}\s?\d{4}|\d{8,}")
+_RE_CORREO = re.compile(r"[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}")
+
+
+def contiene_dato_personal(texto: str) -> bool:
+    """True si ``texto`` trae un RUT, un teléfono o un correo."""
+    if not isinstance(texto, str):
+        return False
+    return bool(_RE_RUT.search(texto) or _RE_TELEFONO.search(texto)
+                or _RE_CORREO.search(texto))

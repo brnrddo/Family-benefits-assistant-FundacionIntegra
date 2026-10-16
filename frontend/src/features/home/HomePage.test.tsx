@@ -1,5 +1,6 @@
 // Inicio con el mock-servidor C3 (setupServer). Datos 100 % sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON).
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -11,6 +12,10 @@ import { mockServer, server } from '../../test/mswServer';
 import { overrideOperation } from '../../test/operations';
 import { renderWithProviders } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
+import { clearDemoData } from '../../offline/db';
+import { clearLocalNamesMemory, refreshLocalNames } from '../../offline/localNames';
+import { seedLocalNames } from '../../offline/localNamesSeed';
+import { DEMO_COPY } from '../demo-session/demoCopy';
 import HomePage from './HomePage';
 
 function renderHome() {
@@ -57,6 +62,25 @@ describe('HomePage', () => {
     expect(named.map((f) => f.family_id).slice(0, 2)).toEqual(['FAM-SIM-E3-00007', 'FAM-SIM-E3-00001']);
   });
 
+  it('buscar un nombre de trato deja una sola familia en la lista (local, sin red)', async () => {
+    resetTestRuntime();
+    installTestRuntime({ persistence: true });
+    await clearDemoData();
+    await seedLocalNames();
+    await refreshLocalNames();
+    try {
+      renderHome();
+      const search = await screen.findByRole('searchbox', { name: DEMO_COPY.searchLabel });
+      expect(document.querySelectorAll('[data-family-row]').length).toBeGreaterThan(1);
+      await userEvent.setup().type(search, 'benjamin');
+      const rows = document.querySelectorAll('[data-family-row]');
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toHaveTextContent('Benjamín T.');
+    } finally {
+      clearLocalNamesMemory();
+      await clearDemoData();
+    }
+  });
   it('error 503 en la lista de familias → mensaje seguro con Reintentar', async () => {
     mockServer.setScenario('error503');
     renderHome();

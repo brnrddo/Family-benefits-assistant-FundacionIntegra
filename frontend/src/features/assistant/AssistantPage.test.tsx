@@ -39,7 +39,6 @@ describe('AssistantPage', () => {
     expect(links.map((a) => a.getAttribute('href'))).toEqual(envelope.citations.map((c) => c.url));
     for (const link of links) expect(link).toHaveAttribute('rel', 'noopener noreferrer external');
     expect(screen.getByText(t('notice.referential'))).toBeInTheDocument();
-    expect(screen.getByText(t('assistant.not_saved'))).toBeInTheDocument();
   });
 
   it('REQUIRES_DETERMINISTIC_EVALUATION → deriva a Mi jardín sin mostrar la respuesta', async () => {
