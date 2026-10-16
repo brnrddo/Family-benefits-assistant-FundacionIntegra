@@ -13,6 +13,7 @@ import { benefitName, t } from '../../i18n/copy';
 import { CARD_CLASS } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
 import { EmptyState } from '../../ui/states';
+import { ShareBenefitsButton } from './ShareBenefitsButton';
 
 type Scope = CatalogScopeItem | undefined;
 
@@ -85,11 +86,14 @@ export function BenefitGroups({
   detail,
   opportunities,
   scopes,
+  showShare = false,
 }: {
   readonly detail: FamilyDetail;
   readonly opportunities: readonly Opportunity[];
   /** Alcance por benefit_id (propuesta DEC-072); vacío o ausente = sin chips territoriales. */
   readonly scopes?: ReadonlyMap<string, CatalogScopeItem>;
+  /** Botón "Compartir beneficios" (solo demo; nunca en `escala`). */
+  readonly showShare?: boolean;
 }) {
   const { applies, missing } = groupBenefits(detail, opportunities);
   return (
@@ -105,6 +109,8 @@ export function BenefitGroups({
             ))}
           </ul>
         )}
+        {/* Sin beneficios en este grupo no hay nada que compartir: el botón se oculta. */}
+        {showShare && applies.length > 0 && <ShareBenefitsButton />}
       </section>
       <section aria-labelledby="family-missing" data-benefit-group="missing" className="space-y-3">
         <h2 id="family-missing">{t('family.missing_title')}</h2>

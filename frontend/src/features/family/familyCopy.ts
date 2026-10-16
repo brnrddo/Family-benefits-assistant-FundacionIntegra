@@ -8,4 +8,8 @@ export const FAMILY_COPY = {
   showAllBenefits: 'Ver todos los beneficios',
   /** family.benefits_hide_all */
   hideAllBenefits: 'Ocultar los beneficios',
+  /** family.share_button (solo demo: no envía nada) */
+  shareButton: 'Compartir beneficios',
+  /** family.share_done (solo demo) */
+  shareDone: 'Beneficios compartidos',
 } as const;

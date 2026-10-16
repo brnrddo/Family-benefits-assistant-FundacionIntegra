@@ -132,7 +132,7 @@ function AskSection({ cards, context }: { readonly cards: readonly Opportunity[]
 }
 
 function FamilyView({ familyId }: { readonly familyId: string }) {
-  const { capabilities } = runtimeConfig();
+  const { capabilities, profile } = runtimeConfig();
   const location = useLocation();
   const names = useLocalNames();
   const [search, setSearch] = useSearchParams();
@@ -257,7 +257,8 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
 
       {/* Lista secundaria, plegada por defecto; el orden dentro de cada grupo es el de C3 (no se reordena). */}
       <Expandable openLabel={FAMILY_COPY.showAllBenefits} closeLabel={FAMILY_COPY.hideAllBenefits}>
-        <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} scopes={scopes} />
+        {/* "Compartir beneficios" es solo para la demo: oculto en `escala` (mismo criterio que Familia nueva). */}
+        <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} scopes={scopes} showShare={profile !== 'escala'} />
       </Expandable>
 
       <AskSection cards={cards} context={context} />

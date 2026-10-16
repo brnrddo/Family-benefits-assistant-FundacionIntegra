@@ -104,6 +104,7 @@ describe('FamilyPage', () => {
     // BEN-001/002/004 son SI; BEN-003 INDETERMINADO (DEC-070: la ficha ya no trae NO/NO_APLICA).
     await waitFor(() => expect(titles(applies)).toEqual([title('BEN-001'), title('BEN-002'), title('BEN-004')]));
     expect(titles(missing)).toEqual([title('BEN-003')]);
+    expect(within(applies).getByRole('button', { name: FAMILY_COPY.shareButton })).toBeEnabled();
     expect(within(applies).getAllByText(t('level.confirmado'))).toHaveLength(2);
     expect(within(missing).getByText(t('context.missing.last_health_control_date'))).toBeInTheDocument();
     const question = ficha.top_opportunities.find((o) => o.benefit_id === 'BEN-003')?.suggested_questions[0] ?? '';
@@ -213,6 +214,7 @@ describe('FamilyPage en perfil escala (DEC-038, DEC-039)', () => {
     expect(document.querySelector('[data-name-editor]')).toBeNull();
     expect(screen.queryByLabelText(t('family.name.title'))).toBeNull();
     expect(screen.queryByRole('link', { name: t('family.actions.add_info') })).toBeNull();
+    expect(screen.queryByRole('button', { name: FAMILY_COPY.shareButton })).toBeNull();
     expect(screen.getByRole('link', { name: t('family.actions.mark') })).toBeInTheDocument();
   });
 });
