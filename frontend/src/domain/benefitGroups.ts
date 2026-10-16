@@ -41,7 +41,7 @@ export function groupBenefits(detail: FamilyDetail, extra: readonly Opportunity[
       level: result.level,
       accessState: result.access_state,
       missingCodes: result.missing_codes,
-      questions: [...new Set(opportunity?.suggested_questions ?? [])],
+      questions: uniqueTexts(opportunity?.suggested_questions ?? []),
     };
   });
   // Una oportunidad del top que no venga en benefit_results se muestra igual (sin reinterpretarla).
@@ -55,7 +55,7 @@ export function groupBenefits(detail: FamilyDetail, extra: readonly Opportunity[
       level: opportunity.level,
       accessState: opportunity.access_state,
       missingCodes: opportunity.missing_codes,
-      questions: [...new Set(opportunity.suggested_questions)],
+      questions: uniqueTexts(opportunity.suggested_questions),
     });
   }
 
@@ -64,6 +64,28 @@ export function groupBenefits(detail: FamilyDetail, extra: readonly Opportunity[
     applies: rows.filter((row) => row.result === 'SI' && !isMissing(row)),
     missing: rows.filter(isMissing),
   };
+}
+
+/** Forma de comparación: sin espacios de más, minúsculas y sin ¿?¡!. en los bordes. */
+function normalizedText(text: string): string {
+  return text
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('es')
+    .replace(/^[¿?¡!.\s]+|[¿?¡!.\s]+$/g, '');
+}
+
+/** Textos sin repetidos (misma pregunta con otra puntuación o mayúsculas); conserva el primero tal cual. */
+export function uniqueTexts(texts: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const text of texts) {
+    const key = normalizedText(text);
+    if (key === '' || seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+  }
+  return out;
 }
 
 /** Códigos faltantes de los beneficios de la familia, sin duplicados, en orden de aparición. */

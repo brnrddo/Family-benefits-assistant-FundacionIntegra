@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:brujula:proposal:add-family-info-request:v1",
   "title": "AddFamilyInfoRequestV1",
-  "description": "PROPUESTA del frontend (DEC-039, PREG-039). NO es parte de C3 v1.0.2. Cuerpo de POST /familias/{id}/antecedentes: subconjunto cerrado de los campos de PreevaluationRequest (C3) que la tia completa para una familia EXISTENTE. Sin nombres, identificadores, contacto ni texto libre. Ausente = sin cambio; null = 'No se' (housing_type usa UNKNOWN). Exige al menos un campo ademas de data_classification. La respuesta es FamiliaDetailEnvelope de C3 sin cambios (resultados declarados = PRELIMINAR).",
+  "description": "PROPUESTA del frontend (DEC-039, PREG-039). NO es parte de C3 v1.0.2. Cuerpo de POST /familias/{id}/antecedentes: subconjunto cerrado de los campos de PreevaluationRequest (C3) que la tia completa para una familia EXISTENTE, mas seis booleanos FUERA de C3 para codigos del motor (pregnancy_weeks_at_least_threshold, has_incompatible_coverage, pregnancy_public_network_delivery, pregnancy_public_prenatal_control, residence_requirement_met, age_record_current). Sin nombres, identificadores, contacto ni texto libre. Ausente = sin cambio; null = 'No se' (housing_type usa UNKNOWN). Exige al menos un campo ademas de data_classification. La respuesta es FamiliaDetailEnvelope de C3 (resultados declarados = PRELIMINAR) y puede traer ademas pregnancy_weeks_threshold (entero, parametro publico del motor), que el cliente separa antes de validar.",
   "type": "object",
   "additionalProperties": false,
   "required": ["data_classification"],
@@ -26,6 +26,12 @@
     "household_has_adult_over_65": {"type": ["boolean", "null"]},
     "household_formal_employment_or_pension": {"type": ["boolean", "null"]},
     "household_water_payment_difficulty": {"type": ["boolean", "null"]},
-    "household_food_purchase_difficulty": {"type": ["boolean", "null"]}
+    "household_food_purchase_difficulty": {"type": ["boolean", "null"]},
+    "pregnancy_weeks_at_least_threshold": {"type": ["boolean", "null"]},
+    "has_incompatible_coverage": {"type": ["boolean", "null"]},
+    "pregnancy_public_network_delivery": {"type": ["boolean", "null"]},
+    "pregnancy_public_prenatal_control": {"type": ["boolean", "null"]},
+    "residence_requirement_met": {"type": ["boolean", "null"]},
+    "age_record_current": {"type": ["boolean", "null"]}
   }
 }

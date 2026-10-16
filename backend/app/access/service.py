@@ -225,10 +225,35 @@ class AccesoService:
             return EstadoAcceso.PENDIENTE_ANTECEDENTES
         return EstadoAcceso.ELEGIBLE_SIN_ASIGNACION  # LA BRECHA
 
+    def estado_reevaluado(self, id_familia: str, res) -> tuple[EstadoAcceso, bool]:
+        """Acceso de un resultado REEVALUADO en memoria con datos declarados.
+
+        DEC-082 (desviación consciente de la decisión [3], solo en esta vía): lo
+        que la familia respondió pasa a "aplica", así que un SI sin gestión queda
+        ``ELEGIBLE_SIN_ASIGNACION`` aunque sea PRELIMINAR (el nivel lo sigue
+        dando el motor). Con gestión -> ASIGNADO/GESTION_*; BEN-018 respeta cupo;
+        IND -> INDETERMINADO; NO -> NO_APLICA. ``evaluar()`` no cambia.
+        Devuelve ``(estado, requiere_accion_familia)``.
+        """
+        post = self._ultima_postulacion(id_familia, res.id_beneficio)
+        ultimo = self._ultimo_estado(post["id_postulacion"]) if post else None
+        estado = self._derivar_estado(id_familia, res.resultado, False, post is not None,
+                                      ultimo, res.id_beneficio)
+        version = self.ev.version_vigente(res.id_beneficio)
+        requiere = (str(version["requiere_accion_familia"]).strip().lower() == "true"
+                    if version is not None else False)
+        return estado, requiere
+
     def evaluar_familia(self, id_familia: str) -> list[ResultadoAcceso]:
         bens = [r[0] for r in self.conn.execute(
             "SELECT id_beneficio FROM beneficios ORDER BY id_beneficio").fetchall()]
         return [self.evaluar(id_familia, b) for b in bens]
+
+
+def estado_acceso_reevaluado(conn: sqlite3.Connection, id_familia: str, res,
+                             fecha=FECHA_EVALUACION) -> tuple[EstadoAcceso, bool]:
+    """Atajo de ``AccesoService.estado_reevaluado`` (DEC-082). Solo lectura."""
+    return AccesoService(conn, fecha).estado_reevaluado(id_familia, res)
 
 
 def evaluar_acceso_familia(id_familia: str, conn=None, fecha=FECHA_EVALUACION

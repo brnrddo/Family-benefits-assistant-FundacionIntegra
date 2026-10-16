@@ -33,6 +33,7 @@ from app.api.models import PreevaluationRequest  # noqa: E402
 from app.api.models_antecedentes import (  # noqa: E402
     CAMPO_A_MISSING_CODE,
     CAMPOS_DECLARABLES,
+    CAMPOS_MOTOR,
     AddFamilyInfoRequestV1,
 )
 
@@ -122,14 +123,17 @@ def test_misma_forma_que_get_familia(client: TestClient):
 
 
 def test_paridad_de_campos_con_preevaluation_request():
-    """Los 18 campos opcionales son exactamente los de PreevaluationRequest."""
-    assert set(AddFamilyInfoRequestV1.model_fields) == {"data_classification"} | CAMPOS_DECLARABLES
+    """18 campos idénticos a PreevaluationRequest + las 6 preguntas Sí/No del motor."""
+    assert set(AddFamilyInfoRequestV1.model_fields) == (
+        {"data_classification"} | CAMPOS_DECLARABLES | set(CAMPOS_MOTOR))
     assert len(CAMPOS_DECLARABLES) == 18
     for nombre in CAMPOS_DECLARABLES:
         propio = AddFamilyInfoRequestV1.model_fields[nombre]
         c3_field = PreevaluationRequest.model_fields[nombre]
         assert propio.annotation == c3_field.annotation, nombre
         assert propio.metadata == c3_field.metadata, nombre
+    for nombre in CAMPOS_MOTOR:
+        assert AddFamilyInfoRequestV1.model_fields[nombre].annotation == (bool | None), nombre
     # Nada de jardín, comuna, nombres, identificadores ni texto libre.
     for prohibido in ("garden_id", "commune_id", "nombre", "rut", "telefono"):
         assert prohibido not in AddFamilyInfoRequestV1.model_fields

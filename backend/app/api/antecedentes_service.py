@@ -30,6 +30,7 @@ import copy
 from app.api.models import validar_benefit_result, validar_opportunity
 from app.api.models_antecedentes import (
     CAMPO_A_MISSING_CODE,
+    CAMPOS_MOTOR,
     AddFamilyInfoRequestV1,
 )
 
@@ -48,7 +49,7 @@ def hechos_declarados(body: AddFamilyInfoRequestV1) -> list[dict]:
         hechos.append(
             {
                 "campo": campo,
-                "missing_code": CAMPO_A_MISSING_CODE[campo],
+                "missing_code": CAMPO_A_MISSING_CODE.get(campo) or CAMPOS_MOTOR[campo],
                 "valor": valor,
                 "desconocido": desconocido,
                 "estado_dato": "DECLARADO",
@@ -137,7 +138,8 @@ def aplicar_declarados(fam: dict, hechos: list[dict]) -> dict:
     # "No informado" a nivel de familia: enum cerrado de FamilyContextView.
     ctx_codes = set(copia["context"]["missing_codes"])
     ctx_codes -= conocidos
-    ctx_codes |= desconocidos
+    # Solo códigos del enum de C3: los de ``CAMPOS_MOTOR`` son del motor, no de C3.
+    ctx_codes |= desconocidos & set(CAMPO_A_MISSING_CODE.values())
     copia["context"]["missing_codes"] = sorted(ctx_codes)[:20]
 
     # Falla cerrada: ninguna reevaluación puede violar el oneOf de C3.

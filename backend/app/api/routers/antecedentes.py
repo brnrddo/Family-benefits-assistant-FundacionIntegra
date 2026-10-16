@@ -2,7 +2,9 @@
 
 ``POST /familias/{id}/antecedentes``: la tía agrega antecedentes de una familia
 EXISTENTE; cada campo se registra como hecho ``DECLARADO`` y la ficha se
-reevalúa. Operación PROPUESTA por el Rol 3, implementada en servidor y FUERA de
+reevalúa. ``GET /familias/{id}/antecedentes``: devuelve el umbral N de semanas
+de gestación (``pregnancy_weeks_threshold``) que la pantalla muestra en la
+pregunta "¿Tiene N semanas o más?". Operación PROPUESTA por el Rol 3, implementada en servidor y FUERA de
 C3 v1.0.2 (el contrato no se edita). Detalles y preguntas abiertas:
 ``backend/app/api/PROPUESTA_ANTECEDENTES.md``.
 
@@ -60,6 +62,35 @@ def add_familia_antecedentes(
         raise
     _log(request, 200, inicio)
     return respuesta
+
+
+@router.get("/familias/{id}/antecedentes", status_code=200)
+def get_familia_antecedentes(
+    request: Request,
+    id: str,
+    _scope=Depends(require_scope("familias:read")),
+) -> dict:
+    """Datos que la pantalla necesita ANTES de preguntar; scope ``familias:read``.
+
+    200 ``{"meta", "data": {"family_id", "pregnancy_weeks_threshold"}}`` con N
+    del parámetro versionado ``P006-02`` (regla vigente R00301); 404 familia
+    inexistente; 503 retryable si N no se puede leer. Fuera de C3.
+    """
+    inicio = time.perf_counter()
+    try:
+        if not motor_real.familia_existe(motor_real.obtener_snapshot(), id):
+            raise ApiError(status_code=404)
+        umbral = motor_real.umbral_semanas_gestacion()
+        if umbral is None:
+            raise ApiError(status_code=503)
+    except ApiError as exc:
+        _log(request, exc.status_code, inicio)
+        raise
+    _log(request, 200, inicio)
+    return {
+        "meta": construir_meta(request.state.request_id),
+        "data": {"family_id": id, "pregnancy_weeks_threshold": umbral},
+    }
 
 
 def _log(request: Request, status: int, inicio: float) -> None:
@@ -132,11 +163,11 @@ def _procesar(
     acumulados = store.declarados_get(id) + hechos
 
     if not mock_habilitado():
-        # B2 · motor real: la fecha del último control de salud se convierte a
-        # ``dias_desde_control`` del niño o niña más joven y se reevalúa la
-        # familia con el motor determinista (R01203, versión vigente). El resto
-        # de los campos no tiene mapeo al motor (ver antecedentes_motor.py): se
-        # registran, pero no mueven elegibilidad por esta vía. Un dato declarado
+        # B2 · motor real: los campos con mapeo (antecedentes_motor.py: control
+        # de salud, embarazo, semanas, cobertura, RSH, parto, control prenatal,
+        # residencia, antecedente de edad) se traducen a hechos del motor y se
+        # reevalúa la familia con el motor determinista. El resto se registra,
+        # pero no mueve elegibilidad por esta vía. Un dato declarado
         # nunca da CONFIRMADO. Si el motor no puede operar (sin DB/precálculo),
         # se falla cerrado y retryable (503).
         data = _reevaluar_con_motor(id, acumulados)

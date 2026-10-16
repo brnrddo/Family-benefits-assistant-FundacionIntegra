@@ -833,8 +833,9 @@ def _construir(db: Path, contenido: ContenidoC4, huella: str) -> MotorSnapshot:
 # declara un dato (``POST /familias/{id}/antecedentes``) hay que recalcular SOLO
 # esa familia incorporando el dato. Se reusa ``_familia`` (la misma maquinaria
 # del batch) sustituyendo las filas de ``evaluaciones`` de esa familia por el
-# resultado reevaluado del motor; los ``accesos`` (estado ASIGNADO/SIN_CUPO,
-# que NO los decide el motor de elegibilidad) se preservan del precálculo.
+# resultado reevaluado del motor. Los ``accesos`` se preservan del precálculo
+# salvo en los beneficios cuyo (resultado, nivel) cambió: ahí se recalculan en
+# memoria con las gestiones de la base (DEC-082). Nada se escribe en la DB.
 
 
 def _fila_evaluacion_declarada(res, periodicidad: dict[str, str | None]) -> dict:
@@ -876,13 +877,15 @@ def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
     se puede operar sobre el motor real (sin DB/precálculo/C4 válidos): el
     llamador decide el fallback.
 
-    Si ``campos`` no aporta ningún dato que el motor pueda usar (hoy, solo la
-    fecha del último control de salud), se reevalúa sin ``declarados``: la ficha
-    sale del motor igual, sin cambios por declaración. No muta el snapshot
-    cacheado ni la DB. Un dato declarado nunca da CONFIRMADO (lo garantiza el
-    motor), así que la ficha resultante respeta las invariantes.
+    Si ``campos`` no aporta ningún dato que el motor pueda usar, se reevalúa sin
+    ``declarados``: la ficha sale del motor igual, sin cambios por declaración.
+    Los beneficios cuyo resultado o nivel cambió recalculan su acceso en memoria
+    (``AccesoService.estado_reevaluado``, DEC-082). No muta el snapshot cacheado
+    ni la DB. Un dato declarado nunca da CONFIRMADO (lo garantiza el motor), así
+    que la ficha resultante respeta las invariantes.
     """
     # Imports locales: evitan un ciclo con engine.service y aíslan el puente B2.
+    from app.access.service import AccesoService
     from app.api.antecedentes_motor import declarados_para_motor
     from app.engine.service import evaluar_familia
 
@@ -910,13 +913,30 @@ def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
         resultados = evaluar_familia(family_id, conn=conn, fecha=datos.fecha,
                                      declarados=declarados or None)
 
-        # Sustituye SOLO las evaluaciones de esta familia; conserva las de las
-        # demás y todos los accesos (el estado de acceso no lo decide el motor).
+        # Sustituye SOLO las evaluaciones de esta familia. El acceso se recalcula
+        # en memoria solo para los beneficios cuyo (resultado, nivel) cambió
+        # (DEC-082: SI sin gestión -> ELEGIBLE_SIN_ASIGNACION); los demás
+        # conservan su fila de ``accesos`` del precálculo.
         evaluaciones = dict(datos.evaluaciones)
+        accesos = dict(datos.accesos)
+        servicio_acceso = None
         for res in resultados:
-            evaluaciones[(family_id, res.id_beneficio)] = _fila_evaluacion_declarada(
-                res, datos.periodicidad)
-        datos_mod = replace(datos, evaluaciones=evaluaciones)
+            clave = (family_id, res.id_beneficio)
+            fila = _fila_evaluacion_declarada(res, datos.periodicidad)
+            previa = datos.evaluaciones.get(clave)
+            if previa is None or (previa["resultado"], previa["nivel"]) != (
+                    fila["resultado"], fila["nivel"]):
+                if servicio_acceso is None:
+                    servicio_acceso = AccesoService(conn, datos.fecha)
+                estado, requiere = servicio_acceso.estado_reevaluado(family_id, res)
+                accesos[clave] = {
+                    "id_familia": family_id,
+                    "id_beneficio": res.id_beneficio,
+                    "estado": estado.value,
+                    "requiere_accion_familia": int(requiere),
+                }
+            evaluaciones[clave] = fila
+        datos_mod = replace(datos, evaluaciones=evaluaciones, accesos=accesos)
 
         c2 = ContextoBuilder(conn, datos.fecha).build(family_id)
         if c2 is None:
@@ -928,5 +948,38 @@ def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
             # Combinación incoherente: no se emite una ficha dudosa.
             return None
         return familia
+    finally:
+        conn.close()
+
+
+def umbral_semanas_gestacion() -> int | None:
+    """N de la pregunta de semanas de gestación (parámetro ``P006-02`` vía R00301).
+
+    Lee ``runtime.DB_PATH`` en solo lectura con la fecha única de
+    ``evaluaciones`` (o ``config.FECHA_EVALUACION`` si no hay precálculo), en
+    ambos modos ``E3_MOCK``. ``None`` si no se puede leer (falla cerrada).
+    """
+    from app.api.antecedentes_motor import umbral_semanas_gestacion as _umbral
+    from app.config import FECHA_EVALUACION
+
+    db = Path(runtime.DB_PATH)
+    if _estado_archivo(db) is None:
+        return None
+    try:
+        conn = _conectar_solo_lectura(db)
+    except sqlite3.Error:
+        return None
+    try:
+        fecha = FECHA_EVALUACION
+        try:
+            fechas = [r[0] for r in conn.execute(
+                "SELECT DISTINCT fecha_evaluacion FROM evaluaciones")]
+            if len(fechas) == 1 and fechas[0]:
+                fecha = fechas[0]
+        except sqlite3.Error:
+            pass  # sin precálculo: fecha de configuración
+        return _umbral(conn, fecha)
+    except sqlite3.Error:
+        return None
     finally:
         conn.close()

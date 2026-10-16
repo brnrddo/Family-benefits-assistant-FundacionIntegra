@@ -1,7 +1,7 @@
 {
   "generator": "scripts/gen-proposals.mjs",
   "files": {
-    "AddFamilyInfoRequestV1.schema.json": "6de224e4e2703090194904d70ed47c322204a2150b8c70832e15977d32eb0335",
+    "AddFamilyInfoRequestV1.schema.json": "780fd8b20ea88cdf64a012aa00ca00804f0c51cc019f801e7f0db28ca86f2243",
     "CatalogScopeEnvelopeV1.schema.json": "c169dbfe10a64b324dd1d5ff6985f1831d8386753297daa4731899c67058cfe0"
   },
   "validators": {
