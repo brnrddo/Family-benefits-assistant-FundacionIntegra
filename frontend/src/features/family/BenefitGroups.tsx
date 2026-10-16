@@ -6,20 +6,13 @@
 // beneficio es SOLO DEMO, su nombre desde la propuesta y el rótulo "Solo demo".
 import { TERRITORIAL_COPY } from '../../api/proposals/territorial';
 import type { CatalogScopeItem } from '../../api/proposals/types';
-import type { FamilyDetail, MissingCode, Opportunity } from '../../api/types';
+import type { FamilyDetail, Opportunity } from '../../api/types';
 import { groupBenefits, type BenefitRow } from '../../domain/benefitGroups';
-import { accessPresentation, ACCESS_STATE_KEY, LEVEL_KEY, MISSING_CODE_KEY } from '../../domain/presentation';
+import { accessPresentation, ACCESS_STATE_KEY, LEVEL_KEY, missingCodeLabels } from '../../domain/presentation';
 import { benefitName, t } from '../../i18n/copy';
 import { CARD_CLASS } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
 import { EmptyState } from '../../ui/states';
-
-const isMissingCode = (code: string): code is MissingCode => Object.prototype.hasOwnProperty.call(MISSING_CODE_KEY, code);
-
-/** Datos faltantes en lenguaje simple; un código sin traducción se muestra como genérico (sin el código). */
-function missingLabels(codes: readonly string[]): string[] {
-  return [...new Set(codes.map((code) => (isMissingCode(code) ? t(MISSING_CODE_KEY[code]) : t('family.missing_generic'))))];
-}
 
 type Scope = CatalogScopeItem | undefined;
 
@@ -43,7 +36,7 @@ function RowChips({ row, scope }: { readonly row: BenefitRow; readonly scope: Sc
 }
 
 function AppliesItem({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
-  const pending = missingLabels(row.missingCodes);
+  const pending = missingCodeLabels(row.missingCodes);
   return (
     <li className={`${CARD_CLASS} space-y-2`}>
       <h3 className="c3-text">{rowName(row, scope)}</h3>
@@ -59,7 +52,7 @@ function AppliesItem({ row, scope }: { readonly row: BenefitRow; readonly scope:
 }
 
 function MissingItem({ row, scope }: { readonly row: BenefitRow; readonly scope: Scope }) {
-  const missing = missingLabels(row.missingCodes);
+  const missing = missingCodeLabels(row.missingCodes);
   return (
     <li className={`${CARD_CLASS} space-y-2`}>
       <h3 className="c3-text">{rowName(row, scope)}</h3>

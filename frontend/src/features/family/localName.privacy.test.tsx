@@ -1,11 +1,12 @@
 // Privacidad del nombre de trato (DEC-038; PRIVACIDAD_DEMO.md, clase "Local de la tía"). Recorre la
 // app completa (router real + AppShell) con el mock-servidor y CAPTURA cada request en el `fetch` del
 // transporte: el nombre nunca aparece en URL, headers ni body (conversación, guion, mensaje,
-// asistente, la operación propuesta ni ninguna lectura) ni en logs. También: logout borra los
+// asistente, la operación propuesta ni ninguna lectura) ni en logs. Guion y mensaje ya no tienen botón
+// en la ficha: se abren por URL directa. También: logout borra los
 // nombres. DEC-047: lo escrito se guarda como "Nombre I." y los nombres sembrados en Demo cumplen lo
 // mismo. Datos 100 % sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON); los nombres son inventados.
 import { QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +20,7 @@ import { seedLocalNames } from '../../offline/localNamesSeed';
 import { createTestQueryClient } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import { routes } from '../../router';
+import { familyRoutes } from './routes';
 
 // Router real con páginas diferidas (lazy): la primera carga de cada vista tarda más en jsdom.
 configure({ asyncUtilTimeout: 8000 });
@@ -120,11 +122,10 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await screen.findByText(t('family.add_info_done'));
     expect(screen.getByRole('heading', { level: 1, name: SAVED })).toBeInTheDocument();
 
-    // Guion y mensaje (POST de generación)
-    await user.click(screen.getByRole('link', { name: t('family.actions.script') }));
+    // Guion y mensaje (POST de generación), por URL directa
+    await act(() => router.navigate(familyRoutes.guion(FAMILY)));
     await screen.findByText(t('script.read_hint'));
-    await user.click(screen.getByRole('link', { name: t('nav.back') }));
-    await user.click(await screen.findByRole('link', { name: t('family.actions.message') }));
+    await act(() => router.navigate(familyRoutes.mensaje(FAMILY)));
     await waitFor(() => expect(document.querySelector('[data-print-root]')).not.toBeNull());
     await user.click(screen.getByRole('link', { name: t('nav.back') }));
 
@@ -194,11 +195,10 @@ describe('nombre de trato: nunca sale del equipo', () => {
     expect(seededLeaks(document.title)).toBe(false);
     expect(seededLeaks(router.state.location.pathname + router.state.location.search)).toBe(false);
 
-    // Guion y mensaje (POST de generación); la tarjeta imprimible no lleva el nombre.
-    await user.click(await screen.findByRole('link', { name: t('family.actions.script') }));
+    // Guion y mensaje (POST de generación) por URL directa; la tarjeta imprimible no lleva el nombre.
+    await act(() => router.navigate(familyRoutes.guion(FAMILY)));
     await screen.findByText(t('script.read_hint'));
-    await user.click(screen.getByRole('link', { name: t('nav.back') }));
-    await user.click(await screen.findByRole('link', { name: t('family.actions.message') }));
+    await act(() => router.navigate(familyRoutes.mensaje(FAMILY)));
     await waitFor(() => expect(document.querySelector('[data-print-root]')).not.toBeNull());
     expect(seededLeaks(document.querySelector('[data-print-root]')?.textContent ?? '')).toBe(false);
     await user.click(screen.getByRole('link', { name: t('nav.back') }));

@@ -20,8 +20,9 @@ import type {
   TrafficLight,
   Zone,
 } from '../api/types';
+import { ADD_INFO_COPY } from '../api/proposals/addInfoCopy';
 import type { CopyKey } from '../i18n/catalog';
-import type { PlainCopyKey } from '../i18n/copy';
+import { t, type PlainCopyKey } from '../i18n/copy';
 
 export type Group = 'go' | 'ask' | 'has' | 'other';
 export type Tone = Group | 'neutral';
@@ -186,6 +187,24 @@ export const MISSING_CODE_KEY: Readonly<Record<MissingCode, PlainCopyKey>> = {
   water_difficulty: 'context.missing.water_difficulty',
   food_difficulty: 'context.missing.food_difficulty',
 };
+
+const ENGINE_MISSING_LABEL: Readonly<Record<string, string>> = ADD_INFO_COPY.missingEngine;
+
+const has = (map: object, key: string): boolean => Object.prototype.hasOwnProperty.call(map, key);
+
+/** Texto simple de un código faltante (C3 o motor); desconocido → null (nunca se muestra el código). */
+function missingCodeLabel(code: string): string | null {
+  if (has(MISSING_CODE_KEY, code)) return t(MISSING_CODE_KEY[code as MissingCode]);
+  if (has(ENGINE_MISSING_LABEL, code)) return ENGINE_MISSING_LABEL[code] ?? null;
+  if (code.startsWith('residencia_')) return ADD_INFO_COPY.missingEngine.residencia;
+  return null;
+}
+
+/** Datos faltantes en lenguaje simple, sin repetir textos; los desconocidos dan UN genérico. */
+export function missingCodeLabels(codes: readonly string[]): string[] {
+  const labels = codes.map((code) => missingCodeLabel(code) ?? t('family.missing_generic'));
+  return [...new Set(labels)];
+}
 
 export const INCONSISTENCY_KEY: Readonly<Record<InconsistencyCode, PlainCopyKey>> = {
   SIBLINGS_UNDER_6_MISMATCH: 'context.inconsistency.siblings_under_6_mismatch',
