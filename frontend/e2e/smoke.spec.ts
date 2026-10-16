@@ -1,7 +1,7 @@
 // Smoke e2e a 360 px con mocks C3 sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON), recorrido de la demo:
 // Inicio (estadísticas del jardín + acceso al chat + búsqueda + lista con nombres de trato sembrados,
-// DEC-047) → buscar un nombre deja una fila → Ficha (dos grupos de beneficios) → nombre de trato local
-// (DEC-038) → Agregar información (operación propuesta, DEC-039) → Marcar conversado (3 toques) →
+// DEC-047) → buscar un nombre deja una fila → Ficha (secciones y filtro; "Datos del hogar" plegada)
+// → nombre de trato local (DEC-038) → Agregar información (operación propuesta, DEC-039) → Marcar conversado (3 toques) →
 // Inicio → Preguntar → chip de situación → respuesta con fuentes. Guarda capturas PNG en
 // SCREENSHOT_DIR (por defecto .agents/tasks/frontend-pwa/screenshots), también a escritorio, y corre
 // axe en Inicio, Ficha y Preguntar (0 violaciones critical/serious). El nombre inventado nunca aparece
@@ -12,7 +12,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ADD_INFO_COPY } from '../src/api/proposals/addInfoCopy.ts';
 import { DEMO_COPY, SITUATION_EXAMPLES } from '../src/features/demo-session/demoCopy.ts';
+import { FAMILY_COPY } from '../src/features/family/familyCopy.ts';
 import { MOCK_COPY } from '../src/i18n/es.mock.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -86,13 +88,13 @@ test('recorrido principal a 360 px', async ({ page }) => {
   await expect(page.locator('[data-family-row]')).toContainText(SEEDED);
   await shot(page, 'c02-busqueda');
 
-  // Ficha: acciones prioritarias arriba y todos los beneficios en dos grupos
+  // Ficha: beneficios por sección ("Puede postular ahora", "Falta información") con filtro
   await page.locator('[data-family-row]', { hasText: SEEDED }).click();
   await expect(page.getByRole('heading', { level: 1, name: SEEDED })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: C['family.top_title'] })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: C['family.applies_title'] })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: C['family.missing_title'] })).toBeVisible();
-  await expect(page.locator('[data-benefit-group="missing"] h3')).toHaveCount(2);
+  await expect(page.getByRole('radio', { name: FAMILY_COPY.filterAll })).toBeChecked();
+  await expect(page.getByRole('heading', { level: 2, name: FAMILY_COPY.sectionApply })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: FAMILY_COPY.sectionMissing })).toBeVisible();
+  await expect(page.locator('[data-benefit-section="missing"] [data-benefit-card]')).toHaveCount(2);
   await expectAxeClean(page);
   await shot(page, 'c03-ficha');
 
@@ -106,15 +108,16 @@ test('recorrido principal a 360 px', async ({ page }) => {
   expect(leaksName(page.url())).toBe(false);
 
   // Agregar información (operación propuesta, mock) → ficha refrescada
-  await page.getByRole('link', { name: C['family.actions.add_info'] }).click();
+  await page.getByRole('button', { name: ADD_INFO_COPY.householdTitle }).click();
+  await page.locator('[data-household]').getByRole('link', { name: C['family.actions.add_info'] }).click();
   await expect(page.getByRole('heading', { level: 1, name: C['add_info.title'] })).toBeVisible();
   await page.getByRole('group', { name: C['new_family.q.has_rsh'] }).locator('label', { hasText: C['common.yes'] }).click();
   await page.getByRole('group', { name: C['new_family.q.household_income_band'] }).locator('label', { hasText: C['income_band.under_110k'] }).click();
   await page.getByRole('button', { name: C['add_info.submit'] }).click();
   await expect(page.getByText(C['family.add_info_done'])).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: NAME_SHORT })).toBeVisible();
-  await expect(page.locator('[data-benefit-group="missing"] h3')).toHaveCount(0);
-  await expect(page.locator('[data-benefit-group="applies"] h3')).toHaveCount(3);
+  await expect(page.locator('[data-benefit-section="missing"]')).toHaveCount(0);
+  await expect(page.locator('[data-benefit-section="apply"] [data-benefit-card]')).toHaveCount(3);
   await expectNoHorizontalScroll(page);
 
   // Marcar conversado en exactamente 3 toques

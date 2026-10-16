@@ -4,8 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
 import type { OpportunityListEnvelope } from '../../api/types';
 import { configureRuntime, resolveProfile } from '../../config/profile';
+import { ACCESS_STATE_KEY, LEVEL_KEY } from '../../domain/presentation';
 import { benefitName, t } from '../../i18n/copy';
 import { clearDemoData } from '../../offline/db';
 import { clearLocalNamesMemory, currentLocalNames } from '../../offline/localNames';
@@ -22,11 +24,6 @@ import FamilyPage from './FamilyPage';
 const DEMO_TITLE = 'Programa Municipal Sintético de Apoyo Familiar (solo demo)';
 const LOCAL_CHIP = 'Disponible en su comuna';
 const DEMO_LABEL = 'Solo demo';
-
-/** La lista de beneficios está plegada por defecto: se abre con su botón. */
-async function openBenefits(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole('button', { name: FAMILY_COPY.showAllBenefits }));
-}
 
 function renderFamily(familyId = 'FAM-SIM-E3-00001') {
   return renderWithProviders(
@@ -47,67 +44,69 @@ describe('FamilyPage', () => {
     resetTestRuntime();
   });
 
-  it('muestra las acciones prioritarias en el orden de C3 con chips, “por qué”, aviso y fuentes HTTPS', async () => {
+  it('secciones en el orden de C3, filtro con conteos y tarjetas solo con el nombre', async () => {
     const user = userEvent.setup();
     renderFamily();
-    const top = fichaBrecha().data.top_opportunities;
-    await screen.findAllByRole('article');
-
-    const cards = screen.getAllByRole('article');
-    // Orden de C3 respetado aunque la posición 1 tenga la urgencia más baja (U 0,45).
-    expect(cards.map((card) => within(card).getByRole('heading', { level: 3 }).textContent)).toEqual(top.map((o) => o.simple_title));
-    const first = cards[0] as HTMLElement;
-    expect(within(first).getByText(t('card.why_first_label'))).toBeVisible();
-    expect(within(first).getByText(top[0]?.why_first ?? '')).toBeVisible();
-    expect(within(first).getByText(t('group.go.label'))).toBeInTheDocument();
-    expect(within(cards[1] as HTMLElement).getByText(t('chip.urgency.high'))).toBeInTheDocument();
-    expect(screen.getByText(t('notice.referential'))).toBeInTheDocument();
-
-    await user.click(within(first).getByRole('button', { name: t('card.expand') }));
-    const source = within(first).getByRole('link', { name: new RegExp(t('card.source_link', { source_id: 'SRC-SIM-001' })) });
-    expect(source).toHaveAttribute('href', top[0]?.sources[0]?.url);
-    expect(source).toHaveAttribute('rel', 'noopener noreferrer external');
-
-    // Códigos técnicos solo dentro de [data-technical].
-    const main = document.body.cloneNode(true) as HTMLElement;
-    main.querySelectorAll('[data-technical]').forEach((node) => node.remove());
-    expect(main.textContent).not.toMatch(/\b[A-Z]{2,}(?:_[A-Z]+)+\b/);
-    expect(screen.getByRole('link', { name: t('family.actions.mark') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00001/conversacion');
-  });
-
-  it('la lista de beneficios arranca plegada y se despliega con "Ver todos los beneficios"', async () => {
-    const user = userEvent.setup();
-    renderFamily();
-    const toggle = await screen.findByRole('button', { name: FAMILY_COPY.showAllBenefits });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '') as HTMLElement;
-    expect(region).not.toBeVisible();
-    expect(screen.queryByRole('heading', { name: t('family.applies_title') })).toBeNull();
-
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(toggle).toHaveFocus();
-    expect(region).toBeVisible();
-    expect(within(region).getByRole('heading', { name: t('family.applies_title') })).toBeVisible();
-  });
-
-  it('todos los beneficios en dos grupos, tal como vienen de C3 (sin NO/NO_APLICA)', async () => {
-    const user = userEvent.setup();
-    renderFamily();
-    await openBenefits(user);
-    const applies = (await screen.findByRole('heading', { name: t('family.applies_title') })).closest('section') as HTMLElement;
-    const missing = screen.getByRole('heading', { name: t('family.missing_title') }).closest('section') as HTMLElement;
-    const titles = (root: HTMLElement) => within(root).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     const ficha = fichaBrecha().data;
     const prioridad = payloadOf<OpportunityListEnvelope>('listOportunidades.FAM-SIM-E3-00001.prioridad').items;
     const title = (id: string) => benefitName(id, [...prioridad, ...ficha.top_opportunities].find((o) => o.benefit_id === id)?.simple_title);
-    // BEN-001/002/004 son SI; BEN-003 INDETERMINADO (DEC-070: la ficha ya no trae NO/NO_APLICA).
-    await waitFor(() => expect(titles(applies)).toEqual([title('BEN-001'), title('BEN-002'), title('BEN-004')]));
-    expect(titles(missing)).toEqual([title('BEN-003')]);
-    expect(within(applies).getAllByText(t('level.confirmado'))).toHaveLength(2);
-    expect(within(missing).getByText(t('context.missing.last_health_control_date'))).toBeInTheDocument();
+    const section = (name: string) => document.querySelector(`[data-benefit-section="${name}"]`) as HTMLElement;
+    const titles = (name: string) => within(section(name)).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+
+    expect(await screen.findByRole('radio', { name: FAMILY_COPY.filterAll })).toBeChecked();
+    // Orden de C3 `prioridad` (BEN-004 ASIGNADO va a "Ya postuló o sin cupo").
+    const applyIds = prioridad.filter((o) => o.access_state === 'ELEGIBLE_SIN_ASIGNACION').map((o) => o.benefit_id);
+    await waitFor(() => expect(titles('apply')).toEqual(applyIds.map(title)));
+    expect(titles('missing')).toEqual([title('BEN-003')]);
+    const showDone = within(section('done')).getByRole('button', { name: FAMILY_COPY.showDone });
+    expect(showDone).toHaveAttribute('aria-expanded', 'false');
+    expect(within(section('done')).getByRole('heading', { level: 3, hidden: true }).textContent).toBe(title('BEN-004'));
+
+    // Tarjeta cerrada: bajo el nombre no va nada; al tocarla se ve el detalle.
+    for (const chip of screen.getAllByText(t('group.go.label'))) expect(chip).not.toBeVisible();
+    const card = within(section('missing')).getByRole('button', { name: title('BEN-003') });
+    expect(card).toHaveAttribute('aria-expanded', 'false');
+    await user.click(card);
+    expect(card).toHaveAttribute('aria-expanded', 'true');
+    expect(within(section('missing')).getByText(t('context.missing.last_health_control_date'))).toBeVisible();
     const question = ficha.top_opportunities.find((o) => o.benefit_id === 'BEN-003')?.suggested_questions[0] ?? '';
-    expect(within(missing).getByText(question)).toBeInTheDocument();
+    expect(within(section('missing')).getByText(question)).toBeVisible();
+
+    // "Qué hacer ahora": preguntar y entregar info de los que puede postular.
+    const plan = document.querySelector('[data-action-plan]') as HTMLElement;
+    expect(within(plan).getByText(question)).toBeInTheDocument();
+    expect(within(plan).getByText(FAMILY_COPY.planDeliver(applyIds.map(title).join(', ')))).toBeInTheDocument();
+
+    // Filtro: solo esa sección.
+    await user.click(screen.getByRole('radio', { name: FAMILY_COPY.filterMissing('1') }));
+    expect([...document.querySelectorAll('[data-benefit-section]')].map((s) => s.getAttribute('data-benefit-section'))).toEqual(['missing']);
+
+    expect(screen.getByText(t('notice.referential'))).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\b[A-Z]{2,}(?:_[A-Z]+)+\b/);
+    expect(screen.getByRole('link', { name: t('family.actions.mark') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00001/conversacion');
+  });
+
+  it('SI pendiente sin códigos va a "Puede postular ahora" (PRELIMINAR en el detalle) sin pedir nada', async () => {
+    const user = userEvent.setup();
+    const clon = structuredClone(fichaBrecha());
+    clon.data.benefit_results.push({ benefit_id: 'BEN-012', result: 'SI', level: 'PRELIMINAR', access_state: 'PENDIENTE_ANTECEDENTES', missing_codes: [], trace: [] });
+    server.use(overrideOperation('getFamilia', () => HttpResponse.json(clon)));
+    renderFamily();
+    const name = benefitName('BEN-012', null);
+    const apply = (await screen.findByRole('heading', { name: FAMILY_COPY.sectionApply })).closest('section') as HTMLElement;
+    const toggle = await within(apply).findByRole('button', { name });
+    await user.click(toggle);
+    const card = toggle.closest('[data-benefit-card]') as HTMLElement;
+    expect(within(card).getByText(t(LEVEL_KEY.PRELIMINAR))).toBeVisible();
+    expect(within(card).queryByText(t(ACCESS_STATE_KEY.PENDIENTE_ANTECEDENTES))).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: ADD_INFO_COPY.householdTitle }));
+    const household = document.querySelector('[data-household]') as HTMLElement;
+    const plan = document.querySelector('[data-action-plan]') as HTMLElement;
+    expect(household.textContent).not.toContain(name);
+    expect(plan.querySelector('ul')?.textContent ?? '').not.toContain(name);
+    expect(document.body.textContent).not.toMatch(/documento que confirme/i);
+    expect(screen.queryByText(t('family.missing_generic'))).toBeNull();
   });
 
   it('DEC-038: el nombre de trato se guarda solo en este equipo y reemplaza el título genérico', async () => {
@@ -124,12 +123,10 @@ describe('FamilyPage', () => {
   });
 
   it('DEC-072: el ejemplo solo demo muestra su nombre, "Disponible en su comuna" y "Solo demo"; lo nacional no lleva chip', async () => {
-    const user = userEvent.setup();
     renderFamily('FAM-SIM-E3-00005');
-    await openBenefits(user);
     const heading = await screen.findByRole('heading', { level: 3, name: DEMO_TITLE });
-    const card = heading.closest('li') as HTMLElement;
-    expect(card.closest('[data-benefit-group]')).toHaveAttribute('data-benefit-group', 'applies');
+    const card = heading.closest('[data-benefit-card]') as HTMLElement;
+    expect(card.closest('[data-benefit-section]')).toHaveAttribute('data-benefit-section', 'apply');
     expect(within(card).getByText(LOCAL_CHIP)).toBeInTheDocument();
     expect(within(card).getByText(DEMO_LABEL)).toBeInTheDocument();
     expect(screen.getAllByText(LOCAL_CHIP)).toHaveLength(1);
@@ -137,8 +134,7 @@ describe('FamilyPage', () => {
 
     cleanup();
     renderFamily('FAM-SIM-E3-00001');
-    await openBenefits(user);
-    await screen.findByRole('heading', { name: t('family.applies_title') });
+    await screen.findByRole('heading', { name: FAMILY_COPY.sectionApply });
     expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
     expect(screen.queryByText(DEMO_LABEL)).toBeNull();
   });
@@ -171,10 +167,10 @@ describe('FamilyPage con VITE_PROPOSAL_TERRITORIAL=false (DEC-072)', () => {
       paths.push(new URL(request.url).pathname);
     });
     renderFamily('FAM-SIM-E3-00005');
-    await openBenefits(userEvent.setup());
-    const applies = (await screen.findByRole('heading', { name: t('family.applies_title') })).closest('section') as HTMLElement;
-    // BEN-001/002/004 y el ejemplo BEN-DEMO-LOCAL-01 (sin nombre de la propuesta: queda su ID).
-    await waitFor(() => expect(within(applies).getAllByRole('heading', { level: 3 })).toHaveLength(4));
+    const applies = (await screen.findByRole('heading', { name: FAMILY_COPY.sectionApply })).closest('section') as HTMLElement;
+    // BEN-001/002 y el ejemplo BEN-DEMO-LOCAL-01 (sin nombre de la propuesta: queda su ID); BEN-004
+    // ASIGNADO va a "Ya postuló o sin cupo".
+    await waitFor(() => expect(within(applies).getAllByRole('heading', { level: 3 })).toHaveLength(3));
     expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
     expect(screen.queryByText(DEMO_LABEL)).toBeNull();
     expect(paths.some((p) => p.endsWith('/catalogo/alcance'))).toBe(false);
@@ -208,8 +204,7 @@ describe('FamilyPage en perfil escala (DEC-038, DEC-039)', () => {
 
   it('no muestra el editor de nombre ni el botón Agregar información', async () => {
     renderFamily('FAM-SIM-E3-00002');
-    await openBenefits(userEvent.setup());
-    await screen.findByRole('heading', { name: t('family.applies_title') });
+    await screen.findByRole('heading', { name: FAMILY_COPY.sectionApply });
     expect(document.querySelector('[data-name-editor]')).toBeNull();
     expect(screen.queryByLabelText(t('family.name.title'))).toBeNull();
     expect(screen.queryByRole('link', { name: t('family.actions.add_info') })).toBeNull();

@@ -50,6 +50,17 @@ def _e3_mock_por_defecto(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _antecedentes_store_limpio():
+    """Lo declarado vive en memoria del proceso y las lecturas GET lo aplican:
+    se vacía antes y después de cada test para no contaminar a otros."""
+    from app.api import antecedentes_store
+
+    antecedentes_store.reset()
+    yield
+    antecedentes_store.reset()
+
+
+@pytest.fixture(autouse=True)
 def _runtime_sin_db_local(monkeypatch, tmp_path_factory):
     """Aísla los tests de un ``backend/e3.db`` local del desarrollador.
 
