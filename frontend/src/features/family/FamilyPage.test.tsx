@@ -15,12 +15,18 @@ import { overrideOperation } from '../../test/operations';
 import { renderWithProviders } from '../../test/render';
 import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import AddInfoPage from '../add-info/AddInfoPage';
+import { FAMILY_COPY } from './familyCopy';
 import FamilyPage from './FamilyPage';
 
 // DEC-072: texto provisional del módulo de propuesta (literal: es lo que ve la tía).
 const DEMO_TITLE = 'Programa Municipal Sintético de Apoyo Familiar (solo demo)';
 const LOCAL_CHIP = 'Disponible en su comuna';
 const DEMO_LABEL = 'Solo demo';
+
+/** La lista de beneficios está plegada por defecto: se abre con su botón. */
+async function openBenefits(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: FAMILY_COPY.showAllBenefits }));
+}
 
 function renderFamily(familyId = 'FAM-SIM-E3-00001') {
   return renderWithProviders(
@@ -69,8 +75,26 @@ describe('FamilyPage', () => {
     expect(screen.getByRole('link', { name: t('family.actions.mark') })).toHaveAttribute('href', '/familias/FAM-SIM-E3-00001/conversacion');
   });
 
-  it('todos los beneficios en dos grupos, tal como vienen de C3 (sin NO/NO_APLICA)', async () => {
+  it('la lista de beneficios arranca plegada y se despliega con "Ver todos los beneficios"', async () => {
+    const user = userEvent.setup();
     renderFamily();
+    const toggle = await screen.findByRole('button', { name: FAMILY_COPY.showAllBenefits });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '') as HTMLElement;
+    expect(region).not.toBeVisible();
+    expect(screen.queryByRole('heading', { name: t('family.applies_title') })).toBeNull();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveFocus();
+    expect(region).toBeVisible();
+    expect(within(region).getByRole('heading', { name: t('family.applies_title') })).toBeVisible();
+  });
+
+  it('todos los beneficios en dos grupos, tal como vienen de C3 (sin NO/NO_APLICA)', async () => {
+    const user = userEvent.setup();
+    renderFamily();
+    await openBenefits(user);
     const applies = (await screen.findByRole('heading', { name: t('family.applies_title') })).closest('section') as HTMLElement;
     const missing = screen.getByRole('heading', { name: t('family.missing_title') }).closest('section') as HTMLElement;
     const titles = (root: HTMLElement) => within(root).getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
@@ -100,7 +124,9 @@ describe('FamilyPage', () => {
   });
 
   it('DEC-072: el ejemplo solo demo muestra su nombre, "Disponible en su comuna" y "Solo demo"; lo nacional no lleva chip', async () => {
+    const user = userEvent.setup();
     renderFamily('FAM-SIM-E3-00005');
+    await openBenefits(user);
     const heading = await screen.findByRole('heading', { level: 3, name: DEMO_TITLE });
     const card = heading.closest('li') as HTMLElement;
     expect(card.closest('[data-benefit-group]')).toHaveAttribute('data-benefit-group', 'applies');
@@ -111,6 +137,7 @@ describe('FamilyPage', () => {
 
     cleanup();
     renderFamily('FAM-SIM-E3-00001');
+    await openBenefits(user);
     await screen.findByRole('heading', { name: t('family.applies_title') });
     expect(screen.queryByText(LOCAL_CHIP)).toBeNull();
     expect(screen.queryByText(DEMO_LABEL)).toBeNull();
@@ -144,6 +171,7 @@ describe('FamilyPage con VITE_PROPOSAL_TERRITORIAL=false (DEC-072)', () => {
       paths.push(new URL(request.url).pathname);
     });
     renderFamily('FAM-SIM-E3-00005');
+    await openBenefits(userEvent.setup());
     const applies = (await screen.findByRole('heading', { name: t('family.applies_title') })).closest('section') as HTMLElement;
     // BEN-001/002/004 y el ejemplo BEN-DEMO-LOCAL-01 (sin nombre de la propuesta: queda su ID).
     await waitFor(() => expect(within(applies).getAllByRole('heading', { level: 3 })).toHaveLength(4));
@@ -180,6 +208,7 @@ describe('FamilyPage en perfil escala (DEC-038, DEC-039)', () => {
 
   it('no muestra el editor de nombre ni el botón Agregar información', async () => {
     renderFamily('FAM-SIM-E3-00002');
+    await openBenefits(userEvent.setup());
     await screen.findByRole('heading', { name: t('family.applies_title') });
     expect(document.querySelector('[data-name-editor]')).toBeNull();
     expect(screen.queryByLabelText(t('family.name.title'))).toBeNull();

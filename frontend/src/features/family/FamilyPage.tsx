@@ -1,6 +1,8 @@
-// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004): tarjeta "Datos del hogar" (quiénes viven, tramo,
+// Ficha familia (design.md §9.2, FE-001/FE-003/FE-004): espacio vacío reservado al agente (Tarea 7, B),
+// tarjeta "Datos del hogar" (quiénes viven, tramo,
 // datos por confirmar y "Agregar información" ahí mismo), las acciones prioritarias (top tres en el orden
-// de C3, chips, “por qué”, detalle expandible), los beneficios relevantes en dos grupos ("Beneficios que
+// de C3, chips, “por qué”, detalle expandible), los beneficios relevantes, plegados tras "Ver todos los
+// beneficios", en dos grupos ("Beneficios que
 // aplica" / "Falta información", tal como vienen de C3; la ficha ya no trae NO/NO_APLICA, DEC-070), con
 // chip "Disponible en su comuna"/"Solo demo" si hay alcance (DEC-072), "Preguntar a la familia" sin
 // repetidos, aviso y fuentes. El cambio de orden pide a C3; el cliente no reordena. Señales de
@@ -25,12 +27,14 @@ import { CARD_CLASS } from '../../ui/Card';
 import { Chip } from '../../ui/Chip';
 import { ChoiceChips } from '../../ui/ChoiceChips';
 import { DataFreshness } from '../../ui/DataStatus';
+import { Expandable } from '../../ui/Expandable';
 import { Icon } from '../../ui/icons';
 import { PageTitle } from '../../ui/PageTitle';
 import { Banner, EmptyState, ErrorState, ReferentialNotice, Skeleton } from '../../ui/states';
 import { QuickInformButton } from '../conversation/QuickInform';
 import NotFoundPage from '../system/NotFoundPage';
 import { BenefitGroups } from './BenefitGroups';
+import { FAMILY_COPY } from './familyCopy';
 import { NameEditor } from './NameEditor';
 import { OpportunityCard } from './OpportunityCard';
 import { familyRoutes } from './routes';
@@ -206,6 +210,8 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
   const hasOpportunities = detail.top_opportunities.length > 0;
   const showAddInfo = capabilities.addInfo && familyMissingCodes(detail).length > 0;
   const context = contexto.data?.body.data ?? null;
+  // Slot del agente: lo monta B (features/assistant/) en la Tarea 7
+  const assistantSlot = <div data-assistant-slot className="empty:hidden" />;
 
   return (
     <div className="space-y-5">
@@ -221,7 +227,9 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
       )}
       <DataFreshness result={ficha.data} />
 
-      {/* Bloques de la ficha: son hermanos independientes; el orden en pantalla se cambia aquí. */}
+      {/* Bloques de la ficha (plan de demo §7.1 #5): agente → "Datos del hogar" → acciones → lista plegada. */}
+      {assistantSlot}
+
       <HouseholdCard detail={detail} context={context} addInfoHref={showAddInfo ? familyRoutes.agregarInformacion(familyId) : null} />
 
       <section aria-labelledby="family-top" className="space-y-3">
@@ -247,7 +255,10 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
         )}
       </section>
 
-      <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} scopes={scopes} />
+      {/* Lista secundaria, plegada por defecto; el orden dentro de cada grupo es el de C3 (no se reordena). */}
+      <Expandable openLabel={FAMILY_COPY.showAllBenefits} closeLabel={FAMILY_COPY.hideAllBenefits}>
+        <BenefitGroups detail={detail} opportunities={prioridad.data?.body.items ?? []} scopes={scopes} />
+      </Expandable>
 
       <AskSection cards={cards} context={context} />
 
