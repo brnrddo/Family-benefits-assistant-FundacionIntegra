@@ -675,14 +675,14 @@ _PATRONES_INDIVIDUAL = re.compile(
 def es_pregunta_individual(question: str) -> bool:
     """Detecta determinísticamente una pregunta de elegibilidad individual.
 
-    Con prefijo "Contexto de la familia:" solo se evalúa lo que cuenta la tía:
-    el contexto (roles, tramo, beneficios y su estado) nunca la dispara.
+    Se evalúa siempre la pregunta completa, también con prefijo "Contexto de la
+    familia:": el prefijo es texto libre de C3 y no exime de la derivación
+    (DEC-008). El contexto que arma el frontend (roles, tramo, títulos y
+    "aplica"/"falta dato") no contiene palabras del patrón.
     """
     if not isinstance(question, str):
         return False
-    contexto, texto_tia = separar_contexto(question)
-    texto = texto_tia if contexto else question
-    return bool(_PATRONES_INDIVIDUAL.search(_normalizar(texto)))
+    return bool(_PATRONES_INDIVIDUAL.search(_normalizar(question)))
 
 
 # --- Chat de familia: prefijo de contexto ---------------------------------------

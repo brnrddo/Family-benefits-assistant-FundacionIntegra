@@ -25,9 +25,12 @@ type Turn =
   | { readonly id: number; readonly kind: 'pii' }
   | { readonly id: number; readonly kind: 'error'; readonly error: unknown; readonly question: string };
 
-/** Apellidos del directorio demo ("Familia Rojas Muñoz" → ["Rojas Muñoz"]), para sustituirlos. */
-const familyWords = (familyName: string | undefined): string[] =>
-  familyName === undefined ? [] : [familyName.replace(/^familia\s+/iu, '')];
+/**
+ * Apellidos de TODO el directorio demo ("Familia Rojas Muñoz" → "Rojas Muñoz"), no solo de la
+ * ficha abierta: la tía puede mencionar a otra familia del jardín y ese apellido tampoco sale.
+ */
+const familyWords = (directory: ReadonlyMap<string, { readonly familyName: string }>): string[] =>
+  [...directory.values()].map((entry) => entry.familyName.replace(/^familia\s+/iu, ''));
 
 export function FamilyChat({ familyId }: { readonly familyId: string }) {
   const familia = useFamilia(familyId);
@@ -63,7 +66,7 @@ export function FamilyChat({ familyId }: { readonly familyId: string }) {
       setText('');
       return;
     }
-    const tiaText = replaceLocalNames(trimmed, names, familyWords(directory.get(familyId)?.familyName));
+    const tiaText = replaceLocalNames(trimmed, names, familyWords(directory));
     const question = composeFamilyQuestion({
       composition: detail.composition,
       rshBand: detail.rsh_band,

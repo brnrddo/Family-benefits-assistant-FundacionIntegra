@@ -9,7 +9,7 @@ import { benefitName } from '../../i18n/copy';
 import { FAMILY_CONTEXT_COPY as C } from '../demo-session/demoCopy';
 
 export const FAMILY_QUESTION_MAX = 500;
-/** Tope del texto de la tía: siempre cabe junto al prefijo y la marca de situación. */
+/** Tope de lo que escribe la tía (textarea); tras reemplazar nombres puede crecer y se recorta el contexto. */
 export const TIA_TEXT_MAX = 300;
 const MAX_BENEFITS = 3;
 
@@ -26,8 +26,14 @@ export interface FamilyQuestionInput {
   readonly tiaText: string;
 }
 
+/**
+ * Tope del texto de la tía YA reemplazado: puede pasar de TIA_TEXT_MAX ("Juanito" → "el niño o la
+ * niña"), así que solo se corta cuando el contexto ya quedó reducido a "<prefijo> …".
+ */
+const TIA_HARD_MAX = FAMILY_QUESTION_MAX - codePoints(`${C.prefix} …`) - codePoints(`  ${C.situation}`);
+
 export function composeFamilyQuestion({ composition, rshBand, opportunities, tiaText }: FamilyQuestionInput): string {
-  const tia = [...plain(tiaText)].slice(0, TIA_TEXT_MAX).join('');
+  const tia = [...plain(tiaText)].slice(0, TIA_HARD_MAX).join('');
   const members = composition.map((m) => `${C.roles[m.role]} de ${years(m.age)}`);
   const rsh = rshBand === null ? C.rshNone : `${C.rsh} ${rshBand}`;
   let benefits = opportunities

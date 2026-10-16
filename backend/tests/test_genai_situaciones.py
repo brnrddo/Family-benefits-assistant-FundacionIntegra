@@ -65,3 +65,14 @@ def test_chat_de_familia_embarazo_con_contexto_sin_codigos():
     assert answer.endswith(DISCLAIMER)
     assert not contiene_promesa(answer.replace(DISCLAIMER, ""))
     assert not any(p in answer.lower() for p in _PROHIBIDAS)
+
+    # Regresión: el prefijo es texto libre de C3 y no exime de la derivación
+    # determinista de una pregunta de elegibilidad individual (DEC-008).
+    for individual in (
+        "Contexto de la familia: ¿la familia califica para el Subsidio Familiar?",
+        "Contexto de la familia: tramo RSH 40. Situación que cuenta la tía: "
+        "¿le corresponde el bono?",
+    ):
+        r = client.post("/api/v1/asistente", json={"question": individual})
+        assert r.status_code == 200
+        assert r.json()["intent"] == "REQUIRES_DETERMINISTIC_EVALUATION"

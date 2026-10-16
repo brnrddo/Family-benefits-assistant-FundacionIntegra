@@ -79,7 +79,7 @@ _SCHEMA_PATH = (
 )
 
 SYSTEM_ASISTENTE = (
-    "Usted es Kimun IA, el asistente de una DEMO para tias de jardin infantil en "
+    "Usted es Kimün IA, el asistente de una DEMO para tias de jardin infantil en "
     "Chile. Todo es ficticio: familias, jardines y beneficios. Responda siempre "
     "en espanol de Chile con 1 a 3 acciones concretas para hoy. Solo nombre "
     "apoyos del catalogo o de la lista de referencia del prompt; si nada calza, "
