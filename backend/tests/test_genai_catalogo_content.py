@@ -108,8 +108,10 @@ def test_content_real_carga_completo():
             assert (e.source_id, e.source_url) == (b["official_source_id"], b["official_url"])
             assert e.source_url.startswith("https://")
     assert cat.entradas["BEN-001"].source_id == "F004"
-    for pid in ("PROMPT-GUION", "PROMPT-MENSAJE-FAMILIA", "PROMPT-ASISTENTE-CATALOGO"):
+    for pid in ("PROMPT-GUION", "PROMPT-MENSAJE-FAMILIA"):
         assert cat.prompt_versions[pid] == "1.0.0"
+    # Asistente en modo demo: subió minor (1.1.0).
+    assert cat.prompt_versions["PROMPT-ASISTENTE-CATALOGO"] == "1.1.0"
 
 
 def test_plantillas_son_las_del_rol4():

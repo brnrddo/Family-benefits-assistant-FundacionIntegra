@@ -634,8 +634,13 @@ def _invocar_modelo(
     json_schema: dict,
     max_tokens: int,
     request_id: str,
+    system: str = SYSTEM,
 ) -> dict:
-    """Barrera 4: resuelve el proveedor, genera y devuelve sus datos tipados."""
+    """Barrera 4: resuelve el proveedor, genera y devuelve sus datos tipados.
+
+    ``system`` permite que el asistente demo (``asistente_bedrock``) use su
+    propio mensaje de sistema; guion y mensaje usan ``SYSTEM``.
+    """
     # La CONSTRUCCIÓN del proveedor también puede fallar cerrada (sin
     # E3_GUARDRAIL_ID o sin boto3): va dentro del try, no solo la llamada.
     if provider is None:
@@ -649,7 +654,7 @@ def _invocar_modelo(
     try:
         resp = provider.generar(
             prompt_renderizado,
-            system=SYSTEM,
+            system=system,
             json_schema=json_schema,
             temperatura=_temperatura(prompt),
             max_tokens=max_tokens,

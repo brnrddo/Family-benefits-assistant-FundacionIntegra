@@ -8,8 +8,9 @@
   ``E3_LLM_PROVIDER=bedrock`` y delegado completo a ``app.genai.redaccion``
   (allowlist, envelope interno, Guardrails y postvalidación). Ante cualquier
   fallo se degrada a la plantilla con HTTP 200 y
-  ``warnings=['GENAI_DEGRADADO_A_PLANTILLA']`` (API-008). ``/asistente`` sigue
-  siempre por plantilla.
+  ``warnings=['GENAI_DEGRADADO_A_PLANTILLA']`` (API-008). ``/asistente`` tiene
+  camino Bedrock en modo demo (``app.genai.asistente_bedrock``) para preguntas
+  generales; si falla, responde la plantilla en silencio (solo log).
 - Un ``benefit_id`` sin respaldo en el catálogo responde 422 y nunca se
   sustituye por otro beneficio (DEC-056). Si el catálogo no valida, la
   respuesta falla cerrada sin 500 (DEC-058).
@@ -35,8 +36,10 @@ from app.config import DB_PATH
 from app.genai import (
     TemplateError,
     TemplateProvider,
+    asistente_bedrock,
     asistente_sin_catalogo,
     content_catalog,
+    es_pregunta_individual,
     redaccion,
 )
 from app.genai.template_provider import (
@@ -265,10 +268,24 @@ def generar_mensaje(benefit_ids: list[str], request_id: str, estados: dict[str, 
 
 
 def responder_asistente(question: str, request_id: str) -> dict:
-    """Arma el ``AssistantEnvelope`` C3 (plantilla; sin Bedrock)."""
+    """Arma el ``AssistantEnvelope`` C3 (BEDROCK en modo demo o PLANTILLA).
+
+    Con ``E3_LLM_PROVIDER=bedrock`` y una pregunta general, redacta el modelo
+    sobre entradas del catálogo elegidas de forma determinista. Una pregunta de
+    elegibilidad individual nunca llama a Bedrock (C3, DEC-008). Ante cualquier
+    fallo se responde la plantilla en silencio: solo un log con el código del
+    motivo, sin warning en el body (el jurado no debe ver avisos técnicos).
+    """
     provider = get_provider()
     if provider is None:
         return asistente_sin_catalogo(request_id, question)
+    if redaccion.bedrock_seleccionado() and not es_pregunta_individual(question):
+        try:
+            return asistente_bedrock.responder_asistente(
+                question, provider.entradas_relevantes(question), request_id=request_id
+            )
+        except redaccion.RedaccionError as exc:
+            _log_genai_degradado(exc.motivo)
     return provider.responder_asistente(request_id, question)
 
 
