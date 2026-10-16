@@ -13,7 +13,8 @@
     },
     "data": {
       "family_id": "FAM-SIM-E3-00002",
-      "pregnancy_weeks_threshold": 20
+      "pregnancy_weeks_threshold": 20,
+      "declared_fields": []
     }
   }
 }

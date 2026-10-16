@@ -97,6 +97,8 @@ interface ServerState {
   families: Map<string, FamilyRecord>;
   /** Fichas re-evaluadas por la operación propuesta `addFamiliaAntecedentes` (DEC-039). */
   details: Map<string, FamilyDetail>;
+  /** Campos ya declarados por familia (solo nombres; GET /antecedentes `declared_fields`, DEC-093). */
+  declared: Map<string, Set<string>>;
   informed: Set<string>;
   conversations: ConversationRecord[];
   newFamiliesInformed: Set<string>;
@@ -128,6 +130,7 @@ function createState(): ServerState {
     pages,
     families,
     details: new Map(),
+    declared: new Map(),
     informed,
     conversations,
     newFamiliesInformed: new Set(),
@@ -319,8 +322,9 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
     http.get(`${API}/familias/:id/antecedentes`, ({ params }) => {
       const familyId = String(params.id);
       if (!isValidId(familyId) || !state.families.has(familyId)) return fail(404);
-      const body = structuredClone(antecedentesFixture.payload);
+      const body = structuredClone(antecedentesFixture.payload) as { data: { family_id: string; declared_fields: string[] } };
       body.data.family_id = familyId;
+      body.data.declared_fields = [...(state.declared.get(familyId) ?? [])].sort();
       return ok(body);
     }),
 
@@ -343,6 +347,9 @@ export function createMockServer(options: { scenario?: ScenarioId } = {}): MockS
       const current = detailEnvelope(record);
       const updated = reevaluateWithDeclared(current.data, parsed.value);
       state.details.set(familyId, structuredClone(updated));
+      const declared = state.declared.get(familyId) ?? new Set<string>();
+      for (const field of Object.keys(parsed.value)) if (field !== 'data_classification') declared.add(field);
+      state.declared.set(familyId, declared);
       const response = structuredClone(addInfoFixture.payload) as unknown as FamiliaDetailEnvelope;
       response.meta.snapshot_id = currentSnapshot();
       response.data = updated;

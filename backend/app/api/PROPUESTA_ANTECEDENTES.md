@@ -88,10 +88,10 @@ Propuesta fuera de C3 (DEC-081). Seis campos nuevos en `AddFamilyInfoRequestV1`,
 **Dónde lee el front N.** Ruta de propuesta, también fuera de C3: `GET /api/v1/familias/{id}/antecedentes`, scope `familias:read`. Respuesta 200 exacta:
 
 ```json
-{"meta": {"…": "construir_meta"}, "data": {"family_id": "FAM-SIM-E3-00002", "pregnancy_weeks_threshold": 20}}
+{"meta": {"…": "construir_meta"}, "data": {"family_id": "FAM-SIM-E3-00002", "pregnancy_weeks_threshold": 20, "declared_fields": []}}
 ```
 
-`pregnancy_weeks_threshold` es `int`. `404` si la familia no existe; `503` (retryable) si N no se puede leer. Va aparte porque la pantalla necesita N **antes** de preguntar y la respuesta del POST es `FamiliaDetailEnvelope` de C3 sin cambios de forma.
+`pregnancy_weeks_threshold` es `int`. `declared_fields` (ampliación compatible, DEC-093) lista los nombres de campo cerrados de `AddFamilyInfoRequestV1` ya declarados para la familia en este proceso (ordenados, únicos, incluye "No sé"); nunca valores. La pantalla los usa para no volver a preguntarlos. `404` si la familia no existe; `503` (retryable) si N no se puede leer. Va aparte porque la pantalla necesita N **antes** de preguntar y la respuesta del POST es `FamiliaDetailEnvelope` de C3 sin cambios de forma.
 
 **Resultado y acceso.** Lo declarado da como máximo `SI PRELIMINAR`, nunca `CONFIRMADO`. En los beneficios cuyo resultado o nivel cambió por la reevaluación, el acceso se recalcula en memoria con las gestiones de la base: SI sin gestión → `ELEGIBLE_SIN_ASIGNACION` (con gestión → `ASIGNADO`/`GESTION_*`; BEN-018 respeta cupo; IND → `INDETERMINADO`; NO → `NO_APLICA`). Es una desviación consciente de la decisión [3] (`AccesoService.evaluar` manda SI PRELIMINAR sin gestión a `PENDIENTE_ANTECEDENTES`), pendiente de registro como **DEC-082**. Antes, la familia quedaba SI + `INDETERMINADO` (combinación inválida) y la ruta respondía `503`. Nada se escribe en la DB ni en el snapshot.
 

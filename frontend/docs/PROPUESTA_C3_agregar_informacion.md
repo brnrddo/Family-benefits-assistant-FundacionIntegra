@@ -18,6 +18,8 @@
 | 401 | Sin sesión o token inválido | Error seguro de sesión |
 | 503 | Motor no disponible | Reintento manual con la misma clave |
 
+**GET previo** `GET /api/v1/familias/{id}/antecedentes` (scope `familias:read`, también fuera de C3): `data` = `family_id`, `pregnancy_weeks_threshold` (umbral N del motor) y, opcional, `declared_fields` (DEC-093: nombres de campo ya declarados en el proceso, nunca valores). La pantalla lo pide siempre: con N arma la pregunta de semanas y con `declared_fields` no vuelve a preguntar lo ya declarado. Si falla, pregunta sin filtro y semanas sin número.
+
 ## Idempotencia y privacidad
 
 La misma clave con el mismo cuerpo canónico devuelve la misma respuesta sin efectos nuevos. Solo funciona en línea: no hay cola offline. En `escala` queda oculta hasta que Integra apruebe el uso de datos reales.

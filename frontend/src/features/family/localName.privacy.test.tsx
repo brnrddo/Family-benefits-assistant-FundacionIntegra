@@ -10,6 +10,7 @@ import { act, cleanup, configure, render, screen, waitFor, within } from '@testi
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
 import { performLogout } from '../../auth/logout';
 import { getSession } from '../../auth/session';
 import { t } from '../../i18n/copy';
@@ -121,6 +122,7 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await user.click(within(rsh).getByRole('radio', { name: t('common.yes') }));
     await user.click(within(screen.getByRole('group', { name: t('new_family.q.household_income_band') })).getByRole('radio', { name: t('income_band.under_110k') }));
     await user.click(screen.getByRole('button', { name: t('add_info.submit') }));
+    await user.click(await screen.findByRole('button', { name: ADD_INFO_COPY.backToFamily }));
     await screen.findByText(t('family.add_info_done'));
     expect(screen.getByRole('heading', { level: 1, name: SAVED })).toBeInTheDocument();
 

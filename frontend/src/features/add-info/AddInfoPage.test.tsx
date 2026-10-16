@@ -51,12 +51,38 @@ describe('AddInfoPage', () => {
     await user.click(within(income).getByRole('radio', { name: t('income_band.under_110k') }));
     await user.click(screen.getByRole('button', { name: t('add_info.submit') }));
 
+    // Resultado según el recálculo: nombres legibles bajo "Ahora aplica", nunca códigos internos.
+    const result = await screen.findByRole('status');
+    const nowApplies = within(result).getByRole('heading', { name: ADD_INFO_COPY.nowApplies }).parentElement as HTMLElement;
+    expect(within(nowApplies).getByText(/Control de salud infantil/)).toBeInTheDocument();
+    expect(within(nowApplies).getByText(/Subsidio para el agua/)).toBeInTheDocument();
+    expect(result.textContent).not.toMatch(/\b(BEN|FAM)-/);
+    await user.click(within(result).getByRole('button', { name: ADD_INFO_COPY.backToFamily }));
+
     expect(await screen.findByText(t('family.add_info_done'))).toBeInTheDocument();
     expect(bodies).toEqual([{ data_classification: 'SYNTHETIC_DEMO_NOT_A_REAL_PERSON', has_rsh: true, household_income_band: 'UNDER_110K' }]);
     // Ya no falta nada: la sección "Falta información" no aparece y los tres quedan en "Puede postular ahora".
     expect(document.querySelector('[data-benefit-section="missing"]')).toBeNull();
     const applies = screen.getByRole('heading', { name: FAMILY_COPY.sectionApply }).closest('section') as HTMLElement;
     expect(within(applies).getAllByText(t('level.preliminar'))).toHaveLength(3);
+  });
+
+  it('no vuelve a preguntar los campos ya declarados (GET /antecedentes declared_fields)', async () => {
+    const declared = structuredClone(antecedentesFixture.payload);
+    server.use(
+      http.get(`${TEST_API_BASE}/familias/:id/antecedentes`, () =>
+        HttpResponse.json({ ...declared, data: { ...declared.data, declared_fields: ['has_rsh'] } }),
+      ),
+    );
+    renderWithProviders(
+      <Routes>
+        <Route path="/familias/:familyId/agregar-informacion" element={<AddInfoPage />} />
+      </Routes>,
+      { route: `/familias/${FAMILY}/agregar-informacion` },
+    );
+    expect(await screen.findByRole('group', { name: t('new_family.q.household_income_band') })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: t('new_family.q.has_rsh') })).toBeNull();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
   });
 
   const renderEngineCodes = (antecedentes: () => Response) => {
