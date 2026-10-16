@@ -1,6 +1,8 @@
 // "Preguntas tipo" de una familia (plan de arreglos §7, Persona B). Se exporta para que la ficha
 // (features/family/FamilyPage.tsx, de Persona A) lo monte: `<FamilyQuickQuestions familyId={id} />`.
-// Respuestas deterministas desde `GET /familias/{id}/oportunidades` (sin LLM ni /asistente).
+// Respuestas deterministas desde `GET /familias/{id}/oportunidades` (sin LLM ni /asistente). Debajo,
+// el chat de la ficha (`FamilyChat`, guion de demo 2026-10-16): ese sí usa `POST /asistente`, con un
+// contexto permitido y sin nombres.
 import { useId, useState } from 'react';
 import { useOportunidades } from '../../data/queries';
 import { useLocalNames } from '../../offline/localNames';
@@ -8,6 +10,7 @@ import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { ReferentialNotice, Skeleton } from '../../ui/states';
 import { DEMO_COPY } from '../demo-session/demoCopy';
+import { FamilyChat } from './FamilyChat';
 import { buildQuickQuestions, type QuickQuestionId } from './familyQuestions';
 
 export function FamilyQuickQuestions({ familyId }: { readonly familyId: string }) {
@@ -49,6 +52,7 @@ export function FamilyQuickQuestions({ familyId }: { readonly familyId: string }
           <ReferentialNotice />
         </div>
       )}
+      <FamilyChat familyId={familyId} />
     </Card>
   );
 }
