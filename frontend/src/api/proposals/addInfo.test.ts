@@ -50,5 +50,8 @@ describe('propuesta addFamiliaAntecedentes', () => {
     expect(validateAntecedentesEnvelope(ok)).toBe(true);
     expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, pregnancy_weeks_threshold: 20.5 } })).toBe(false);
     expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, extra: 1 } })).toBe(false);
+    // declared_fields (DEC-093) es opcional: nombres de campo, nunca valores.
+    expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, declared_fields: ['has_rsh'] } })).toBe(true);
+    expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, declared_fields: ['has_rsh', 3] } })).toBe(false);
   });
 });

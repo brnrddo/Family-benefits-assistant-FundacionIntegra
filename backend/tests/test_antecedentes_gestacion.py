@@ -103,6 +103,12 @@ def test_embarazo_declarado_persiste_en_lecturas():
     assert ctx.status_code == 200
     assert "pregnancy" not in ctx.json()["data"]["missing_codes"]
 
+    # Lo ya declarado se expone como nombres de campo (sin valores) para no volver a preguntarlo.
+    ant = client.get(f"/api/v1/familias/{_FAMILIA}/antecedentes")
+    assert ant.status_code == 200
+    assert ant.json()["data"]["declared_fields"] == [
+        "has_incompatible_coverage", "household_pregnancy", "pregnancy_weeks_at_least_threshold"]
+
 
 def test_umbral_semanas_expuesto(db_motor_path: Path):
     conn = sqlite3.connect(db_motor_path.resolve().as_uri() + "?mode=ro", uri=True)
@@ -119,3 +125,4 @@ def test_umbral_semanas_expuesto(db_motor_path: Path):
     assert data["family_id"] == _FAMILIA
     assert data["pregnancy_weeks_threshold"] == esperado
     assert isinstance(data["pregnancy_weeks_threshold"], int)
+    assert data["declared_fields"] == []

@@ -1,26 +1,29 @@
-// "Agregar información" de una familia EXISTENTE (cambio 5, DEC-039). Preguntas CERRADAS solo para
-// los datos que le faltan a sus beneficios (missing_codes de C3), con "No sé" (→ null; vivienda →
-// UNKNOWN). Sin texto libre, nombres ni contacto. Reutiliza los controles de Familia nueva. Los
-// códigos del motor usan booleanos de la propuesta (semanas solo tras "Sí" a embarazo; umbral del
-// motor o texto sin número); las preguntas sensibles se marcan opcionales. Un código sin campo
-// cerrado muestra la pregunta sugerida de C3 o su etiqueta solo como guía, sin repetir (DEC-039). Envía
-// la operación PROPUESTA POST /familias/{id}/antecedentes (fuera de C3): solo en línea, sin cola, y
-// oculta en `escala` o sin `capabilities.addInfo`. La re-evaluación (PRELIMINAR) la hace la API.
+// "Agregar información" de una familia EXISTENTE (cambio 5, DEC-039; orientada al caso, DEC-093).
+// Preguntas CERRADAS solo para los datos que le faltan a sus beneficios de "Falta información"
+// (missing_codes de C3), ordenadas de forma determinista por impacto (cuántos INDETERMINADO destraba
+// cada respuesta; empate: `position` del motor) y SIN LLM (questionPlan.ts). Se muestran
+// MAX_PRIMARY_QUESTIONS y el resto tras "Ver más preguntas"; cada una dice qué apoyos puede abrir (por
+// nombre legible, nunca el código) y lleva una pista corta del caso. Lo ya declarado (GET
+// /antecedentes `declared_fields`) no se vuelve a preguntar. Con "No sé" (→ null; vivienda → UNKNOWN);
+// sin texto libre, nombres ni contacto. Semanas solo tras "Sí" a embarazo, con el umbral del motor o
+// texto sin número. Un código sin campo cerrado se muestra solo como guía. Envía la operación PROPUESTA
+// POST /familias/{id}/antecedentes (fuera de C3): solo en línea, sin cola, y oculta en `escala` o sin
+// `capabilities.addInfo`. La re-evaluación (PRELIMINAR) la hace la API; al guardar se muestra qué
+// apoyos cambiaron según ese recálculo y se vuelve a la ficha.
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { DEPENDENT_FIELDS, fieldForMissingCode, getFamiliaAntecedentes } from '../../api/proposals/addInfo';
+import { declaredFieldsOf, getFamiliaAntecedentes } from '../../api/proposals/addInfo';
 import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
-import type { AddFamilyInfoRequestV1 } from '../../api/proposals/types';
-import type { FamilyDetail, Opportunity } from '../../api/types';
+import type { AddFamilyInfoRequestV1, AddInfoField } from '../../api/proposals/types';
+import type { FamilyContextView, FamilyDetail, Opportunity } from '../../api/types';
 import { runtimeConfig, SYNTHETIC_CLASSIFICATION } from '../../config/profile';
 import { useSubmitAddInfo } from '../../data/mutations';
-import { useFamilia, useOportunidades } from '../../data/queries';
-import { familyMissingCodes, groupBenefits, uniqueTexts } from '../../domain/benefitGroups';
+import { useContexto, useFamilia, useOportunidades } from '../../data/queries';
+import { benefitSections } from '../../domain/benefitGroups';
 import { familyDisplayName } from '../../domain/familyName';
 import { formatInteger } from '../../domain/format';
 import { isValidId } from '../../domain/ids';
-import { missingCodeLabels } from '../../domain/presentation';
 import { t } from '../../i18n/copy';
 import { uuid } from '../../lib/uuid';
 import { useLocalNames } from '../../offline/localNames';
@@ -32,25 +35,18 @@ import { Banner, EmptyState, ErrorState, ReferentialNotice, Skeleton } from '../
 import { familyRoutes } from '../family/routes';
 import {
   ADD_INFO_QUESTIONS,
+  answerLabel,
   answerValue,
   EMPTY_ANSWERS,
   isFutureDate,
   keepsIdempotencyKey,
-  QUESTION_ORDER,
   QuestionField,
   questionLabel,
   type AddInfoQuestionKey,
   type Answers,
 } from '../new-family/questions';
 import NotFoundPage from '../system/NotFoundPage';
-
-/** Campo padre de un campo dependiente (p. ej. semanas → embarazo), si lo hay. */
-function parentOf(key: AddInfoQuestionKey): AddInfoQuestionKey | null {
-  for (const [parent, children] of Object.entries(DEPENDENT_FIELDS)) {
-    if (children?.includes(key)) return parent as AddInfoQuestionKey;
-  }
-  return null;
-}
+import { diffAfterSave, parentOf, planQuestions, plannedFields, type AfterSaveDiff, type ChangedBenefit, type PlannedQuestion } from './questionPlan';
 
 /** rsh_band y los dependientes solo se preguntan si también se pregunta su padre y la respuesta es "Sí". */
 function isVisible(key: AddInfoQuestionKey, answers: Answers, fields: readonly AddInfoQuestionKey[]): boolean {
@@ -61,13 +57,6 @@ function isVisible(key: AddInfoQuestionKey, answers: Answers, fields: readonly A
 
 /** Preguntas sensibles: se avisan como opcionales ("Si desea responder"). */
 const SENSITIVE: ReadonlySet<AddInfoQuestionKey> = new Set<AddInfoQuestionKey>(['household_pregnancy', 'pregnancy_weeks_at_least_threshold', 'child_possible_disability']);
-
-/** Campos a preguntar: los de cada código faltante más sus dependientes, en el orden de la ficha. */
-function fieldsFor(codes: readonly string[]): AddInfoQuestionKey[] {
-  const mapped = new Set(codes.map(fieldForMissingCode).filter((field): field is AddInfoQuestionKey => field !== null));
-  for (const field of [...mapped]) for (const child of DEPENDENT_FIELDS[field] ?? []) mapped.add(child);
-  return QUESTION_ORDER.filter((key) => mapped.has(key));
-}
 
 /**
  * Texto de la pregunta: semanas con el umbral N del motor si se conoce (si no, texto sin número, nunca
@@ -81,16 +70,14 @@ function labelFor(key: AddInfoQuestionKey, weeks: number | null): string | undef
   return SENSITIVE.has(key) ? ADD_INFO_COPY.optionalSensitive(label ?? questionLabel(key)) : label;
 }
 
-/** Umbral N (GET previo, fuera de C3): solo si se va a preguntar por semanas; si falla, null. */
-function useWeeksThreshold(familyId: string, enabled: boolean): number | null {
-  const query = useQuery({
+/** GET previo (fuera de C3): umbral N y campos ya declarados. Siempre se pide; si falla, sin filtro ni N. */
+function useAntecedentes(familyId: string) {
+  return useQuery({
     queryKey: ['antecedentes', familyId],
-    enabled,
     retry: false,
     staleTime: Infinity,
     queryFn: ({ signal }) => getFamiliaAntecedentes({ familyId, signal }),
   });
-  return query.data?.body.data.pregnancy_weeks_threshold ?? null;
 }
 
 /** Cuerpo con SOLO las preguntas respondidas (sin responder = sin cambio); "No sé" → null / UNKNOWN. */
@@ -103,36 +90,78 @@ export function buildAddInfoBody(answers: Answers, fields: readonly AddInfoQuest
   return body as AddFamilyInfoRequestV1;
 }
 
-function AddInfoForm({ familyId, detail, opportunities }: {
+function ResultList({ title, items }: { readonly title: string; readonly items: readonly ChangedBenefit[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <h3 className="font-semibold">{title}</h3>
+      <ul className="list-disc space-y-1 pl-6">
+        {items.map((item, index) => (
+          <li key={`${index}-${item.name}`}>
+            {item.name}
+            {item.reason !== null && <span className="text-sm text-ink-muted"> ({item.reason})</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function AddInfoResult({ familyId, result }: { readonly familyId: string; readonly result: AfterSaveDiff }) {
+  const navigate = useNavigate();
+  const unchanged = result.nowApplies.length === 0 && result.notListed.length === 0;
+  return (
+    <Card role="status" className="space-y-4">
+      <h2>{ADD_INFO_COPY.resultTitle}</h2>
+      <ResultList title={ADD_INFO_COPY.nowApplies} items={result.nowApplies} />
+      <ResultList title={ADD_INFO_COPY.stillMissing} items={result.stillMissing} />
+      <ResultList title={ADD_INFO_COPY.notListed} items={result.notListed} />
+      {unchanged && <p className="text-ink-muted">{ADD_INFO_COPY.noChange}</p>}
+      <Button icon="chevron-left" data-primary-action onClick={() => void navigate(familyRoutes.ficha(familyId), { state: { addInfoDone: true } })}>
+        {ADD_INFO_COPY.backToFamily}
+      </Button>
+    </Card>
+  );
+}
+
+function AddInfoForm({ familyId, detail, opportunities, context }: {
   readonly familyId: string;
   readonly detail: FamilyDetail;
   readonly opportunities: readonly Opportunity[];
+  readonly context: FamilyContextView | null;
 }) {
-  const navigate = useNavigate();
   const online = useOnline();
   const mutation = useSubmitAddInfo();
+  const antecedentes = useAntecedentes(familyId);
+  const moreId = useId();
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [attempt, setAttempt] = useState<{ canonical: string; key: string } | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [showMore, setShowMore] = useState(false);
+  const [result, setResult] = useState<AfterSaveDiff | null>(null);
 
-  const codes = familyMissingCodes(detail);
-  const fields = fieldsFor(codes);
-  const weeks = useWeeksThreshold(familyId, fields.includes('pregnancy_weeks_at_least_threshold'));
-  const { applies, missing } = groupBenefits(detail, opportunities);
-  const rows = [...missing, ...applies];
-  // Guía (sin campo cerrado), sin repetir textos: las preguntas de C3 de beneficios a los que solo les
-  // faltan datos sin campo, y la etiqueta simple de los demás datos sin campo.
-  const noField = (code: string) => fieldForMissingCode(code) === null;
-  const guideRows = rows.filter((row) => row.missingCodes.length > 0 && row.missingCodes.every(noField) && row.questions.length > 0);
-  const covered = new Set(guideRows.flatMap((row) => row.missingCodes));
-  const guide = uniqueTexts([
-    ...guideRows.flatMap((row) => row.questions),
-    ...missingCodeLabels(codes.filter((code) => noField(code) && !covered.has(code))),
-  ]);
+  if (result !== null) return <AddInfoResult familyId={familyId} result={result} />;
+  // La lista depende de lo ya declarado: se muestra cuando el GET termina (éxito o error).
+  if (antecedentes.isPending) return <Skeleton rows={3} rowClass="h-16" />;
+
+  const weeks = antecedentes.data?.body.data.pregnancy_weeks_threshold ?? null;
+  const declared = declaredFieldsOf(antecedentes.data?.body);
+  const plan = planQuestions({ detail, opportunities, declared, context });
+  // Las respuestas de preguntas ocultas tras "Ver más" se conservan y se envían.
+  const fields = plannedFields(plan);
   const body = buildAddInfoBody(answers, fields);
   const answered = Object.keys(body).length - 1;
   const futureDate = isFutureDate(answers.last_child_health_control_date);
   const blocked = answered === 0 || futureDate || !online;
+
+  if (plan.pendingBenefits === 0) {
+    return (
+      <div className="space-y-5">
+        <p>{ADD_INFO_COPY.noPending}</p>
+        <ReferentialNotice />
+      </div>
+    );
+  }
 
   const update = (key: AddInfoQuestionKey, value: string) => {
     setAnswers((current) => ({ ...current, [key]: value }));
@@ -144,19 +173,38 @@ function AddInfoForm({ familyId, detail, opportunities }: {
     const canonical = JSON.stringify(body);
     // Mismo cuerpo ⇒ misma clave; cualquier edición cambia el cuerpo ⇒ clave nueva.
     const current = attempt !== null && attempt.canonical === canonical ? attempt : { canonical, key: uuid() };
+    // La mutación reemplaza la ficha en caché: se guarda el "antes" para comparar.
+    const beforeRows = benefitSections(detail, opportunities).missing;
+    const answeredText = new Map<AddInfoField, string>(
+      fields.filter((key) => key in body).map((key) => [key, answerLabel(ADD_INFO_QUESTIONS[key], answers[key])]),
+    );
     setAttempt(current);
     setError(null);
     mutation
       .mutateAsync({ familyId, body, idempotencyKey: current.key })
-      .then(() => {
+      .then((ok) => {
         setAttempt(null);
-        void navigate(familyRoutes.ficha(familyId), { state: { addInfoDone: true } });
+        setResult(diffAfterSave(beforeRows, ok.body.data, opportunities, answeredText, weeks));
       })
       .catch((failure: unknown) => {
         if (!keepsIdempotencyKey(failure)) setAttempt(null);
         setError(failure);
       });
   };
+
+  const renderQuestion = (question: PlannedQuestion) => (
+    <div key={question.key} className="space-y-2">
+      <QuestionField question={ADD_INFO_QUESTIONS[question.key]} value={answers[question.key]} onChange={(value) => update(question.key, value)} label={labelFor(question.key, weeks)} />
+      {question.opens.length > 0 && <p className="text-sm text-ink-muted">{ADD_INFO_COPY.opens(question.opens.join(', '))}</p>}
+      {question.completes.length > 0 && <p className="text-sm text-ink-muted">{ADD_INFO_COPY.completes(question.completes.join(', '))}</p>}
+      {question.hint !== null && <p className="text-sm text-ink-muted">{question.hint}</p>}
+      {question.dependents
+        .filter((key) => isVisible(key, answers, fields))
+        .map((key) => (
+          <QuestionField key={key} question={ADD_INFO_QUESTIONS[key]} value={answers[key]} onChange={(value) => update(key, value)} label={labelFor(key, weeks)} />
+        ))}
+    </div>
+  );
 
   return (
     <div className="space-y-5">
@@ -170,11 +218,17 @@ function AddInfoForm({ familyId, detail, opportunities }: {
             submit();
           }}
         >
-          {fields
-            .filter((key) => isVisible(key, answers, fields))
-            .map((key) => (
-              <QuestionField key={key} question={ADD_INFO_QUESTIONS[key]} value={answers[key]} onChange={(value) => update(key, value)} label={labelFor(key, weeks)} />
-            ))}
+          {plan.primary.map(renderQuestion)}
+          {plan.more.length > 0 && (
+            <>
+              <div id={moreId} className="space-y-5" hidden={!showMore}>
+                {showMore && plan.more.map(renderQuestion)}
+              </div>
+              <Button variant="ghost" aria-expanded={showMore} aria-controls={moreId} onClick={() => setShowMore((open) => !open)}>
+                {showMore ? ADD_INFO_COPY.fewerQuestions : ADD_INFO_COPY.moreQuestions(formatInteger(plan.more.length))}
+              </Button>
+            </>
+          )}
           {!online && (
             <Banner tone="warn" icon="wifi-off">
               {t('add_info.offline')}
@@ -188,12 +242,12 @@ function AddInfoForm({ familyId, detail, opportunities }: {
         </form>
       )}
 
-      {guide.length > 0 && (
+      {plan.guide.length > 0 && (
         <Card className="space-y-2">
           <h2>{t('add_info.guide_title')}</h2>
           <p className="text-ink-muted">{t('add_info.guide_hint')}</p>
           <ul className="list-disc space-y-1 pl-6">
-            {guide.map((line) => (
+            {plan.guide.map((line) => (
               <li key={line} className="c3-text">
                 {line}
               </li>
@@ -210,11 +264,21 @@ function AddInfoView({ familyId }: { readonly familyId: string }) {
   const names = useLocalNames();
   const ficha = useFamilia(familyId);
   const prioridad = useOportunidades(familyId, 'prioridad', ficha.isSuccess);
+  // Solo para la pista de contexto (señales de urgencia); si falla o tarda, la pista va sin señales.
+  const contexto = useContexto(familyId, ficha.isSuccess);
 
   let body;
   if (ficha.isPending) body = <Skeleton rows={3} rowClass="h-16" />;
   else if (ficha.isError && ficha.data === undefined) body = <ErrorState error={ficha.error} onRetry={() => void ficha.refetch()} />;
-  else body = <AddInfoForm familyId={familyId} detail={ficha.data.body.data} opportunities={prioridad.data?.body.items ?? []} />;
+  else
+    body = (
+      <AddInfoForm
+        familyId={familyId}
+        detail={ficha.data.body.data}
+        opportunities={prioridad.data?.body.items ?? []}
+        context={contexto.data?.body.data ?? null}
+      />
+    );
 
   return (
     <div className="space-y-4">

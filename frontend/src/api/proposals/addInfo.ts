@@ -11,7 +11,7 @@ import { validateFamiliaDetailEnvelope } from '../generated/validators.gen.js';
 import { getTransport } from '../transport';
 import type { C3Ok, EnvelopeMetadata, FamiliaDetailEnvelope, ProposalOperationId } from '../types';
 import { validateAddFamilyInfoRequestV1 } from './generated/validators.gen.js';
-import type { AddFamilyInfoRequestV1, AddInfoField } from './types';
+import { ADD_INFO_EXTRA_FIELDS, type AddFamilyInfoRequestV1, type AddInfoField } from './types';
 
 export const ADD_INFO_OPERATION_ID: ProposalOperationId = 'addFamiliaAntecedentes';
 export const ADD_INFO_ROUTE = '/familias/{id}/antecedentes';
@@ -68,8 +68,21 @@ export const DEPENDENT_FIELDS: Readonly<Partial<Record<AddInfoField, readonly Ad
 /** GET /familias/{id}/antecedentes: datos que la pantalla necesita ANTES de preguntar (fuera de C3). */
 export interface AntecedentesEnvelope {
   readonly meta: EnvelopeMetadata;
-  readonly data: { readonly family_id: string; readonly pregnancy_weeks_threshold: number };
+  readonly data: {
+    readonly family_id: string;
+    readonly pregnancy_weeks_threshold: number;
+    /** Campos ya declarados (solo nombres, nunca valores; DEC-093). Opcional: un backend sin el cambio sigue validando. */
+    readonly declared_fields?: readonly string[];
+  };
 }
+
+const DECLARED_FIELD_PATTERN = /^[a-z0-9_]+$/;
+const MAX_DECLARED_FIELDS = 40;
+
+const isDeclaredFields = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.length <= MAX_DECLARED_FIELDS &&
+  value.every((item) => typeof item === 'string' && DECLARED_FIELD_PATTERN.test(item));
 
 const META_KEYS = ['request_id', 'snapshot_id', 'eligibility_bundle_hash', 'content_bundle_hash', 'content_version'];
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -77,8 +90,9 @@ const hasExactKeys = (value: Record<string, unknown>, keys: readonly string[]) =
   Object.keys(value).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 
 /**
- * Envelope cerrado: `meta` de C3 (mismas claves, strings) y `data` con solo `family_id` y el umbral N
- * de semanas (entero 1–45, parámetro público del motor P006-02). Cualquier otra forma se rechaza.
+ * Envelope cerrado: `meta` de C3 (mismas claves, strings) y `data` con solo `family_id`, el umbral N
+ * de semanas (entero 1–45, parámetro público del motor P006-02) y, opcional, `declared_fields`
+ * (nombres de campo `^[a-z0-9_]+$`, ≤ 40). Cualquier otra forma se rechaza.
  */
 export const validateAntecedentesEnvelope = Object.assign(
   (value: unknown): value is AntecedentesEnvelope => {
@@ -89,7 +103,8 @@ export const validateAntecedentesEnvelope = Object.assign(
       hasExactKeys(value.meta, META_KEYS) &&
       META_KEYS.every((key) => typeof (value.meta as Record<string, unknown>)[key] === 'string') &&
       isRecord(value.data) &&
-      hasExactKeys(value.data, ['family_id', 'pregnancy_weeks_threshold']) &&
+      (hasExactKeys(value.data, ['family_id', 'pregnancy_weeks_threshold']) ||
+        (hasExactKeys(value.data, ['family_id', 'pregnancy_weeks_threshold', 'declared_fields']) && isDeclaredFields(value.data.declared_fields))) &&
       isValidId(value.data.family_id) &&
       Number.isInteger(value.data.pregnancy_weeks_threshold) &&
       (value.data.pregnancy_weeks_threshold as number) >= 1 &&
@@ -99,6 +114,17 @@ export const validateAntecedentesEnvelope = Object.assign(
   },
   { errors: null as { instancePath: string; keyword: string }[] | null },
 );
+
+const KNOWN_FIELDS: ReadonlySet<string> = new Set<AddInfoField>([
+  ...Object.values(MISSING_CODE_FIELD).filter((field): field is AddInfoField => field !== undefined),
+  ...ADD_INFO_EXTRA_FIELDS,
+]);
+
+/** Campos ya declarados del envelope, filtrados a campos conocidos de la pantalla (desconocidos se ignoran). */
+export function declaredFieldsOf(envelope: AntecedentesEnvelope | undefined): ReadonlySet<AddInfoField> {
+  const fields = envelope?.data.declared_fields ?? [];
+  return new Set(fields.filter((field): field is AddInfoField => KNOWN_FIELDS.has(field)));
+}
 
 /** Umbral N de semanas de embarazo para la pregunta "¿Tiene N semanas o más?" (mismo recurso propuesto). */
 export async function getFamiliaAntecedentes(params: { familyId: string; signal?: AbortSignal }): Promise<C3Ok<AntecedentesEnvelope>> {

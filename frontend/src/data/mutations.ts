@@ -120,6 +120,8 @@ export function useSubmitAddInfo() {
         queryClient.invalidateQueries({ queryKey: ['oportunidades', input.familyId] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.contexto(input.familyId) }),
         queryClient.invalidateQueries({ queryKey: ['familias'] }),
+        // Campos ya declarados (GET /antecedentes, DEC-093): no se vuelven a preguntar.
+        queryClient.invalidateQueries({ queryKey: ['antecedentes', input.familyId] }),
       ]);
     },
   });

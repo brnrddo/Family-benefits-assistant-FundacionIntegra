@@ -4,7 +4,8 @@
 EXISTENTE; cada campo se registra como hecho ``DECLARADO`` y la ficha se
 reevalúa. ``GET /familias/{id}/antecedentes``: devuelve el umbral N de semanas
 de gestación (``pregnancy_weeks_threshold``) que la pantalla muestra en la
-pregunta "¿Tiene N semanas o más?". Operación PROPUESTA por el Rol 3, implementada en servidor y FUERA de
+pregunta "¿Tiene N semanas o más?" y los nombres de campo ya declarados
+(``declared_fields``, sin valores) para no volver a preguntarlos. Operación PROPUESTA por el Rol 3, implementada en servidor y FUERA de
 C3 v1.0.2 (el contrato no se edita). Detalles y preguntas abiertas:
 ``backend/app/api/PROPUESTA_ANTECEDENTES.md``.
 
@@ -72,8 +73,10 @@ def get_familia_antecedentes(
 ) -> dict:
     """Datos que la pantalla necesita ANTES de preguntar; scope ``familias:read``.
 
-    200 ``{"meta", "data": {"family_id", "pregnancy_weeks_threshold"}}`` con N
-    del parámetro versionado ``P006-02`` (regla vigente R00301); 404 familia
+    200 ``{"meta", "data": {"family_id", "pregnancy_weeks_threshold",
+    "declared_fields"}}`` con N del parámetro versionado ``P006-02`` (regla
+    vigente R00301) y los nombres de campo cerrados ya declarados en este
+    proceso (ordenados, únicos, incluye "No sé"; nunca valores); 404 familia
     inexistente; 503 retryable si N no se puede leer. Fuera de C3.
     """
     inicio = time.perf_counter()
@@ -89,7 +92,12 @@ def get_familia_antecedentes(
     _log(request, 200, inicio)
     return {
         "meta": construir_meta(request.state.request_id),
-        "data": {"family_id": id, "pregnancy_weeks_threshold": umbral},
+        "data": {
+            "family_id": id,
+            "pregnancy_weeks_threshold": umbral,
+            # Solo nombres de campo de AddFamilyInfoRequestV1, nunca valores.
+            "declared_fields": sorted({h["campo"] for h in store.declarados_get(id)}),
+        },
     }
 
 

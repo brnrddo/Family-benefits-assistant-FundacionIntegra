@@ -122,6 +122,10 @@ test('recorrido principal a 360 px', async ({ page }) => {
   await page.getByRole('group', { name: C['new_family.q.has_rsh'] }).locator('label', { hasText: C['common.yes'] }).click();
   await page.getByRole('group', { name: C['new_family.q.household_income_band'] }).locator('label', { hasText: C['income_band.under_110k'] }).click();
   await page.getByRole('button', { name: C['add_info.submit'] }).click();
+  // DEC-093: tarjeta de resultado antes de volver a la ficha.
+  await expect(page.getByRole('heading', { name: ADD_INFO_COPY.resultTitle })).toBeVisible();
+  await expectNoHorizontalScroll(page);
+  await page.getByRole('button', { name: ADD_INFO_COPY.backToFamily }).click();
   await expect(page.getByText(C['family.add_info_done'])).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: NAME_SHORT })).toBeVisible();
   await expect(page.locator('[data-benefit-section="missing"]')).toHaveCount(0);
