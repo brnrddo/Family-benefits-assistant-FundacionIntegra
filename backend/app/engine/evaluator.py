@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 
 from . import operators as ops
-from .facts import Repo
+from .facts import Repo, _coerce_declarado
 from .model import (Hecho, Nivel, ResultadoBeneficio, TrazaRegla, Tri,
                     MOTIVO_CRITERIO_NO_CUMPLE, MOTIVO_CRITERIOS_CUMPLEN,
                     MOTIVO_DATO_FALTANTE, MOTIVO_DATO_RSH_FALTANTE,
@@ -45,7 +45,12 @@ def _candidatos(rol: str, ctx: FamiliaCtx) -> list[sqlite3.Row]:
     if rol == "ESTUDIANTE":
         return [i for i in ints if _tiene_condicion(ctx, i, "MATRICULA")]
     if rol == "GESTANTE":
-        return [i for i in ints if _tiene_gestacion(ctx, i)]  # ninguno en el dataset
+        # El dataset no trae gestación: solo hay candidata si la familia la
+        # DECLARÓ (``gestacion_declarada`` de hogar). Hecho declarado -> PRELIMINAR.
+        if _gestacion_declarada(ctx) is not True:
+            return []
+        gestante = gestante_declarada(ints)
+        return [gestante] if gestante is not None else []
     if rol == "RECIEN_NACIDO":
         d = ctx.repo.dias_desde_nacimiento
         return [i for i in ints
@@ -76,8 +81,24 @@ def _tiene_condicion(ctx, i, tipo):
     return r is not None
 
 
-def _tiene_gestacion(ctx, i):
-    return False  # el dataset no trae datos de gestación
+def _gestacion_declarada(ctx) -> bool | None:
+    """``gestacion_declarada`` de hogar coercionado a bool, o ``None`` si no se declaró."""
+    return _coerce_declarado("gestacion_declarada", ctx.declarado_hogar("gestacion_declarada"))
+
+
+def gestante_declarada(integrantes) -> sqlite3.Row | None:
+    """Integrante al que se atribuye un embarazo declarado a nivel de hogar.
+
+    La pantalla no identifica a la persona: se elige la PERSONA_REFERENCIA con
+    sexo registral F; si no, la primera PAREJA F; si no, la PERSONA_REFERENCIA;
+    ``None`` si no hay ninguna. ``antecedentes_motor`` usa esta MISMA función
+    para ubicar los hechos por integrante (misma persona).
+    """
+    def primera(parentesco, sexo=None):
+        return next((i for i in integrantes if i["parentesco"] == parentesco
+                     and (sexo is None or i["sexo_registral_sintetico"] == sexo)), None)
+    return (primera("PERSONA_REFERENCIA", "F") or primera("PAREJA", "F")
+            or primera("PERSONA_REFERENCIA"))
 
 
 class Evaluator:
@@ -309,6 +330,13 @@ class Evaluator:
         ganadores_previos = ganadores_previos or {}
         candidatos = _candidatos(rol, ctx)
         if not candidatos:
+            if rol == "GESTANTE" and _gestacion_declarada(ctx) is False:
+                # La familia declaró que no hay embarazo: no aplica (no falta nada).
+                trazas = [TrazaRegla(
+                    id_regla=r["id_regla"], campo=r["campo_dato"], operador=r["operador"],
+                    esperado=self._esperado(r), observado=None, resultado=Tri.NO,
+                    binding_grupo=r["binding_grupo"], nota="declarado") for r in reglas_b]
+                return Tri.NO, None, trazas, set(), True
             # Sin candidatos: si el motivo es falta de datos -> IND; si no -> NO.
             campos = {r["campo_dato"] for r in reglas_b}
             trazas = [TrazaRegla(

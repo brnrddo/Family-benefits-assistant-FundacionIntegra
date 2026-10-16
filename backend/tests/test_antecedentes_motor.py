@@ -6,8 +6,8 @@ que el motor sabe usar:
 - la fecha del último control de salud se convierte a ``dias_desde_control``
   (días, nunca negativo; fecha ilegible -> no se inyecta);
 - el dato se asigna al niño o niña MÁS JOVEN de la familia (menor de 18);
-- ningún otro campo de la pantalla (p. ej. ``has_rsh``, ``household_pregnancy``)
-  llega al motor por esta vía.
+- un campo sin ``campo_dato`` declarable (p. ej. ``has_rsh``) no llega al motor;
+  ``household_pregnancy`` llega como ``gestacion_declarada`` de hogar.
 """
 from __future__ import annotations
 
@@ -106,10 +106,13 @@ def test_declarados_para_motor_mapea_solo_fecha_control(conn):
         campos = {
             "last_child_health_control_date": "2026-10-01",
             "has_rsh": True,                 # no declarable al motor -> se ignora
-            "household_pregnancy": True,     # bool; el motor pide semanas -> se ignora
+            "household_pregnancy": True,     # hogar: habilita la candidata GESTANTE
         }
         out = declarados_para_motor(conn, FID, campos, FECHA)
-        assert out == {"integrante": {HIJO_MENOR: {"dias_desde_control": 12}}}
+        assert out == {
+            "hogar": {"gestacion_declarada": True},
+            "integrante": {HIJO_MENOR: {"dias_desde_control": 12}},
+        }
     finally:
         _limpiar(conn)
 
