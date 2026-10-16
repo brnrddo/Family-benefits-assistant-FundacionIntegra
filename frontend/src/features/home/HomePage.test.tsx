@@ -15,7 +15,9 @@ import { installTestRuntime, resetTestRuntime } from '../../test/runtime';
 import { clearDemoData } from '../../offline/db';
 import { clearLocalNamesMemory, refreshLocalNames } from '../../offline/localNames';
 import { seedLocalNames } from '../../offline/localNamesSeed';
-import { DEMO_COPY } from '../demo-session/demoCopy';
+import { clearDoneActionsMemory } from '../../offline/doneActions';
+import { QUICK_INFORM_COPY } from '../conversation/QuickInform';
+import { DEMO_COPY, listOpen } from '../demo-session/demoCopy';
 import HomePage from './HomePage';
 
 function renderHome() {
@@ -29,7 +31,25 @@ function renderHome() {
 
 describe('HomePage', () => {
   beforeEach(() => installTestRuntime());
-  afterEach(() => resetTestRuntime());
+  afterEach(() => {
+    clearDoneActionsMemory();
+    resetTestRuntime();
+  });
+
+  it('DEC-091: "Ya le informé" en la tarjeta Hoy pasa a la siguiente familia y deja el ✓ de memoria', async () => {
+    const user = userEvent.setup();
+    renderHome();
+    const today = (await screen.findByRole('heading', { level: 2, name: DEMO_COPY.todayTitle })).closest('section') as HTMLElement;
+    // Mayor priority_score sin conversar: FAM-SIM-E3-00001, primer apoyo BEN-001.
+    expect(within(today).getByText(/la familia 00001/)).toHaveTextContent(benefitLabel('BEN-001'));
+    expect(today.querySelector('[data-done-line]')).toBeNull();
+
+    await user.click(within(today).getByRole('button', { name: QUICK_INFORM_COPY.button }));
+
+    // Siguiente según el motor: FAM-SIM-E3-00002 (BEN-003); la memoria recuerda la anterior.
+    expect(await within(today).findByText(/la familia 00002/)).toHaveTextContent(benefitLabel('BEN-003'));
+    expect(within(today).getByText('Ya habló con la familia 00001 ✓ (hoy)')).toBeInTheDocument();
+  });
 
   it('DEC-037: orden neutro por nombre/family_id que NO depende de priority_score, con acciones prioritarias', async () => {
     // Las 8 familias del jardín en orden inverso y con puntajes invertidos: el orden mostrado no cambia.
@@ -42,7 +62,11 @@ describe('HomePage', () => {
     };
     server.use(overrideOperation('listFamiliasByJardin', () => HttpResponse.json(shuffled)));
     renderHome();
+    const user = userEvent.setup();
     const section = (await screen.findByRole('heading', { name: t('home.list_title') })).closest('section') as HTMLElement;
+    // Lista y resumen vienen plegados (DEC-091).
+    await user.click(within(section).getByRole('button', { name: listOpen(items.length) }));
+    await user.click(screen.getByRole('button', { name: DEMO_COPY.statsOpen }));
     const hrefs = within(section)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href'));

@@ -24,7 +24,36 @@ export const DEMO_COPY = {
   chatHistoryLabel: 'Conversación',
   quickTitle: 'Preguntas rápidas',
   quickNoData: 'Por ahora no hay apoyos pendientes para esta familia.',
+  // Acción del día y memoria local (DEC-091).
+  todayTitle: 'Hoy',
+  todayOpenFamily: 'Ver la familia',
+  todayHideMore: 'Ocultar',
+  todayAllDone: 'Por hoy está al día. Gracias por acompañar a sus familias.',
+  statsOpen: 'Ver resumen del jardín',
+  statsClose: 'Ocultar resumen',
+  listClose: 'Ocultar familias',
 } as const;
+
+/** Frase de la acción del día: "Converse con la familia de Antonella sobre" + nombre del apoyo. */
+export const todayLead = (who: string): string => `Converse con ${who} sobre`;
+export const todayMore = (n: number): string => `y ${n} más`;
+export const listOpen = (n: number): string => `Ver todas las familias (${n})`;
+/** Cuándo, en palabras: "hoy", "ayer", "hace 3 días". */
+export const whenLabel = (daysAgo: number): string => (daysAgo <= 0 ? 'hoy' : daysAgo === 1 ? 'ayer' : `hace ${daysAgo} días`);
+export const doneLine = (who: string, when: string): string => `Ya habló con ${who} ✓ (${when})`;
+/** Saludo del chat con memoria: lo último que hizo la tía y la sugerencia de hoy (ambas opcionales). */
+export const chatMemory = (
+  last: { readonly who: string; readonly benefit: string | null; readonly when: string } | null,
+  next: { readonly who: string; readonly benefit: string } | null,
+): string | null => {
+  const parts: string[] = [];
+  if (last !== null) {
+    parts.push(`La última vez habló con ${last.who}${last.benefit !== null ? ` sobre ${last.benefit}` : ''} (${last.when}).`);
+  }
+  if (next !== null) parts.push(`Hoy le sugiero conversar con ${next.who} sobre ${next.benefit}.`);
+  else if (last !== null) parts.push('Por hoy está al día.');
+  return parts.length > 0 ? parts.join(' ') : null;
+};
 
 /** Chips de situación: se envían tal cual al asistente (tabla cerrada del servidor). */
 export const SITUATION_EXAMPLES: readonly string[] = [

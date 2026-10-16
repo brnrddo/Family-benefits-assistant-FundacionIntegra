@@ -1,6 +1,6 @@
 // Smoke e2e a 360 px con mocks C3 sintéticos (SYNTHETIC_DEMO_NOT_A_REAL_PERSON), recorrido de la demo:
-// Inicio (estadísticas del jardín + acceso al chat + búsqueda + lista con nombres de trato sembrados,
-// DEC-047) → buscar un nombre deja una fila → Ficha (secciones y filtro; "Datos del hogar" plegada)
+// Inicio (tarjeta "Hoy" + acceso al chat + búsqueda; resumen y lista plegados con nombres de trato
+// sembrados, DEC-047/DEC-091) → buscar un nombre deja una fila → Ficha (secciones y filtro; "Datos del hogar" plegada)
 // → nombre de trato local (DEC-038) → Agregar información (operación propuesta, DEC-039) → Marcar conversado (3 toques) →
 // Inicio → Preguntar → chip de situación → respuesta con fuentes. Guarda capturas PNG en
 // SCREENSHOT_DIR (por defecto .agents/tasks/frontend-pwa/screenshots), también a escritorio, y corre
@@ -13,7 +13,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADD_INFO_COPY } from '../src/api/proposals/addInfoCopy.ts';
-import { DEMO_COPY, SITUATION_EXAMPLES } from '../src/features/demo-session/demoCopy.ts';
+import { DEMO_COPY, listOpen, SITUATION_EXAMPLES } from '../src/features/demo-session/demoCopy.ts';
 import { FAMILY_COPY } from '../src/features/family/familyCopy.ts';
 import { MOCK_COPY } from '../src/i18n/es.mock.ts';
 
@@ -70,6 +70,13 @@ test('recorrido principal a 360 px', async ({ page }) => {
   // Inicio: estadísticas del jardín, acceso al chat, búsqueda y familias con nombre de trato
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: C['home.title'] })).toBeVisible();
+  // Acción del día arriba (DEC-091); resumen y lista plegados.
+  await expect(page.getByRole('heading', { level: 2, name: DEMO_COPY.todayTitle })).toBeVisible();
+  await expect(page.locator('[data-today-text]')).toContainText('Martina');
+  await expect(page.getByRole('heading', { level: 2, name: DEMO_COPY.statsTitle })).toBeHidden();
+  await shot(page, 'c00-inicio-plegado');
+  await page.getByRole('button', { name: DEMO_COPY.statsOpen }).click();
+  await page.getByRole('button', { name: listOpen(8) }).click();
   await expect(page.getByRole('heading', { level: 2, name: DEMO_COPY.statsTitle })).toBeVisible();
   await expect(page.getByText(C['home.progress'].replace('{informed}', '2').replace('{total}', '8'))).toBeVisible();
   await expect(page.getByRole('heading', { level: 3, name: DEMO_COPY.statsTopTitle })).toBeVisible();
@@ -132,11 +139,17 @@ test('recorrido principal a 360 px', async ({ page }) => {
   // Inicio: la familia ahora lleva el nombre que puso la tía
   await page.getByRole('link', { name: C['nav.home'], exact: true }).click();
   await expect(page.locator('[data-family-row]', { hasText: NAME_SHORT })).toHaveCount(1);
+  // Memoria local (DEC-091): Inicio recuerda lo hecho hoy.
+  await expect(page.locator('[data-done-line]')).toHaveText('Ya habló con la familia de Sofía ✓ (hoy)');
   await expectNoHorizontalScroll(page);
+  await shot(page, 'c05-inicio-memoria');
 
   // Preguntar: chip de situación → respuesta CATALOG_INFO con fuentes
   await page.getByRole('link', { name: C['nav.assistant'], exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: DEMO_COPY.chatTitle })).toBeVisible();
+  await expect(page.locator('[data-chat-memory]')).toContainText('La última vez habló con la familia de Sofía');
+  await expect(page.locator('[data-chat-memory]')).toContainText('Hoy le sugiero conversar con la familia de Martina');
+  await shot(page, 'c06-chat-memoria');
   await page.getByRole('button', { name: SITUATION }).click();
   await expect(page.getByRole('link', { name: /SRC-SIM-001/ })).toHaveAttribute('href', /^https:\/\//);
   await expect(page.getByText(C['notice.referential']).first()).toBeVisible();
