@@ -7,9 +7,13 @@ datos personales por el router y las entradas del catálogo C4 que eligió el
 cualquier ``RedaccionError``.
 
 Todo el mundo de la demo es ficticio (familias, jardines y beneficios). El
-prompt C4 permite al modelo proponer acciones o programas ficticios plausibles
-cuando nada del catálogo calza, para que ninguna pregunta del jurado termine en
-un callejón sin salida. El modelo nunca decide elegibilidad.
+prompt C4 (1.2.0) solo deja nombrar apoyos de ``catalog_items`` o de su lista
+fija "Programas de referencia"; nunca inventar programas. Si nada calza, el
+modelo propone acciones genéricas (revisar la ficha, conversar con la familia,
+ir a la municipalidad) para que ninguna pregunta termine en un callejón sin
+salida. La pregunta puede traer el prefijo "Contexto de la familia:" del chat
+de la ficha (solo roles/edades, tramo RSH, títulos y estado; nunca nombres ni
+IDs). El modelo nunca decide elegibilidad.
 
 Barreras, en orden (PRIVACIDAD_DEMO §"Barrera previa y GenAI"):
 
@@ -75,11 +79,13 @@ _SCHEMA_PATH = (
 )
 
 SYSTEM_ASISTENTE = (
-    "Usted es Brujula, el asistente de una DEMO para tias de jardin infantil en "
+    "Usted es Kimun IA, el asistente de una DEMO para tias de jardin infantil en "
     "Chile. Todo es ficticio: familias, jardines y beneficios. Responda siempre "
-    "en espanol de Chile con 1 a 3 acciones concretas para hoy. Si nada del "
-    "catalogo calza, puede proponer un programa o accion ficticia plausible. El "
-    "motor determinista decide elegibilidad: nunca afirme que alguien califica. "
+    "en espanol de Chile con 1 a 3 acciones concretas para hoy. Solo nombre "
+    "apoyos del catalogo o de la lista de referencia del prompt; si nada calza, "
+    "proponga acciones genericas (revisar la ficha, conversar con la familia, ir "
+    "a la municipalidad). Nunca invente programas. El motor determinista decide "
+    "elegibilidad: nunca afirme que alguien califica. "
     "Responda unicamente con la herramienta indicada."
 )
 
@@ -201,7 +207,8 @@ def sin_codigos_internos(
 def _citas(benefit_ids: object, enviadas: dict[str, CatalogEntry]) -> list[dict]:
     """Citas solo de entradas enviadas al modelo; IDs desconocidos se ignoran.
 
-    En modo demo el modelo puede nombrar programas ficticios: esos no se citan.
+    Los programas de la lista de referencia del prompt no son del catálogo
+    enviado: no se citan.
     """
     citas: list[dict] = []
     for bid in benefit_ids if isinstance(benefit_ids, list) else []:

@@ -6,6 +6,7 @@ promesas de elegibilidad. Una pregunta con RUT se rechaza con 422 sin eco.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -41,3 +42,26 @@ def test_situacion_embarazo_sin_trabajo_y_rut_sin_eco():
     assert r.status_code == 422
     validar_error(r.json())
     assert "12.345.678" not in r.text
+
+
+def test_chat_de_familia_embarazo_con_contexto_sin_codigos():
+    # El prefijo de contexto (lo arma el chat de la ficha) no dispara la
+    # derivación individual y la situación de la tía manda sobre los
+    # beneficios nombrados en el contexto.
+    pregunta = (
+        "Contexto de la familia: 1 adulto de referencia de 29 años, 1 niño o niña "
+        "de 2 años, tramo RSH 40, beneficios en la ficha: Subsidio Familiar (aplica), "
+        "Bono por Hijo (falta dato). Situación que cuenta la tía: la mamá está "
+        "embarazada otra vez"
+    )
+    r = client.post("/api/v1/asistente", json={"question": pregunta})
+    assert r.status_code == 200
+    body = r.json()
+    validar("AssistantEnvelope", body)
+    assert body["intent"] == "CATALOG_INFO"
+    answer = body["answer"]
+    assert "Subsidio Maternal" in answer                  # BEN-003
+    assert not re.search(r"\bBEN-\d+|FAM-|JAR-", answer)
+    assert answer.endswith(DISCLAIMER)
+    assert not contiene_promesa(answer.replace(DISCLAIMER, ""))
+    assert not any(p in answer.lower() for p in _PROHIBIDAS)
