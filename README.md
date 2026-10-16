@@ -35,6 +35,28 @@ CSV canónicos → base tipada → características → reglas → estado de acc
 
 Los beneficios personalizados provienen del motor. Los beneficios generales se muestran en una sección independiente y nunca aparentan ser una evaluación familiar. Todo resultado incluye el aviso de orientación referencial.
 
+## Ventajas y desventajas del modelo
+
+Este proyecto adopta un modelo de **reglas deterministas como fuente de verdad, con IA acotada a la redacción**. Conviene tener claro qué gana y qué limita esa decisión.
+
+### Ventajas
+
+- **Detecta la brecha de acceso, no solo la elegibilidad.** El motor cruza la elegibilidad con las gestiones reales y distingue el caso que importa: *elegible pero sin asignación* (`ELEGIBLE_SIN_ASIGNACION`), además de `SIN_CUPO` con cupo contingente. Ese es el problema social accionable, no un cálculo abstracto.
+- **Resultados trazables y auditables.** Cada evaluación trae traza regla-por-regla y lógica de tres valores (SI / NO / INDETERMINADO) con nivel CONFIRMADO o PRELIMINAR. Se puede explicar por qué una familia califica o no, regla por regla.
+- **Honestidad sobre la incertidumbre.** No se colapsa INDETERMINADO en NO: "no sabemos" se distingue de "no califica". Si la evidencia es declarada y no acreditada, el nivel baja a PRELIMINAR y nunca pisa un dato real de la base.
+- **La IA no decide, solo redacta.** Amazon Bedrock explica resultados ya calculados y datos ya filtrados. No puede inventar una elegibilidad. Si falla, degrada a plantilla determinista sin romper la respuesta (HTTP 200).
+- **Privacidad en profundidad.** Doble filtro por allowlist positiva antes del LLM, Guardrails como segunda barrera, inspección de egreso y nombres de trato que nunca salen del dispositivo. Todo "falla cerrado".
+- **Opera sin nube.** `StubProvider` y la bandera `E3_MOCK` permiten correr el sistema completo (y los tests) sin credenciales de AWS.
+
+### Desventajas y límites
+
+- **Prototipo joven.** Construido en un hackathon sobre un dataset sintético fijo; no está probado con datos reales ni en producción.
+- **Umbrales acoplados a las reglas.** Los umbrales viven junto a las reglas versionadas en vez de ser parámetros independientes con vigencia temporal explícita, lo que complica mantener cambios legislativos en el tiempo.
+- **Límites del dataset.** Campos como gestación, controles o residencia no vienen en los CSV, por lo que esos beneficios quedan INDETERMINADO salvo declaración de la familia (y entonces solo PRELIMINAR). Es correcto por diseño, pero reduce cuántos "SI confirmados" puede producir.
+- **El modelo no interpreta la ley.** Traducir la normativa a reglas requiere criterio humano; el motor ejecuta reglas ya codificadas, no las deduce.
+- **Es estático.** Calcula el estado "tal como es hoy"; no modela efectos de comportamiento ni proyecciones.
+- **Cobertura de pruebas desigual.** Sólida en el motor; mínima de punta a punta (un solo flujo e2e).
+
 ## 📊 Estado del proyecto por rol
 
 > Resumen vivo para que cualquiera sepa qué está listo y qué sigue.
@@ -57,11 +79,14 @@ Ver detalle y comandos en [`backend/README.md`](./backend/README.md).
 - **C1** (salida del motor, §6.6): tabla `evaluaciones` / vista `v_familia_beneficio`.
 - **C2** (`contexto_familia`, §2.7.2): `app/context/contexto_familia.py` → filtrar con `app/context/context_filter.filtrar_para_llm` antes de ir al LLM.
 
-### ⚙️ Rol 2 · API, priorización e IA — pendiente
-Toma como base: las vistas de cruce (C1), `contexto_familia` (C2) y `app/genai/` (rellenar `BedrockProvider`).
+### ⚙️ Rol 2 · API, priorización e IA — **implementado**
+API FastAPI en `backend/app/api/` con routers bajo `/api/v1` (jardines, familias, antecedentes, tracking, genai, kpi, catalogo) y el OpenAPI del contrato **C3** como fuente de verdad. Priorización en `backend/app/priority/`. Capa GenAI en `backend/app/genai/` con `LLMProvider`, `StubProvider` (sin AWS) y `BedrockProvider` completo (Claude vía Converse, Guardrails, presupuesto de tiempo y degradación a plantilla).
 
-### 📱 Rol 3 · Frontend — pendiente
-### 🎯 Rol 4 · Producto, contenido y pitch — pendiente (`content/` aún no creado)
+### 📱 Rol 3 · Frontend — **implementado**
+PWA en `frontend/` (React + TypeScript + Vite). Features en `frontend/src/features/` (inicio, ficha de familia, conversación, asistente, agregar información, mensaje, guion, KPI, sesión demo). Consume la API por el cliente generado del contrato C3 y usa MSW para el modo mock.
+
+### 🎯 Rol 4 · Producto, contenido y pitch — **implementado**
+Catálogo de contenido en `backend/app/catalog/` (contrato **C4**) que alimenta el `TemplateProvider` determinista. Documentación de producto en `docs/producto/`.
 
 ---
 
@@ -107,15 +132,15 @@ marcado con ✅; lo pendiente de otros roles con ⬜.**
          │           v_brechas · v_ventanas                            │
          ▼                                                             │
  ┌──────────────────────────┐   ┌──────────────────────────────────┐  │
- │ [5] ⬜ PRIORIZACIÓN       │   │  ✅ BASE GENAI (app/genai/)       │  │
- │     U·B·V  (Rol 2)        │   │  LLMProvider + stub; Rol 2 pone   │  │
- │                           │   │  Bedrock (Claude). El LLM NO      │  │
+ │ [5] ✅ PRIORIZACIÓN       │   │  ✅ GENAI (app/genai/)            │  │
+ │     U·B·V  (Rol 2)        │   │  LLMProvider + stub + Bedrock     │  │
+ │                           │   │  (Claude). El LLM NO              │  │
  │                           │   │  decide elegibilidad.             │  │
  └──────────────────────────┘   └──────────────────────────────────┘  │
          │                                                             │
          ▼                                                             │
  ┌───────────────────────────────────────────────────────────┐        │
- │ [6] ⬜ VISTA DE LA TÍA (Rol 3) + API (Rol 2)               │◄───────┘
+ │ [6] ✅ VISTA DE LA TÍA (Rol 3) + API (Rol 2)               │◄───────┘
  │     "3 cosas para conversar" + guion IA + marcar conversado │
  └───────────────────────────────────────────────────────────┘
 ```
