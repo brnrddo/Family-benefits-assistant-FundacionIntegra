@@ -5,7 +5,7 @@
 # Cualquier edición de un archivo listado obliga a recalcular su sha256 y el content_bundle_hash.
 schema_version: "1.0.0"
 content_version: "0.2.1"
-content_bundle_hash: "c830d9f9cb383226849d546bad4db9b369cc456d11a0d9d9082f53e99e22ce37"
+content_bundle_hash: "4ceeafa2a6f02c7b03cf62e04faf4f95da1bad2e6037341073ee9bf43573c948"
 canonical_i18n: content/i18n/es.json
 files:
   - path: content/accessibility.yaml
@@ -18,7 +18,7 @@ files:
     sha256: "6aa8653be77be9e3e3bd7b70f0cd9a6ab98433bb96fd14cc64ab75fb7212e632"
     kind: SYNTHETIC_ASSET_MANIFEST
   - path: content/i18n/es.json
-    sha256: "d2cffd8dec67c16f816bb695cf5eef620d0f27971f6434799494c384f0bc2044"
+    sha256: "d790894bc5e24133699b645687e893bd75ec05961452343334f0398488dc0664"
     kind: I18N
   - path: content/pesos_priorizacion.yaml
     sha256: "cf86e7ebb025ee8c4ecd47de4d4103127ff80fa722e9d74dc606d1d255eb8d0b"
@@ -27,7 +27,7 @@ files:
     sha256: "6fe6eab5228df29fbbf295397766f395d1575a2ab565ba6bb2a61bf7e4c254cd"
     kind: QUESTIONS
   - path: content/prompts/asistente_catalogo.md
-    sha256: "1aaf0ceca969ab94e9f9cdeeb0789132f0e6ede595168efab45c77e3f52a5b2f"
+    sha256: "7cd9908c85a822e6a0a0bfa23dc501182c27a197a52137725e598cb9078c0e3a"
     kind: PROMPT
   - path: content/prompts/explicacion.md
     sha256: "8666afa0501865325b8bccd4df5c4aeb845d48ab18e39aa9608ed2e7d2cf01c0"

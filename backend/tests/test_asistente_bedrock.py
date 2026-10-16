@@ -140,6 +140,37 @@ def test_guardrail_input_evalua_solo_la_pregunta_no_el_prompt(monkeypatch):
     assert prompt != PREGUNTA_AGUA and PREGUNTA_AGUA in prompt
 
 
+def test_prosa_con_markdown_y_punto_y_coma_se_normaliza_sin_degradar(monkeypatch, caplog):
+    """Medido en la cuenta: Claude escribe '**', viñetas y ';' y todo degradaba.
+
+    La prosa se normaliza de forma determinista y la frase con un monto se
+    elimina; la respuesta sigue siendo del modelo, sin markup ni cifras.
+    """
+    crudo = (
+        "## Para hoy\n"
+        "**Acción 1:** converse con la familia; pídale la ultima boleta de agua\n"
+        "- Presentele el BEN-005 en la oficina municipal\n"
+        "1. El aporte es de $25.000 al mes.\n"
+        "* Revise la ficha de la familia"
+    )
+    _inyectar(monkeypatch, ClienteFalso(respuesta_converse=respuesta_tooluse(
+        {"answer": crudo, "benefit_ids": ["BEN-005"]}
+    )))
+    with caplog.at_level(logging.DEBUG):
+        body = _preguntar(PREGUNTA_AGUA)
+
+    assert body["provider"] == "BEDROCK"
+    assert body["intent"] == "CATALOG_INFO"
+    titulo = cargar_catalogo_contenido().entradas["BEN-005"].title
+    assert body["answer"] == (
+        "Para hoy. Acción 1: converse con la familia. pídale la ultima boleta de "
+        f"agua. Presentele el {titulo} en la oficina municipal. Revise la ficha de "
+        f"la familia. {DISCLAIMER}"
+    )
+    assert not re.search(r"[;*#$]|\d{2,}", body["answer"].replace(DISCLAIMER, ""))
+    assert "DEGRADADO" not in caplog.text
+
+
 @pytest.mark.parametrize(("cliente", "motivo"), [
     (lambda: ClienteFalso(error_converse=RuntimeError("simulado")),
      redaccion.MOTIVO_BEDROCK_ERROR),

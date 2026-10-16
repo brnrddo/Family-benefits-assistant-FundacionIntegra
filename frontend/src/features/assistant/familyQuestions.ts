@@ -4,6 +4,7 @@
 import type { Opportunity } from '../../api/types';
 import { benefitName } from '../../i18n/copy';
 import { familyRef } from '../demo-session/demoCopy';
+import { benefitStatus } from './familyHint';
 
 export type QuickQuestionId = 'first' | 'missing' | 'pending';
 export interface QuickQuestion {
@@ -31,8 +32,15 @@ function actionLine(o: Opportunity): string {
   }
 }
 
-/** Hasta 3 preguntas tipo; cada una con hasta 3 líneas concretas. Vacío si no hay nada pendiente. */
-export function buildQuickQuestions(opportunities: readonly Opportunity[], childName: string | null): QuickQuestion[] {
+/**
+ * Hasta 3 preguntas tipo; cada una con hasta 3 líneas concretas. Vacío si no hay nada pendiente.
+ * `reminder` (familyHint.ts, solo pantalla) recuerda el hogar y el tramo antes de las acciones.
+ */
+export function buildQuickQuestions(
+  opportunities: readonly Opportunity[],
+  childName: string | null,
+  reminder: string | null = null,
+): QuickQuestion[] {
   const open = opportunities.filter((o) => o.access_state !== 'ASIGNADO');
   const out: QuickQuestion[] = [];
   const top = open.slice(0, MAX_BENEFITS);
@@ -40,7 +48,11 @@ export function buildQuickQuestions(opportunities: readonly Opportunity[], child
     out.push({
       id: 'first',
       question: `¿Qué le presento primero a ${familyRef(childName)}?`,
-      lines: top.map((o) => (o.why_first ? `${actionLine(o)} ${o.why_first}` : actionLine(o))),
+      lines: [
+        ...(reminder !== null ? [reminder] : []),
+        // Cada acción con su porqué: el estado que entrega C3 y su `why_first`.
+        ...top.map((o) => [actionLine(o), `Por qué: ${benefitStatus(o)}.`, o.why_first].filter((part) => part !== '').join(' ')),
+      ],
     });
   }
   const asks = [...new Set(open.filter((o) => o.missing_codes.length > 0).flatMap((o) => o.suggested_questions))].slice(0, MAX_BENEFITS);

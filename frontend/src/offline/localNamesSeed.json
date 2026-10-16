@@ -16,7 +16,7 @@
     "tia": { "tia_id": "TIA-SIM-DEMO-001", "display_name": "Tía Carmen" },
     "garden": { "garden_id": "JAR-SIM-E3-00014", "name": "Jardín Infantil Los Aromos" },
     "families": [
-      { "family_id": "FAM-SIM-E3-00014", "family_name": "Familia Rojas Muñoz", "child_name": "Martina R." },
+      { "family_id": "FAM-SIM-E3-00014", "family_name": "Familia Rojas Muñoz", "child_name": "Juanito R." },
       { "family_id": "FAM-SIM-E3-00064", "family_name": "Familia González Tapia", "child_name": "Benjamín G." },
       { "family_id": "FAM-SIM-E3-00114", "family_name": "Familia Muñoz Contreras", "child_name": "Isidora M." },
       { "family_id": "FAM-SIM-E3-00164", "family_name": "Familia Díaz Fuentes", "child_name": "Tomás D." },
@@ -27,6 +27,8 @@
       { "family_id": "FAM-SIM-E3-00414", "family_name": "Familia Torres Reyes", "child_name": "Vicente T." },
       { "family_id": "FAM-SIM-E3-00464", "family_name": "Familia Espinoza Rivera", "child_name": "Emilia E." }
     ],
+    "today_family_id_uso": "Familia estrella FICTICIA de la tarjeta Hoy (guion de demo 2026-10-16). Solo pasa al frente si ya cumple los filtros de la accion del dia.",
+    "today_family_id": "FAM-SIM-E3-00364",
     "memory_uso": "Accion previa FICTICIA (origen SIMULADO_DEMO, DEC-091) para que la demo arranque con memoria visible. Solo local; nunca va a la API.",
     "memory": [
       { "family_id": "FAM-SIM-E3-00014", "benefit_id": "BEN-005", "days_ago": 1 }

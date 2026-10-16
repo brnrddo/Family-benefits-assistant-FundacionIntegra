@@ -138,18 +138,20 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await screen.findByText(t('conversation.success'));
     expect(screen.getByText(SAVED)).toBeInTheDocument();
 
-    // Asistente: una pregunta con el nombre se bloquea SIN enviar; una general sí se envía.
+    // Asistente: una pregunta con el nombre SÍ se envía, con el nombre reemplazado (el body se revisa
+    // abajo: el nombre nunca sale); una general también.
     await user.click(screen.getByRole('link', { name: t('nav.assistant') }));
     const field = await screen.findByLabelText(new RegExp(t('assistant.question_label')));
     await user.type(field, '¿Qué apoyos hay para sofia?');
     const before = captured.length;
     await user.click(screen.getByRole('button', { name: t('assistant.submit') }));
-    expect(await screen.findByText(t('assistant.name_blocked'))).toBeInTheDocument();
-    expect(captured.length).toBe(before);
+    await screen.findByRole('heading', { name: t('assistant.answer_title') });
+    expect(captured.length).toBeGreaterThan(before);
+    expect(screen.queryByText(t('assistant.name_blocked'))).toBeNull();
     await user.clear(field);
     await user.type(field, '¿Qué es el Registro Social de Hogares?');
     await user.click(screen.getByRole('button', { name: t('assistant.submit') }));
-    await screen.findByRole('heading', { name: t('assistant.answer_title') });
+    await waitFor(() => expect(screen.getAllByRole('heading', { name: t('assistant.answer_title') })).toHaveLength(2));
 
     // El diálogo de logout avisa que se borrarán los nombres (sin confirmar aquí).
     await user.click(screen.getByRole('button', { name: t('auth.logout') }));
@@ -206,14 +208,15 @@ describe('nombre de trato: nunca sale del equipo', () => {
     await user.click(screen.getByRole('link', { name: t('nav.back') }));
     await screen.findByRole('heading', { level: 1, name: SEEDED });
 
-    // Asistente: el primer nombre solo (sin tilde) basta para bloquear SIN enviar.
+    // Asistente: el primer nombre solo (sin tilde) se reemplaza y la pregunta se envía; el body se
+    // revisa abajo: el nombre nunca sale.
     await user.click(screen.getByRole('link', { name: t('nav.assistant') }));
     const field = await screen.findByLabelText(new RegExp(t('assistant.question_label')));
     await user.type(field, '¿Qué apoyos hay para benjamin?');
     const before = captured.length;
     await user.click(screen.getByRole('button', { name: t('assistant.submit') }));
-    expect(await screen.findByText(t('assistant.name_blocked'))).toBeInTheDocument();
-    expect(captured.length).toBe(before);
+    await screen.findByRole('heading', { name: t('assistant.answer_title') });
+    expect(captured.length).toBeGreaterThan(before);
 
     // El aviso de logout cuenta también los sembrados (sin confirmar aquí).
     await user.click(screen.getByRole('button', { name: t('auth.logout') }));

@@ -546,12 +546,19 @@ class TemplateProvider:
 
         Determinista: primero las coincidencias por nombre, luego la tabla
         ``SITUACIONES`` y al final el resto del catálogo en su orden, sin
-        duplicados. No filtra: el filtro de egreso hacia el modelo lo aplica
+        duplicados. Con prefijo "Contexto de la familia:" se mira primero el
+        texto de la tía (situaciones y nombres) y después el contexto. No
+        filtra: el filtro de egreso hacia el modelo lo aplica
         ``asistente_bedrock``.
         """
+        contexto, texto_tia = separar_contexto(question)
+        if contexto:
+            fuentes = [*self._por_situacion(texto_tia), *self._coincidencias(texto_tia),
+                       *self._por_situacion(contexto), *self._coincidencias(contexto)]
+        else:
+            fuentes = [*self._coincidencias(question), *self._por_situacion(question)]
         vistas: dict[str, CatalogEntry] = {}
-        for e in [*self._coincidencias(question), *self._por_situacion(question),
-                  *self._catalogo.values()]:
+        for e in [*fuentes, *self._catalogo.values()]:
             vistas.setdefault(e.benefit_id, e)
         return list(vistas.values())
 
@@ -562,7 +569,11 @@ class TemplateProvider:
         afirma elegibilidad (el motor decide). Sin coincidencias o si el texto
         trae una promesa, devuelve ``None`` y se usa la respuesta general.
         """
-        entradas = self._por_situacion(question)
+        return self._responder_entradas_situacion(request_id, self._por_situacion(question))
+
+    def _responder_entradas_situacion(self, request_id: str,
+                                      entradas: list[CatalogEntry]) -> dict | None:
+        """Arma la respuesta de situación para ``entradas`` ya elegidas."""
         if not entradas:
             return None
         titulos = [self._titulo(e) for e in entradas]
@@ -600,11 +611,26 @@ class TemplateProvider:
                 request_id, "REQUIRES_DETERMINISTIC_EVALUATION", answer, [], []
             )
 
-        coincidencias = self._coincidencias(question)
-        if not coincidencias:
-            situacion = self._responder_situacion(request_id, question)
-            if situacion is not None:
-                return situacion
+        contexto, texto_tia = separar_contexto(question)
+        if contexto:
+            # Chat de familia: el contexto lo arma el frontend solo con datos
+            # permitidos (roles/edades, tramo RSH, títulos y estado), nunca
+            # nombres ni IDs. Manda lo que cuenta la tía; el contexto (los
+            # beneficios en la ficha) es el respaldo antes de la respuesta general.
+            coincidencias: list[CatalogEntry] = []
+            for parte in (texto_tia, contexto):
+                situacion = self._responder_situacion(request_id, parte)
+                if situacion is not None:
+                    return situacion
+                coincidencias = self._coincidencias(parte)
+                if coincidencias:
+                    break
+        else:
+            coincidencias = self._coincidencias(question)
+            if not coincidencias:
+                situacion = self._responder_situacion(request_id, question)
+                if situacion is not None:
+                    return situacion
         if coincidencias:
             partes: list[str] = []
             for e in coincidencias:
@@ -647,10 +673,47 @@ _PATRONES_INDIVIDUAL = re.compile(
 
 
 def es_pregunta_individual(question: str) -> bool:
-    """Detecta determinísticamente una pregunta de elegibilidad individual."""
+    """Detecta determinísticamente una pregunta de elegibilidad individual.
+
+    Se evalúa siempre la pregunta completa, también con prefijo "Contexto de la
+    familia:": el prefijo es texto libre de C3 y no exime de la derivación
+    (DEC-008). El contexto que arma el frontend (roles, tramo, títulos y
+    "aplica"/"falta dato") no contiene palabras del patrón.
+    """
     if not isinstance(question, str):
         return False
     return bool(_PATRONES_INDIVIDUAL.search(_normalizar(question)))
+
+
+# --- Chat de familia: prefijo de contexto ---------------------------------------
+
+# El chat de la ficha antepone un contexto armado en el frontend con datos
+# permitidos (roles/edades, tramo RSH, títulos de beneficios y su estado); nunca
+# nombres ni IDs. Formato: "Contexto de la familia: <...>. Situación que cuenta
+# la tía: <texto>".
+PREFIJO_CONTEXTO = "Contexto de la familia:"
+MARCA_SITUACION = "Situación que cuenta la tía:"
+_PREFIJO_NORM = _normalizar(PREFIJO_CONTEXTO)
+_MARCA_NORM = _normalizar(MARCA_SITUACION)
+
+
+def separar_contexto(question: str) -> tuple[str, str]:
+    """Separa ``(contexto, texto_tia)`` de una pregunta del chat de familia.
+
+    Sin prefijo devuelve ``("", question)``. Con prefijo, ``texto_tia`` es lo
+    que sigue a la marca de situación (``""`` si falta). La comparación tolera
+    tildes y mayúsculas; los textos devueltos son normalizados.
+    """
+    if not isinstance(question, str):
+        return "", ""
+    norm = _normalizar(question)
+    if not norm.startswith(_PREFIJO_NORM):
+        return "", question
+    resto = norm[len(_PREFIJO_NORM):]
+    contexto, _, texto_tia = resto.partition(_MARCA_NORM)
+    # Un contexto vacío sigue marcando la pregunta como del chat de familia.
+    contexto = contexto.strip(" .") or _PREFIJO_NORM
+    return contexto, texto_tia.strip()
 
 
 # --- Situaciones (chat de la tía) ----------------------------------------------

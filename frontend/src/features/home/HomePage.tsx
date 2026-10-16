@@ -194,31 +194,37 @@ function GardenHome({ garden }: { readonly garden: JardinSummary }) {
   const families = familias.data?.pages.flatMap((page) => page.body.items) ?? [];
   const snapshotId = familias.data?.pages[0]?.body.meta.snapshot_id;
 
+  // Móvil: una columna. Escritorio (≥1024 px): Hoy + chat a la izquierda, búsqueda/lista a la derecha
+  // (mismo orden en el DOM, así el lector de pantalla y el teclado recorren igual).
   return (
-    <>
-      {loading ? (
-        <Skeleton rows={2} />
-      ) : failed ? (
-        <ErrorState error={familias.error} onRetry={() => void familias.refetch()} />
-      ) : (
-        <TodayCard families={families} gardenId={garden.garden_id} snapshotId={snapshotId} />
-      )}
-      <ButtonLink to="/preguntar" icon="chat" className="w-full text-lg">
-        {DEMO_COPY.homeChatCta}
-      </ButtonLink>
-      <QueuePanel />
-      {!loading && !failed && (
-        <section aria-labelledby="home-list-title" className="space-y-3">
-          <h2 id="home-list-title">{t('home.list_title')}</h2>
-          <DataFreshness result={familias.data?.pages[0]} />
-          {isFetchNextPageError && <ErrorState error={familias.error} onRetry={() => void fetchNextPage()} />}
-          <FamilyList families={families} gardenId={garden.garden_id} snapshotId={snapshotId} />
-        </section>
-      )}
-      <Expandable openLabel={DEMO_COPY.statsOpen} closeLabel={DEMO_COPY.statsClose}>
-        <GardenStats garden={garden} />
-      </Expandable>
-    </>
+    <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8 lg:space-y-0">
+      <div className="space-y-5">
+        {loading ? (
+          <Skeleton rows={2} />
+        ) : failed ? (
+          <ErrorState error={familias.error} onRetry={() => void familias.refetch()} />
+        ) : (
+          <TodayCard families={families} gardenId={garden.garden_id} snapshotId={snapshotId} />
+        )}
+        <ButtonLink to="/preguntar" icon="chat" className="w-full text-lg">
+          {DEMO_COPY.homeChatCta}
+        </ButtonLink>
+        <QueuePanel />
+      </div>
+      <div className="space-y-5">
+        {!loading && !failed && (
+          <section aria-labelledby="home-list-title" className="space-y-3">
+            <h2 id="home-list-title">{t('home.list_title')}</h2>
+            <DataFreshness result={familias.data?.pages[0]} />
+            {isFetchNextPageError && <ErrorState error={familias.error} onRetry={() => void fetchNextPage()} />}
+            <FamilyList families={families} gardenId={garden.garden_id} snapshotId={snapshotId} />
+          </section>
+        )}
+        <Expandable openLabel={DEMO_COPY.statsOpen} closeLabel={DEMO_COPY.statsClose}>
+          <GardenStats garden={garden} />
+        </Expandable>
+      </div>
+    </div>
   );
 }
 

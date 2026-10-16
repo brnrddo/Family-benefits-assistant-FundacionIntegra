@@ -6,7 +6,7 @@
 // ahora" (actionPlan.ts, determinista, sin LLM). El orden es el de C3 `prioridad` (el cliente no
 // reordena ni muestra puntajes). Señales de urgencia/vulnerabilidad del contexto no se muestran
 // (SUP-032). El título es el nombre de trato local (DEC-038) o un genérico con el ID corto; la URL y
-// los requests usan el family_id de C3.
+// los requests usan el family_id de C3. En escritorio (≥1024 px) el agente va en columna lateral.
 import { useId, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
@@ -192,46 +192,55 @@ function FamilyView({ familyId }: { readonly familyId: string }) {
       )}
       <DataFreshness result={ficha.data} />
 
-      {/* Bloques de la ficha: agente → "Datos del hogar" → filtro y secciones → "Qué hacer ahora". */}
-      <FamilyQuickQuestions familyId={familyId} />
+      {/* Bloques de la ficha: agente → "Datos del hogar" → filtro y secciones → "Qué hacer ahora".
+          Celular: todo apilado en ese orden. Escritorio (≥1024 px): la ficha a la izquierda y el agente
+          (preguntas rápidas + chat de familia) en una columna lateral fija a la derecha; el orden del
+          DOM no cambia (lectores de pantalla y teclado siguen el mismo recorrido). */}
+      <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-6 lg:space-y-0">
+        <div data-family-aside className="lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto">
+          <FamilyQuickQuestions familyId={familyId} />
+        </div>
 
-      <HouseholdCard
-        detail={detail}
-        context={context}
-        toConfirm={toConfirmItems(sections, context, scopes)}
-        addInfoHref={showAddInfo ? addInfoHref : null}
-      />
+        <div className="space-y-5 lg:col-start-1 lg:row-start-1">
+        <HouseholdCard
+          detail={detail}
+          context={context}
+          toConfirm={toConfirmItems(sections, context, scopes)}
+          addInfoHref={showAddInfo ? addInfoHref : null}
+        />
 
-      {/* "Compartir beneficios" es solo para la demo: oculto en `escala` (mismo criterio que Familia nueva). */}
-      <BenefitSections sections={sections} scopes={scopes} showShare={profile !== 'escala'} />
+        {/* "Compartir beneficios" es solo para la demo: oculto en `escala` (mismo criterio que Familia nueva). */}
+        <BenefitSections sections={sections} scopes={scopes} showShare={profile !== 'escala'} />
 
-      <ActionPlanSection plan={plan} addInfoHref={addInfoHref} />
+        <ActionPlanSection plan={plan} addInfoHref={addInfoHref} />
 
-      <ReferentialNotice />
+        <ReferentialNotice />
 
-      <div className="sticky bottom-18 z-10 flex flex-col gap-2 rounded-card bg-canvas/95 py-2">
-        {hasOpportunities ? (
-          <>
-            {/* B3 (DEC-080): un toque con los beneficios recién mostrados; el flujo de 3 toques sigue. */}
-            <QuickInformButton
-              familyId={familyId}
-              gardenId={detail.garden_id}
-              benefitIds={detail.top_opportunities.map((o) => o.benefit_id)}
-              snapshotId={ficha.data.body.meta.snapshot_id}
-              informed={detail.informed}
-            />
-            <ButtonLink to={familyRoutes.conversacion(familyId)} icon="check" data-primary-action className="w-full">
-              {t('family.actions.mark')}
-            </ButtonLink>
-          </>
-        ) : (
-          <>
-            <Button icon="check" disabled className="w-full">
-              {t('family.actions.mark')}
-            </Button>
-            <p className="text-center text-ink-muted">{t('conversation.no_benefits')}</p>
-          </>
-        )}
+        <div className="sticky bottom-18 z-10 flex flex-col gap-2 rounded-card bg-canvas/95 py-2">
+          {hasOpportunities ? (
+            <>
+              {/* B3 (DEC-080): un toque con los beneficios recién mostrados; el flujo de 3 toques sigue. */}
+              <QuickInformButton
+                familyId={familyId}
+                gardenId={detail.garden_id}
+                benefitIds={detail.top_opportunities.map((o) => o.benefit_id)}
+                snapshotId={ficha.data.body.meta.snapshot_id}
+                informed={detail.informed}
+              />
+              <ButtonLink to={familyRoutes.conversacion(familyId)} icon="check" data-primary-action className="w-full">
+                {t('family.actions.mark')}
+              </ButtonLink>
+            </>
+          ) : (
+            <>
+              <Button icon="check" disabled className="w-full">
+                {t('family.actions.mark')}
+              </Button>
+              <p className="text-center text-ink-muted">{t('conversation.no_benefits')}</p>
+            </>
+          )}
+          </div>
+        </div>
       </div>
     </div>
   );

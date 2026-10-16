@@ -154,6 +154,37 @@ const fold = (text: string): string => text.normalize('NFD').replace(/\p{M}/gu, 
 
 const MIN_TOKEN = 3;
 
+export const CHILD_PLACEHOLDER = 'el niño o la niña';
+export const FAMILY_PLACEHOLDER = 'la familia';
+
+const tokensOf = (values: Iterable<string>): Set<string> => {
+  const out = new Set<string>();
+  for (const value of values) {
+    for (const token of fold(value).split(/[^\p{L}]+/u)) if (token.length >= MIN_TOKEN) out.add(token);
+  }
+  return out;
+};
+
+/**
+ * Chat de la ficha: en vez de bloquear, cambia cada palabra que coincida (mismo criterio que
+ * `containsLocalName`) con un nombre guardado por "el niño o la niña" y con un apellido de `familyWords`
+ * (directorio demo, sin la palabra "Familia") por "la familia". Local: nunca registra nada.
+ */
+export function replaceLocalNames(
+  text: string,
+  saved: ReadonlyMap<string, string> = names,
+  familyWords: readonly string[] = [],
+): string {
+  const child = tokensOf(saved.values());
+  const family = tokensOf(familyWords);
+  return text.replace(/\p{L}[\p{L}\p{M}]*/gu, (word) => {
+    const folded = fold(word);
+    if (child.has(folded)) return CHILD_PLACEHOLDER;
+    if (family.has(folded)) return FAMILY_PLACEHOLDER;
+    return word;
+  });
+}
+
 /**
  * true si `text` contiene, como palabra completa, alguna palabra de 3+ letras de un nombre guardado.
  * Falla cerrada: preferimos bloquear de más antes que enviar un nombre a la API.

@@ -3,32 +3,29 @@
 // CATALOG_INFO → texto + citas HTTPS tipadas; REQUIRES_DETERMINISTIC_EVALUATION → derivar a la ficha
 // SIN mostrar `answer`. Si la API falla, plantilla fija del catálogo i18n (nunca texto inventado).
 // Las preguntas del jardín se responden aquí con plantilla desde `GET /kpi` (sin /asistente ni LLM).
-// RUT/teléfono/correo y los nombres guardados en el equipo (DEC-038) no se envían. El historial vive
-// solo en memoria.
+// RUT/teléfono/correo no se envían. Los nombres guardados en el equipo y los apellidos del directorio
+// demo se cambian por "el niño o la niña" / "la familia" antes de enviar (DEC-038: nunca salen); el
+// historial muestra lo que escribió la tía y vive solo en memoria. Cada envío lleva un resumen corto
+// de la respuesta anterior para dar continuidad (chatContext.ts). Aviso referencial una vez, al pie.
 import { useEffect, useId, useRef, useState } from 'react';
 import type { AssistantEnvelope } from '../../api/types';
 import { useAskAssistant } from '../../data/mutations';
 import { useFamilias, useKpi } from '../../data/queries';
-import { errorCopyKey, helpCodeOf } from '../../domain/errorCopy';
 import { formatInteger } from '../../domain/format';
 import { containsPii } from '../../domain/piiGuard';
 import { t } from '../../i18n/copy';
 import { containsLocalName, useLocalNames } from '../../offline/localNames';
-import { Button, ButtonLink } from '../../ui/Button';
-import { ProviderNote } from '../../ui/DataStatus';
-import { Icon } from '../../ui/icons';
+import { Button } from '../../ui/Button';
 import { PageTitle } from '../../ui/PageTitle';
-import { ReferentialNotice } from '../../ui/states';
-import { SourceLink } from '../../ui/SourceLink';
 import { DEMO_COPY, GARDEN_EXAMPLES, SITUATION_EXAMPLES, type GardenQuestionKind } from '../demo-session/demoCopy';
+import { useDemoDirectory } from '../demo-session/session';
 import { memoryGreeting, useDayPlan } from '../home/todayAction';
 import { useSelectedGarden } from '../system/useSelectedGarden';
+import { AnswerBubble, BUBBLE_ASSISTANT, ChatNotice, TemplateFallback, TypingBubble, UserBubble } from './chatBubbles';
+import { anonymize, codePoints, composeGeneralQuestion, lastAnswerOf } from './chatContext';
 import { gardenAnswer } from './gardenAnswers';
 
-
 const MAX_CHARS = 500;
-/** Code points (no unidades UTF-16), como cuenta C3 `maxLength`. */
-const codePoints = (text: string): number => [...text].length;
 
 type ChatTurn =
   | { readonly id: number; readonly kind: 'user'; readonly text: string }
@@ -38,89 +35,18 @@ type ChatTurn =
   | { readonly id: number; readonly kind: 'pii' }
   | { readonly id: number; readonly kind: 'error'; readonly error: unknown; readonly question: string };
 
-const BUBBLE_ASSISTANT = 'mr-6 space-y-3 rounded-card rounded-tl-sm border border-border bg-surface p-4 shadow-sm';
-
-function AnswerBubble({ envelope }: { readonly envelope: AssistantEnvelope }) {
-  if (envelope.intent === 'REQUIRES_DETERMINISTIC_EVALUATION') {
-    return (
-      <div className={BUBBLE_ASSISTANT}>
-        <p className="font-semibold">{t('assistant.deterministic_redirect')}</p>
-        <ButtonLink to="/" icon="home" className="w-full">
-          {t('assistant.go_home')}
-        </ButtonLink>
-        <ReferentialNotice />
-      </div>
-    );
-  }
-  return (
-    <div className={BUBBLE_ASSISTANT}>
-      <h3 className="sr-only">{t('assistant.answer_title')}</h3>
-      <ProviderNote provider={envelope.provider} warnings={envelope.warnings} />
-      <p className="c3-text whitespace-pre-line">{envelope.answer}</p>
-      {envelope.citations.length > 0 && (
-        <div>
-          <h3 className="text-base">{t('assistant.citations_title')}</h3>
-          <ul>
-            {envelope.citations.map((citation) => (
-              <li key={citation.source_id}>
-                <SourceLink citation={citation} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <ReferentialNotice />
-    </div>
-  );
-}
-
-/** Plantilla fija ante falla o sin respuesta: solo claves del catálogo, sin contenido del servidor. */
-function TemplateFallback({ error, onRetry }: { readonly error: unknown; readonly onRetry: () => void }) {
-  const helpCode = helpCodeOf(error);
-  return (
-    <div className={BUBBLE_ASSISTANT}>
-      <ProviderNote provider="PLANTILLA" warnings={[]} />
-      <p role="alert" className="flex items-start gap-2 font-semibold text-danger-ink">
-        <Icon name="alert" className="mt-0.5 size-5" />
-        {t(errorCopyKey(error))}
-      </p>
-      {helpCode !== null && <p className="text-sm">{t('error.help_code', { request_id: helpCode })}</p>}
-      <p>{t('card.where_none')}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" icon="refresh" onClick={onRetry}>
-          {t('common.retry')}
-        </Button>
-        <ButtonLink to="/" variant="ghost" icon="home">
-          {t('assistant.go_home')}
-        </ButtonLink>
-      </div>
-      <ReferentialNotice />
-    </div>
-  );
-}
-
 function Turn({ turn, onRetry }: { readonly turn: ChatTurn; readonly onRetry: (question: string) => void }) {
   switch (turn.kind) {
     case 'user':
-      return (
-        <div className="ml-6 rounded-card rounded-tr-sm bg-primary p-4 text-surface">
-          <p className="sr-only">{DEMO_COPY.chatYou}:</p>
-          <p className="whitespace-pre-line">{turn.text}</p>
-        </div>
-      );
+      return <UserBubble text={turn.text} />;
     case 'pending':
-      return (
-        <p role="status" className={`${BUBBLE_ASSISTANT} text-ink-muted`}>
-          {t('assistant.thinking')}
-        </p>
-      );
+      return <TypingBubble />;
     case 'answer':
       return <AnswerBubble envelope={turn.envelope} />;
     case 'local':
       return (
         <div className={BUBBLE_ASSISTANT}>
           <p>{turn.text}</p>
-          <ReferentialNotice />
         </div>
       );
     case 'pii':
@@ -141,6 +67,7 @@ export default function AssistantPage() {
   const [turns, setTurns] = useState<readonly ChatTurn[]>([]);
   const [nameBlocked, setNameBlocked] = useState(false);
   const names = useLocalNames();
+  const directory = useDemoDirectory();
   const ask = useAskAssistant();
   const { garden } = useSelectedGarden();
   const kpi = useKpi(garden !== undefined ? { nivel: 'jardin', id: garden.garden_id } : null);
@@ -150,6 +77,7 @@ export default function AssistantPage() {
   const memory = familias.data === undefined ? null : memoryGreeting(plan);
   const fieldId = useId();
   const counterId = useId();
+  const hintId = useId();
   const nextId = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
   const trimmed = question.trim();
@@ -163,28 +91,46 @@ export default function AssistantPage() {
   const replacePending = (pendingId: number, turn: ChatTurn) =>
     setTurns((prev) => prev.map((item) => (item.id === pendingId ? turn : item)));
 
-  const send = (text: string, showUser = true) => {
+  const request = (outgoing: string, pendingId: number) => {
+    ask.mutate(outgoing, {
+      onSuccess: (ok) => replacePending(pendingId, { id: pendingId, kind: 'answer', envelope: ok.body }),
+      onError: (error) => replacePending(pendingId, { id: pendingId, kind: 'error', error, question: outgoing }),
+    });
+  };
+
+  const send = (text: string) => {
     const clean = text.trim();
     if (clean === '' || codePoints(clean) > MAX_CHARS || ask.isPending) return;
     if (containsPii(clean)) {
       // No se envía nada: respuesta amable local.
-      push(...(showUser ? [{ id: id(), kind: 'user', text: clean } as const] : []), { id: id(), kind: 'pii' });
+      push({ id: id(), kind: 'user', text: clean }, { id: id(), kind: 'pii' });
       setQuestion('');
       return;
     }
-    // DEC-038: un nombre de trato guardado en este equipo nunca sale hacia la API.
-    if (containsLocalName(clean, names)) {
+    // DEC-038: los nombres se cambian por "el niño o la niña" / "la familia" (también en el resumen
+    // del turno anterior); lo que ve la tía en pantalla sigue con el nombre.
+    const previous = lastAnswerOf(turns);
+    const outgoing = composeGeneralQuestion(
+      anonymize(clean, names, directory),
+      previous === null ? null : anonymize(previous, names, directory),
+    );
+    // Defensa final: si algún nombre guardado sobrevivió, no se envía nada.
+    if (containsLocalName(outgoing, names)) {
       setNameBlocked(true);
       return;
     }
     setNameBlocked(false);
     const pendingId = id();
-    push(...(showUser ? [{ id: id(), kind: 'user', text: clean } as const] : []), { id: pendingId, kind: 'pending' });
+    push({ id: id(), kind: 'user', text: clean }, { id: pendingId, kind: 'pending' });
     setQuestion('');
-    ask.mutate(clean, {
-      onSuccess: (ok) => replacePending(pendingId, { id: pendingId, kind: 'answer', envelope: ok.body }),
-      onError: (error) => replacePending(pendingId, { id: pendingId, kind: 'error', error, question: clean }),
-    });
+    request(outgoing, pendingId);
+  };
+
+  const retry = (outgoing: string) => {
+    if (ask.isPending) return;
+    const pendingId = id();
+    push({ id: pendingId, kind: 'pending' });
+    request(outgoing, pendingId);
   };
 
   const askGarden = (kind: GardenQuestionKind, text: string) => {
@@ -192,7 +138,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 lg:mx-auto lg:max-w-3xl">
       <PageTitle>{DEMO_COPY.chatTitle}</PageTitle>
       <p>{DEMO_COPY.chatIntro}</p>
       {memory !== null && (
@@ -222,15 +168,17 @@ export default function AssistantPage() {
         </div>
       </section>
       {turns.length > 0 && (
-        <section aria-label={DEMO_COPY.chatHistoryLabel} aria-live="polite" className="space-y-3">
+        <section aria-label={DEMO_COPY.chatHistoryLabel} role="log" aria-live="polite" className="space-y-3">
           {turns.map((turn) => (
-            <Turn key={turn.id} turn={turn} onRetry={(q) => send(q, false)} />
+            <Turn key={turn.id} turn={turn} onRetry={retry} />
           ))}
           <div ref={endRef} />
         </section>
       )}
+      {/* Entrada fija abajo, sobre la barra de navegación (móvil) o al pie de la ventana (escritorio). */}
       <form
-        className="space-y-2"
+        data-chat-input
+        className="sticky bottom-18 z-10 space-y-2 border-t border-border bg-canvas/95 pb-2 pt-3 lg:bottom-0"
         onSubmit={(event) => {
           event.preventDefault();
           send(trimmed);
@@ -239,19 +187,34 @@ export default function AssistantPage() {
         <label htmlFor={fieldId} className="block font-semibold">
           {t('assistant.question_label')}
         </label>
-        <textarea
-          id={fieldId}
-          value={question}
-          onChange={(event) => {
-            setQuestion(event.target.value);
-            setNameBlocked(false);
-          }}
-          maxLength={MAX_CHARS}
-          rows={3}
-          aria-describedby={counterId}
-          aria-invalid={nameBlocked || undefined}
-          className="w-full rounded-xl border-2 border-border-strong bg-surface p-3"
-        />
+        <p id={hintId} className="text-[0.9rem] text-ink-muted">
+          {DEMO_COPY.chatNamesHint}
+        </p>
+        <div className="flex items-end gap-2">
+          <textarea
+            id={fieldId}
+            value={question}
+            onChange={(event) => {
+              setQuestion(event.target.value);
+              setNameBlocked(false);
+            }}
+            onKeyDown={(event) => {
+              // Enter envía; Mayús+Enter agrega una línea (como un chat).
+              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                send(trimmed);
+              }
+            }}
+            maxLength={MAX_CHARS}
+            rows={2}
+            aria-describedby={`${hintId} ${counterId}`}
+            aria-invalid={nameBlocked || undefined}
+            className="min-w-0 flex-1 rounded-xl border-2 border-border-strong bg-surface p-3"
+          />
+          <Button type="submit" icon="chat" data-primary-action disabled={trimmed === ''} busy={ask.isPending}>
+            {t('assistant.submit')}
+          </Button>
+        </div>
         <p id={counterId} className="text-[0.9rem] text-ink-muted">
           {t('assistant.char_count', { count: formatInteger(codePoints(question)), max: formatInteger(MAX_CHARS) })}
         </p>
@@ -260,10 +223,8 @@ export default function AssistantPage() {
             {t('assistant.name_blocked')}
           </p>
         )}
-        <Button type="submit" icon="chat" data-primary-action className="w-full" disabled={trimmed === ''} busy={ask.isPending}>
-          {t('assistant.submit')}
-        </Button>
       </form>
+      <ChatNotice />
     </div>
   );
 }

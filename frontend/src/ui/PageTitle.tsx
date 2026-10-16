@@ -1,6 +1,6 @@
 // h1 único por vista (V-03): fija document.title y recibe el foco al montar (design.md §9, §13).
 import { useEffect, useRef } from 'react';
-import { t } from '../i18n/copy';
+import { APP_NAME } from '../brand';
 
 /**
  * `documentTitle` reemplaza el texto en `document.title` (historial del navegador): la ficha lo usa
@@ -10,7 +10,7 @@ export function PageTitle({ children, documentTitle }: { readonly children: stri
   const ref = useRef<HTMLHeadingElement>(null);
   const tabTitle = documentTitle ?? children;
   useEffect(() => {
-    document.title = `${tabTitle} · ${t('app.name')}`;
+    document.title = `${tabTitle} · ${APP_NAME}`;
     ref.current?.focus();
   }, [children, tabTitle]);
   return (

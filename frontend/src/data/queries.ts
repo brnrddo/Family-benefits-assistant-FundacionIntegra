@@ -103,9 +103,10 @@ export function primeFamilia(queryClient: QueryClient, familyId: string, ok: C3O
   queryClient.setQueryData(queryKeys.familia(familyId), read);
 }
 
-export function useFamilia(familyId: string) {
+export function useFamilia(familyId: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.familia(familyId),
+    enabled,
     queryFn: ({ signal }) =>
       readThrough(() => client.getFamilia({ familyId }, { signal }), {
         key: `familia:${familyId}`,

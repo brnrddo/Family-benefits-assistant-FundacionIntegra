@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { copySource, copyValues } from 'virtual:brujula-content';
 import { describe, expect, it } from 'vitest';
 import meta from '../api/generated/c3.meta.json';
+import { APP_NAME } from '../brand';
 import { validateFamiliaDetailEnvelope } from '../api/generated/validators.gen.js';
 import { fichaBrecha } from '../test/fixtures';
 import { COPY_KEYS } from './catalog';
@@ -29,7 +30,7 @@ describe('i18n — t() y benefitName (§7.3)', () => {
 
   it('no reemplaza placeholders no declarados', () => {
     expect(t('common.years', { age: 4 })).toBe('4 años');
-    expect(t('app.name')).toBe('Brújula Familiar');
+    expect(t('app.name')).toBe(APP_NAME);
   });
 
   it('benefitName: simple_title de C3 > clave opcional > ID', () => {

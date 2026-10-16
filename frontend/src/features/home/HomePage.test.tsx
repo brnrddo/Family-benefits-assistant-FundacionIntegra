@@ -48,7 +48,7 @@ describe('HomePage', () => {
 
     // Siguiente según el motor: FAM-SIM-E3-00002 (BEN-003); la memoria recuerda la anterior.
     expect(await within(today).findByText(/la familia 00002/)).toHaveTextContent(benefitLabel('BEN-003'));
-    expect(within(today).getByText('Ya habló con la familia 00001 ✓ (hoy)')).toBeInTheDocument();
+    expect(within(today).getByText('Hoy habló con la familia 00001 ✓')).toBeInTheDocument();
   });
 
   it('DEC-037: orden neutro por nombre/family_id que NO depende de priority_score, con acciones prioritarias', async () => {

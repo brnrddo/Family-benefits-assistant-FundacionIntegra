@@ -25,4 +25,4 @@ from .template_provider import (DISCLAIMER,  # noqa: F401
                                 PlantillasTexto, SourceCitation,
                                 TemplateError, TemplateProvider,
                                 asistente_sin_catalogo, contiene_promesa,
-                                es_pregunta_individual)
+                                es_pregunta_individual, separar_contexto)
