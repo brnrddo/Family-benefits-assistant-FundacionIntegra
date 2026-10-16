@@ -24,6 +24,8 @@ export const DEMO_COPY = {
   chatAssistant: APP_NAME,
   chatGardenNoData: 'Aún no tengo los datos de su jardín. Intente de nuevo en un momento.',
   chatHistoryLabel: 'Conversación',
+  chatTyping: `${APP_NAME} está escribiendo…`,
+  chatNamesHint: 'Puede escribir nombres: antes de enviar los cambio por «el niño o la niña» o «la familia».',
   quickTitle: 'Preguntas rápidas',
   quickNoData: 'Por ahora no hay apoyos pendientes para esta familia.',
   // Acción del día y memoria local (DEC-091).
@@ -50,6 +52,7 @@ export const FAMILY_CONTEXT_COPY = {
   benefits: 'beneficios en la ficha:',
   applies: 'aplica',
   missing: 'falta dato',
+  hint: 'Pista:',
   roles: { ADULT_REFERENCE: 'adulto de referencia', CHILD: 'niño o niña', OTHER_ADULT: 'otro adulto' },
 } as const;
 

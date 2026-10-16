@@ -7,7 +7,7 @@ datos personales por el router y las entradas del catálogo C4 que eligió el
 cualquier ``RedaccionError``.
 
 Todo el mundo de la demo es ficticio (familias, jardines y beneficios). El
-prompt C4 (1.2.1) solo deja nombrar apoyos de ``catalog_items`` o de su lista
+prompt C4 (1.3.0) solo deja nombrar apoyos de ``catalog_items`` o de su lista
 fija "Programas de referencia"; nunca inventar programas. Si nada calza, el
 modelo propone acciones genéricas (revisar la ficha, conversar con la familia,
 ir a la municipalidad) para que ninguna pregunta termine en un callejón sin

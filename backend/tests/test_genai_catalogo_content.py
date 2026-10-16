@@ -110,8 +110,9 @@ def test_content_real_carga_completo():
     assert cat.entradas["BEN-001"].source_id == "F004"
     for pid in ("PROMPT-GUION", "PROMPT-MENSAJE-FAMILIA"):
         assert cat.prompt_versions[pid] == "1.0.0"
-    # Asistente en modo demo: contexto de familia, nunca inventa y prosa plana (1.2.1).
-    assert cat.prompt_versions["PROMPT-ASISTENTE-CATALOGO"] == "1.2.1"
+    # Asistente en modo demo: contexto de familia con pista y turno previo, nunca inventa y
+    # prosa plana (1.3.0).
+    assert cat.prompt_versions["PROMPT-ASISTENTE-CATALOGO"] == "1.3.0"
 
 
 def test_plantillas_son_las_del_rol4():

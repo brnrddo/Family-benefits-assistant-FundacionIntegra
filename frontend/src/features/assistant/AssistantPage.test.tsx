@@ -6,6 +6,8 @@ import { HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AssistantEnvelope } from '../../api/types';
 import { t } from '../../i18n/copy';
+import { clearDemoData } from '../../offline/db';
+import { clearLocalNamesMemory, refreshLocalNames, saveLocalName } from '../../offline/localNames';
 import { payloadOf } from '../../test/fixtures';
 import { mockServer, server } from '../../test/mswServer';
 import { overrideOperation } from '../../test/operations';
@@ -62,6 +64,29 @@ describe('AssistantPage', () => {
     await ask('¿Qué recibe el RUT 12.345.678-5?');
     expect(await screen.findByRole('alert')).toHaveTextContent(t('assistant.pii_blocked'));
     expect(calls).toBe(0);
+  });
+
+  it('nombre guardado → se reemplaza antes de enviar (sin bloqueo) y el historial muestra lo escrito', async () => {
+    resetTestRuntime();
+    installTestRuntime({ persistence: true });
+    await clearDemoData();
+    expect((await saveLocalName('FAM-SIM-E3-00002', 'Sofía Ficticia')).ok).toBe(true);
+    await refreshLocalNames();
+    let sent = '';
+    server.use(
+      overrideOperation('askCatalogAssistant', async ({ request }) => {
+        sent = ((await request.json()) as { question?: string }).question ?? '';
+        return HttpResponse.json(payloadOf('askCatalogAssistant.catalog-info'), { status: 200 });
+      }),
+    );
+    renderAssistant();
+    await ask('Sofía llegó triste, ¿qué apoyos hay?');
+    expect(await screen.findByRole('heading', { name: t('assistant.answer_title') })).toBeInTheDocument();
+    expect(sent).toBe('el niño o la niña llegó triste, ¿qué apoyos hay?');
+    expect(screen.queryByText(t('assistant.name_blocked'))).toBeNull();
+    expect(screen.getByText('Sofía llegó triste, ¿qué apoyos hay?')).toBeInTheDocument();
+    clearLocalNamesMemory();
+    await clearDemoData();
   });
 
   it('la API falla → plantilla fija en español con Reintentar, sin texto del servidor', async () => {

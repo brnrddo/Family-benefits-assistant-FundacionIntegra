@@ -104,6 +104,7 @@ test('recorrido principal a 360 px', async ({ page }) => {
   await expect(page.locator('[data-benefit-section="missing"] [data-benefit-card]')).toHaveCount(2);
   await expectAxeClean(page);
   await shot(page, 'c03-ficha');
+  await shot(page, 'c03-ficha-escritorio', 1280);
 
   // Nombre de trato (solo en este equipo)
   await page.getByRole('button', { name: C['family.name.change'] }).click();
