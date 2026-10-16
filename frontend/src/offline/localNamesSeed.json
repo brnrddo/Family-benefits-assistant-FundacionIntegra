@@ -26,6 +26,10 @@
       { "family_id": "FAM-SIM-E3-00364", "family_name": "Familia Contreras Araya", "child_name": "Antonella C." },
       { "family_id": "FAM-SIM-E3-00414", "family_name": "Familia Torres Reyes", "child_name": "Vicente T." },
       { "family_id": "FAM-SIM-E3-00464", "family_name": "Familia Espinoza Rivera", "child_name": "Emilia E." }
+    ],
+    "memory_uso": "Accion previa FICTICIA (origen SIMULADO_DEMO, DEC-091) para que la demo arranque con memoria visible. Solo local; nunca va a la API.",
+    "memory": [
+      { "family_id": "FAM-SIM-E3-00014", "benefit_id": "BEN-005", "days_ago": 1 }
     ]
   }
 }

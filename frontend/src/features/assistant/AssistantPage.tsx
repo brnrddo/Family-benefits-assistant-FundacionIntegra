@@ -8,7 +8,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { AssistantEnvelope } from '../../api/types';
 import { useAskAssistant } from '../../data/mutations';
-import { useKpi } from '../../data/queries';
+import { useFamilias, useKpi } from '../../data/queries';
 import { errorCopyKey, helpCodeOf } from '../../domain/errorCopy';
 import { formatInteger } from '../../domain/format';
 import { containsPii } from '../../domain/piiGuard';
@@ -21,6 +21,7 @@ import { PageTitle } from '../../ui/PageTitle';
 import { ReferentialNotice } from '../../ui/states';
 import { SourceLink } from '../../ui/SourceLink';
 import { DEMO_COPY, GARDEN_EXAMPLES, SITUATION_EXAMPLES, type GardenQuestionKind } from '../demo-session/demoCopy';
+import { memoryGreeting, useDayPlan } from '../home/todayAction';
 import { useSelectedGarden } from '../system/useSelectedGarden';
 import { gardenAnswer } from './gardenAnswers';
 
@@ -143,6 +144,10 @@ export default function AssistantPage() {
   const ask = useAskAssistant();
   const { garden } = useSelectedGarden();
   const kpi = useKpi(garden !== undefined ? { nivel: 'jardin', id: garden.garden_id } : null);
+  // DEC-091: saludo con memoria local (lo último hecho y la acción de hoy). Texto local, nunca se envía.
+  const familias = useFamilias(garden?.garden_id);
+  const plan = useDayPlan(familias.data?.pages.flatMap((page) => page.body.items) ?? []);
+  const memory = familias.data === undefined ? null : memoryGreeting(plan);
   const fieldId = useId();
   const counterId = useId();
   const nextId = useRef(0);
@@ -190,6 +195,12 @@ export default function AssistantPage() {
     <div className="space-y-5">
       <PageTitle>{DEMO_COPY.chatTitle}</PageTitle>
       <p>{DEMO_COPY.chatIntro}</p>
+      {memory !== null && (
+        <div data-chat-memory className={BUBBLE_ASSISTANT}>
+          <p className="sr-only">{DEMO_COPY.chatAssistant}:</p>
+          <p>{memory}</p>
+        </div>
+      )}
       <section aria-labelledby="assistant-situations" className="space-y-2">
         <h2 id="assistant-situations">{DEMO_COPY.chatSituationsTitle}</h2>
         <div className="flex flex-wrap gap-2">

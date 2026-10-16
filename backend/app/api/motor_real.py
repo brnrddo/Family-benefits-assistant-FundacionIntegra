@@ -210,6 +210,7 @@ def limpiar_cache() -> None:
         _CACHE = None
         _FALLO = None
         _RUTAS_MANIFEST = None
+        _DECLARADAS.clear()
 
 
 def _degradar(motivo: str) -> None:
@@ -359,10 +360,11 @@ def familia_existe(snap: MotorSnapshot | None, family_id: str) -> bool:
 def vista_familia(snap: MotorSnapshot, family_id: str, conversada: bool) -> dict:
     """Familia con ``informed``/``summary`` según las conversaciones vigentes.
 
+    Si la familia tiene antecedentes declarados (``antecedentes_store``), es la
+    ficha reevaluada con ellos (``_vigente``), igual que la respuesta del POST.
     Copia superficial: ``familia_detail_data`` hace la copia profunda.
     """
-    fam = snap.familias[family_id]
-    pendiente, con_conversacion = snap.prioridades[family_id]
+    fam, (pendiente, con_conversacion), _ordenes = _vigente(snap, family_id)
     summary = dict(
         fam["summary"],
         priority_score=con_conversacion if conversada else pendiente,
@@ -372,19 +374,88 @@ def vista_familia(snap: MotorSnapshot, family_id: str, conversada: bool) -> dict
 
 
 def resumen_familia(snap: MotorSnapshot, family_id: str, conversada: bool) -> dict:
-    """``FamilySummary`` de C3 (copia)."""
-    return copy.deepcopy(vista_familia(snap, family_id, conversada)["summary"])
+    """``FamilySummary`` de C3 (copia).
+
+    Sale del snapshot sin antecedentes declarados: la lista del jardín se ordena
+    por la prioridad estática del snapshot (``familias_por_jardin``) y el
+    resumen debe ser coherente con ese orden.
+    """
+    pendiente, con_conversacion = snap.prioridades[family_id]
+    return dict(
+        copy.deepcopy(snap.familias[family_id]["summary"]),
+        priority_score=con_conversacion if conversada else pendiente,
+        conversation_status="CONVERSADA" if conversada else "PENDIENTE",
+    )
 
 
 def contexto(snap: MotorSnapshot, family_id: str) -> dict:
-    """``FamilyContextView`` de C3 (copia)."""
-    return copy.deepcopy(snap.familias[family_id]["context"])
+    """``FamilyContextView`` de C3 (copia), con lo declarado aplicado."""
+    return copy.deepcopy(_vigente(snap, family_id)[0]["context"])
 
 
 def oportunidades(snap: MotorSnapshot, family_id: str, orden: str) -> list[dict]:
-    """``Opportunity`` de la familia en el orden de vista pedido (copias)."""
-    por_id = {o["benefit_id"]: o for o in snap.familias[family_id]["opportunities"]}
-    return [copy.deepcopy(por_id[bid]) for bid in snap.ordenes[family_id][orden]]
+    """``Opportunity`` de la familia en el orden de vista pedido (copias).
+
+    Con antecedentes declarados, las de la ficha reevaluada (``_vigente``).
+    """
+    fam, _prioridades, ordenes = _vigente(snap, family_id)
+    por_id = {o["benefit_id"]: o for o in fam["opportunities"]}
+    return [copy.deepcopy(por_id[bid]) for bid in ordenes[orden]]
+
+
+# --- antecedentes declarados en las lecturas (DEC-081/DEC-082) ----------------
+# ``POST /familias/{id}/antecedentes`` guarda los hechos en ``antecedentes_store``
+# (memoria del proceso). Las lecturas de la ficha, el contexto y las
+# oportunidades aplican esos hechos con la MISMA reevaluación que la respuesta
+# del POST (``_reconstruir``), para que la ficha no "vuelva atrás" al recargar.
+# Nada se escribe en la DB ni en el snapshot; se pierde al reiniciar.
+
+# (huella del snapshot, family_id, campos canónicos) -> (familia, prioridades, órdenes)
+_DECLARADAS: dict[tuple, tuple[dict, tuple[float, float], dict[str, tuple[str, ...]]]] = {}
+_MAX_DECLARADAS = 256
+
+
+def campos_declarados(hechos: list[dict]) -> dict:
+    """Hechos acumulados -> campo de pantalla con su último valor conocido.
+
+    El último hecho de un campo gana; un "No sé" no fuerza un dato: se omite y
+    el campo sigue indeterminado (sigue faltando).
+    """
+    campos: dict = {}
+    for hecho in hechos:
+        if hecho["desconocido"]:
+            campos.pop(hecho["campo"], None)
+        else:
+            campos[hecho["campo"]] = hecho["valor"]
+    return campos
+
+
+def _vigente(
+    snap: MotorSnapshot, family_id: str
+) -> tuple[dict, tuple[float, float], dict[str, tuple[str, ...]]]:
+    """(familia, prioridades, órdenes) con lo declarado aplicado, o del snapshot.
+
+    Sin hechos declarados (o si la reevaluación no puede operar) devuelve lo del
+    snapshot, como antes. El resultado reevaluado se cachea por huella del
+    snapshot y campos declarados: regenerar la DB o declarar algo nuevo invalida.
+    """
+    from app.api import antecedentes_store
+
+    base = (snap.familias[family_id], snap.prioridades[family_id], snap.ordenes[family_id])
+    campos = campos_declarados(antecedentes_store.declarados_get(family_id))
+    if not campos:
+        return base
+    clave = (snap.huella, family_id, json.dumps(campos, sort_keys=True, default=str))
+    cacheado = _DECLARADAS.get(clave)
+    if cacheado is not None:
+        return cacheado
+    reevaluada = _reconstruir(family_id, campos)
+    if reevaluada is None:
+        return base
+    if len(_DECLARADAS) >= _MAX_DECLARADAS:
+        _DECLARADAS.clear()
+    _DECLARADAS[clave] = reevaluada
+    return reevaluada
 
 
 def resumen_jardin(snap: MotorSnapshot, garden_id: str, conversadas: frozenset[str]) -> dict:
@@ -884,6 +955,38 @@ def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
     ni la DB. Un dato declarado nunca da CONFIRMADO (lo garantiza el motor), así
     que la ficha resultante respeta las invariantes.
     """
+    reevaluada = _reconstruir(family_id, campos)
+    return None if reevaluada is None else reevaluada[0]
+
+
+def _contexto_declarado(ctx: dict, campos: dict) -> dict:
+    """Vista de contexto coherente con lo declarado (copia).
+
+    C2 sale de la DB y no conoce lo declarado: un campo declarado con valor
+    conocido deja de figurar en ``missing_codes`` (enum cerrado de C3). Un
+    "No sé" no llega en ``campos`` y sigue faltando. ``rsh_band`` e
+    ``income_band`` se reflejan tal cual, igual que ``aplicar_declarados``.
+    """
+    from app.api.models_antecedentes import CAMPO_A_MISSING_CODE
+
+    ctx = copy.deepcopy(ctx)
+    conocidos = {CAMPO_A_MISSING_CODE[c] for c in campos if c in CAMPO_A_MISSING_CODE}
+    ctx["missing_codes"] = sorted(set(ctx["missing_codes"]) - conocidos)
+    if "rsh_band" in campos:
+        ctx["rsh_band"] = campos["rsh_band"]
+    if "household_income_band" in campos:
+        ctx["income_band"] = campos["household_income_band"]
+    return ctx
+
+
+def _reconstruir(
+    family_id: str, campos: dict
+) -> tuple[dict, tuple[float, float], dict[str, tuple[str, ...]]] | None:
+    """(familia, prioridades, órdenes) reevaluados con ``campos``, o ``None``.
+
+    Núcleo de ``reconstruir_familia_declarada`` (POST) y de ``_vigente`` (GET):
+    la misma reevaluación para ambos caminos.
+    """
     # Imports locales: evitan un ciclo con engine.service y aíslan el puente B2.
     from app.access.service import AccesoService
     from app.api.antecedentes_motor import declarados_para_motor
@@ -942,12 +1045,15 @@ def reconstruir_familia_declarada(family_id: str, campos: dict) -> dict | None:
         if c2 is None:
             return None
         try:
-            familia, _prioridades, _ordenes = _familia(
+            familia, prioridades, ordenes = _familia(
                 family_id, garden_id, datos_mod, c2, contenido)
         except (ValueError, KeyError, TypeError, ConfigInvalida):
             # Combinación incoherente: no se emite una ficha dudosa.
             return None
-        return familia
+        familia["context"] = _contexto_declarado(familia["context"], campos)
+        if "rsh_band" in campos:
+            familia["rsh_band"] = familia["context"]["rsh_band"]
+        return familia, prioridades, ordenes
     finally:
         conn.close()
 

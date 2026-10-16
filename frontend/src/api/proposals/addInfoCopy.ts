@@ -43,5 +43,6 @@ export const ADD_INFO_COPY = {
     /** Cualquier `residencia_*`. */
     residencia: 'Tiempo de residencia',
     antecedente_edad_vigente: 'Documento que acredita la edad',
+    dias_desde_control: 'Fecha del último control de salud del niño o niña',
   },
 } as const;

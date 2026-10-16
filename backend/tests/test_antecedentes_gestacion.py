@@ -75,6 +75,35 @@ def test_embarazo_declarado_aplica():
     assert ben["missing_codes"] == []
 
 
+def test_embarazo_declarado_persiste_en_lecturas():
+    """Tras el POST, las rutas GET (motor real) devuelven la ficha reevaluada.
+
+    Memoria del proceso (``antecedentes_store``): el autouse ``_modo_real`` la
+    vacía antes y después de cada test.
+    """
+    r = client.post(
+        f"/api/v1/familias/{_FAMILIA}/antecedentes",
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+        json={
+            "data_classification": _ROTULO,
+            "household_pregnancy": True,
+            "pregnancy_weeks_at_least_threshold": True,
+            "has_incompatible_coverage": False,
+        },
+    )
+    assert r.status_code == 200, r.status_code
+
+    ficha = client.get(f"/api/v1/familias/{_FAMILIA}")
+    assert ficha.status_code == 200
+    ben = _ben(ficha.json()["data"]["benefit_results"], "BEN-003")
+    assert (ben["result"], ben["level"], ben["access_state"]) == (
+        "SI", "PRELIMINAR", "ELEGIBLE_SIN_ASIGNACION")
+
+    ctx = client.get(f"/api/v1/familias/{_FAMILIA}/contexto")
+    assert ctx.status_code == 200
+    assert "pregnancy" not in ctx.json()["data"]["missing_codes"]
+
+
 def test_umbral_semanas_expuesto(db_motor_path: Path):
     conn = sqlite3.connect(db_motor_path.resolve().as_uri() + "?mode=ro", uri=True)
     try:
