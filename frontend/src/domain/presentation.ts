@@ -206,6 +206,12 @@ export function missingCodeLabels(codes: readonly string[]): string[] {
   return [...new Set(labels)];
 }
 
+/** Solo los datos faltantes con texto propio, sin repetir; los desconocidos se omiten (sin genérico). */
+export function knownMissingLabels(codes: readonly string[]): string[] {
+  const labels = codes.map(missingCodeLabel).filter((label): label is string => label !== null);
+  return [...new Set(labels)];
+}
+
 export const INCONSISTENCY_KEY: Readonly<Record<InconsistencyCode, PlainCopyKey>> = {
   SIBLINGS_UNDER_6_MISMATCH: 'context.inconsistency.siblings_under_6_mismatch',
   SIBLINGS_6_14_MISMATCH: 'context.inconsistency.siblings_6_14_mismatch',

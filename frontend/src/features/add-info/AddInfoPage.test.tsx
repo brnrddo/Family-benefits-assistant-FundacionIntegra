@@ -53,11 +53,9 @@ describe('AddInfoPage', () => {
 
     expect(await screen.findByText(t('family.add_info_done'))).toBeInTheDocument();
     expect(bodies).toEqual([{ data_classification: 'SYNTHETIC_DEMO_NOT_A_REAL_PERSON', has_rsh: true, household_income_band: 'UNDER_110K' }]);
-    // La lista de beneficios de la ficha arranca plegada.
-    await user.click(screen.getByRole('button', { name: FAMILY_COPY.showAllBenefits }));
-    const missing = screen.getByRole('heading', { name: t('family.missing_title') }).closest('section') as HTMLElement;
-    expect(within(missing).getByText(t('family.missing_empty'))).toBeInTheDocument();
-    const applies = screen.getByRole('heading', { name: t('family.applies_title') }).closest('section') as HTMLElement;
+    // Ya no falta nada: la sección "Falta información" no aparece y los tres quedan en "Puede postular ahora".
+    expect(document.querySelector('[data-benefit-section="missing"]')).toBeNull();
+    const applies = screen.getByRole('heading', { name: FAMILY_COPY.sectionApply }).closest('section') as HTMLElement;
     expect(within(applies).getAllByText(t('level.preliminar'))).toHaveLength(3);
   });
 
