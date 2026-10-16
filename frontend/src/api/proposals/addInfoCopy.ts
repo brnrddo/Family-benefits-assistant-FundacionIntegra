@@ -10,8 +10,8 @@ export const ADD_INFO_COPY = {
   pregnancyWeeksMin: '¿Tiene las semanas mínimas indicadas?',
   /** add_info.q.pregnancy_weeks_n {weeks} (integer). */
   pregnancyWeeksN: (weeks: string) => `¿Tiene ${weeks} semanas de embarazo o más?`,
-  /** add_info.optional_sensitive */
-  optionalSensitive: 'Si desea responder',
+  /** add_info.optional_sensitive {question}: dentro de la leyenda, para que el lector de pantalla lo anuncie. */
+  optionalSensitive: (question: string) => `${question} (si desea responder)`,
   /** add_info.q.<campo> */
   questions: {
     has_incompatible_coverage: '¿Recibe otro apoyo o cobertura que no se pueda juntar con este?',

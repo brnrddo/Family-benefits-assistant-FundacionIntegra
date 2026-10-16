@@ -12,7 +12,7 @@ import { fichaPreguntar } from '../../test/fixtures';
 import { validateFamiliaDetailEnvelope } from '../generated/validators.gen.js';
 import meta from './generated/proposals.meta.json';
 import engineCodes from '../../mocks/proposals/addFamiliaAntecedentes.engineCodes.json';
-import { pregnancyWeeksThreshold, validateAddInfoResponse } from './addInfo';
+import { validateAntecedentesEnvelope } from './addInfo';
 import { validateAddFamilyInfoRequestV1 } from './generated/validators.gen.js';
 import { ADD_INFO_EXTRA_FIELDS, type AddFamilyInfoRequestV1 } from './types';
 
@@ -43,15 +43,12 @@ describe('propuesta addFamiliaAntecedentes', () => {
     expect(reevaluateWithDeclared(fichaPreguntar().data, fixture.request as AddFamilyInfoRequestV1)).toEqual(fixture.payload.data);
   });
 
-  it('respuesta con pregnancy_weeks_threshold: se separa del envelope C3 y se guarda; un no entero se rechaza', () => {
+  it('GET /antecedentes: envelope cerrado con pregnancy_weeks_threshold entero; otra forma se rechaza', () => {
     expect(engineCodes.data_classification).toBe('SYNTHETIC_DEMO_NOT_A_REAL_PERSON');
     expect(validateFamiliaDetailEnvelope(structuredClone(engineCodes.ficha))).toBe(true);
-    expect(pregnancyWeeksThreshold()).toBeNull();
-    const body: unknown = structuredClone(engineCodes.response);
-    expect(validateAddInfoResponse(body)).toBe(true);
-    expect(body).not.toHaveProperty('pregnancy_weeks_threshold');
-    expect(pregnancyWeeksThreshold()).toBe(20);
-    expect(validateAddInfoResponse({ ...structuredClone(engineCodes.response), pregnancy_weeks_threshold: 20.5 })).toBe(false);
-    expect(pregnancyWeeksThreshold()).toBe(20);
+    const ok = engineCodes.antecedentes;
+    expect(validateAntecedentesEnvelope(ok)).toBe(true);
+    expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, pregnancy_weeks_threshold: 20.5 } })).toBe(false);
+    expect(validateAntecedentesEnvelope({ ...ok, data: { ...ok.data, extra: 1 } })).toBe(false);
   });
 });

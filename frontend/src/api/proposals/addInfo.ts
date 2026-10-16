@@ -1,5 +1,5 @@
 // Cliente de la operación PROPUESTA `addFamiliaAntecedentes` (DEC-039, PREG-039): POST
-// /familias/{id}/antecedentes. Vive FUERA del cliente generado desde C3 (src/api/client.ts) para que
+// /familias/{id}/antecedentes, y su GET previo (umbral N de semanas, solo si se pregunta embarazo). Vive FUERA del cliente generado desde C3 (src/api/client.ts) para que
 // nadie la confunda con el contrato vigente; usa el mismo transporte (sesión, timeout, algoritmo de
 // respuesta) y valida request (schema local) y respuesta (FamiliaDetailEnvelope de C3). Solo se usa
 // si `capabilities.addInfo` (mocks por defecto; API real solo con VITE_PROPOSAL_ADD_INFO=true).
@@ -9,13 +9,14 @@ import { formats } from '../contract/runtime.js';
 import { contractError } from '../errors';
 import { validateFamiliaDetailEnvelope } from '../generated/validators.gen.js';
 import { getTransport } from '../transport';
-import type { C3Ok, FamiliaDetailEnvelope, ProposalOperationId } from '../types';
+import type { C3Ok, EnvelopeMetadata, FamiliaDetailEnvelope, ProposalOperationId } from '../types';
 import { validateAddFamilyInfoRequestV1 } from './generated/validators.gen.js';
 import type { AddFamilyInfoRequestV1, AddInfoField } from './types';
 
 export const ADD_INFO_OPERATION_ID: ProposalOperationId = 'addFamiliaAntecedentes';
 export const ADD_INFO_ROUTE = '/familias/{id}/antecedentes';
 const ADD_INFO_TIMEOUT_MS = 30_000;
+const ANTECEDENTES_TIMEOUT_MS = 15_000;
 
 /**
  * `missing_code` → UN campo de la propuesta: enum de C3 FamilyContextView → campo de
@@ -64,38 +65,57 @@ export const DEPENDENT_FIELDS: Readonly<Partial<Record<AddInfoField, readonly Ad
   household_pregnancy: ['pregnancy_weeks_at_least_threshold'],
 };
 
-/** Umbral de semanas de embarazo (parámetro público del motor) recibido en la última respuesta; null = sin dato. */
-let weeksThreshold: number | null = null;
-
-export function pregnancyWeeksThreshold(): number | null {
-  return weeksThreshold;
+/** GET /familias/{id}/antecedentes: datos que la pantalla necesita ANTES de preguntar (fuera de C3). */
+export interface AntecedentesEnvelope {
+  readonly meta: EnvelopeMetadata;
+  readonly data: { readonly family_id: string; readonly pregnancy_weeks_threshold: number };
 }
 
-const THRESHOLD_KEY = 'pregnancy_weeks_threshold';
+const META_KEYS = ['request_id', 'snapshot_id', 'eligibility_bundle_hash', 'content_bundle_hash', 'content_version'];
+const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+const hasExactKeys = (value: Record<string, unknown>, keys: readonly string[]) =>
+  Object.keys(value).length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
 
 /**
- * La respuesta puede traer `pregnancy_weeks_threshold` (entero 1–45, fuera de C3). Se valida, se quita
- * del cuerpo y el resto se valida como FamiliaDetailEnvelope de C3 (cerrado).
+ * Envelope cerrado: `meta` de C3 (mismas claves, strings) y `data` con solo `family_id` y el umbral N
+ * de semanas (entero 1–45, parámetro público del motor P006-02). Cualquier otra forma se rechaza.
  */
-export const validateAddInfoResponse = Object.assign(
-  (data: unknown): data is FamiliaDetailEnvelope => {
-    let threshold: number | null = null;
-    if (data !== null && typeof data === 'object' && Object.prototype.hasOwnProperty.call(data, THRESHOLD_KEY)) {
-      const raw = (data as Record<string, unknown>)[THRESHOLD_KEY];
-      if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 1 || raw > 45) {
-        validateAddInfoResponse.errors = [{ instancePath: `/${THRESHOLD_KEY}`, keyword: 'type' }];
-        return false;
-      }
-      threshold = raw;
-      delete (data as Record<string, unknown>)[THRESHOLD_KEY];
-    }
-    const ok = validateFamiliaDetailEnvelope(data);
-    validateAddInfoResponse.errors = validateFamiliaDetailEnvelope.errors ?? null;
-    if (ok && threshold !== null) weeksThreshold = threshold;
+export const validateAntecedentesEnvelope = Object.assign(
+  (value: unknown): value is AntecedentesEnvelope => {
+    const ok =
+      isRecord(value) &&
+      hasExactKeys(value, ['meta', 'data']) &&
+      isRecord(value.meta) &&
+      hasExactKeys(value.meta, META_KEYS) &&
+      META_KEYS.every((key) => typeof (value.meta as Record<string, unknown>)[key] === 'string') &&
+      isRecord(value.data) &&
+      hasExactKeys(value.data, ['family_id', 'pregnancy_weeks_threshold']) &&
+      isValidId(value.data.family_id) &&
+      Number.isInteger(value.data.pregnancy_weeks_threshold) &&
+      (value.data.pregnancy_weeks_threshold as number) >= 1 &&
+      (value.data.pregnancy_weeks_threshold as number) <= 45;
+    validateAntecedentesEnvelope.errors = ok ? null : [{ instancePath: '', keyword: 'type' }];
     return ok;
   },
   { errors: null as { instancePath: string; keyword: string }[] | null },
 );
+
+/** Umbral N de semanas de embarazo para la pregunta "¿Tiene N semanas o más?" (mismo recurso propuesto). */
+export async function getFamiliaAntecedentes(params: { familyId: string; signal?: AbortSignal }): Promise<C3Ok<AntecedentesEnvelope>> {
+  const op = ADD_INFO_OPERATION_ID;
+  if (!isValidId(params.familyId)) throw contractError(op, 'invalid_param');
+  const id = encodeURIComponent(params.familyId);
+  return getTransport().send({
+    operationId: op,
+    method: 'GET',
+    path: `/familias/${id}/antecedentes`,
+    route: ADD_INFO_ROUTE,
+    expectedStatus: 200,
+    validate: validateAntecedentesEnvelope,
+    timeoutMs: ANTECEDENTES_TIMEOUT_MS,
+    ...(params.signal !== undefined ? { signal: params.signal } : {}),
+  });
+}
 
 export async function addFamiliaAntecedentes(params: {
   familyId: string;
@@ -116,7 +136,7 @@ export async function addFamiliaAntecedentes(params: {
     body: params.body,
     headers: { 'Idempotency-Key': params.idempotencyKey },
     expectedStatus: 200,
-    validate: validateAddInfoResponse,
+    validate: validateFamiliaDetailEnvelope,
     timeoutMs: ADD_INFO_TIMEOUT_MS,
   });
 }

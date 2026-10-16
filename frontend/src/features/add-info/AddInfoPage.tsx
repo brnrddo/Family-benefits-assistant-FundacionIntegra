@@ -6,9 +6,10 @@
 // cerrado muestra la pregunta sugerida de C3 o su etiqueta solo como guía, sin repetir (DEC-039). Envía
 // la operación PROPUESTA POST /familias/{id}/antecedentes (fuera de C3): solo en línea, sin cola, y
 // oculta en `escala` o sin `capabilities.addInfo`. La re-evaluación (PRELIMINAR) la hace la API.
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { DEPENDENT_FIELDS, fieldForMissingCode, pregnancyWeeksThreshold } from '../../api/proposals/addInfo';
+import { DEPENDENT_FIELDS, fieldForMissingCode, getFamiliaAntecedentes } from '../../api/proposals/addInfo';
 import { ADD_INFO_COPY } from '../../api/proposals/addInfoCopy';
 import type { AddFamilyInfoRequestV1 } from '../../api/proposals/types';
 import type { FamilyDetail, Opportunity } from '../../api/types';
@@ -37,6 +38,7 @@ import {
   keepsIdempotencyKey,
   QUESTION_ORDER,
   QuestionField,
+  questionLabel,
   type AddInfoQuestionKey,
   type Answers,
 } from '../new-family/questions';
@@ -67,11 +69,28 @@ function fieldsFor(codes: readonly string[]): AddInfoQuestionKey[] {
   return QUESTION_ORDER.filter((key) => mapped.has(key));
 }
 
-/** Pregunta de semanas con el umbral del motor si se conoce; si no, texto sin número (nunca uno fijo). */
-function labelFor(key: AddInfoQuestionKey): string | undefined {
-  if (key !== 'pregnancy_weeks_at_least_threshold') return undefined;
-  const weeks = pregnancyWeeksThreshold();
-  return weeks === null ? undefined : ADD_INFO_COPY.pregnancyWeeksN(formatInteger(weeks));
+/**
+ * Texto de la pregunta: semanas con el umbral N del motor si se conoce (si no, texto sin número, nunca
+ * uno fijo); las sensibles llevan "si desea responder" en la misma leyenda/etiqueta.
+ */
+function labelFor(key: AddInfoQuestionKey, weeks: number | null): string | undefined {
+  let label: string | undefined;
+  if (key === 'pregnancy_weeks_at_least_threshold') {
+    label = weeks === null ? ADD_INFO_COPY.pregnancyWeeksMin : ADD_INFO_COPY.pregnancyWeeksN(formatInteger(weeks));
+  }
+  return SENSITIVE.has(key) ? ADD_INFO_COPY.optionalSensitive(label ?? questionLabel(key)) : label;
+}
+
+/** Umbral N (GET previo, fuera de C3): solo si se va a preguntar por semanas; si falla, null. */
+function useWeeksThreshold(familyId: string, enabled: boolean): number | null {
+  const query = useQuery({
+    queryKey: ['antecedentes', familyId],
+    enabled,
+    retry: false,
+    staleTime: Infinity,
+    queryFn: ({ signal }) => getFamiliaAntecedentes({ familyId, signal }),
+  });
+  return query.data?.body.data.pregnancy_weeks_threshold ?? null;
 }
 
 /** Cuerpo con SOLO las preguntas respondidas (sin responder = sin cambio); "No sé" → null / UNKNOWN. */
@@ -98,6 +117,7 @@ function AddInfoForm({ familyId, detail, opportunities }: {
 
   const codes = familyMissingCodes(detail);
   const fields = fieldsFor(codes);
+  const weeks = useWeeksThreshold(familyId, fields.includes('pregnancy_weeks_at_least_threshold'));
   const { applies, missing } = groupBenefits(detail, opportunities);
   const rows = [...missing, ...applies];
   // Guía (sin campo cerrado), sin repetir textos: las preguntas de C3 de beneficios a los que solo les
@@ -153,10 +173,7 @@ function AddInfoForm({ familyId, detail, opportunities }: {
           {fields
             .filter((key) => isVisible(key, answers, fields))
             .map((key) => (
-              <div key={key} className="space-y-1">
-                {SENSITIVE.has(key) && <p className="text-ink-muted">{ADD_INFO_COPY.optionalSensitive}</p>}
-                <QuestionField question={ADD_INFO_QUESTIONS[key]} value={answers[key]} onChange={(value) => update(key, value)} label={labelFor(key)} />
-              </div>
+              <QuestionField key={key} question={ADD_INFO_QUESTIONS[key]} value={answers[key]} onChange={(value) => update(key, value)} label={labelFor(key, weeks)} />
             ))}
           {!online && (
             <Banner tone="warn" icon="wifi-off">
