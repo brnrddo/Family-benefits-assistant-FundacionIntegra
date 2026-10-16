@@ -1,13 +1,16 @@
 // Tarjeta "Hoy" de Inicio (DEC-091): UNA frase de acción con la familia que sigue según el motor, un
-// acceso directo a su ficha y "Ya le informé". Al registrarlo, la memoria local pasa a la siguiente
-// familia y muestra "Ya habló con… ✓ (hoy)". Las 2 siguientes quedan plegadas.
+// acceso directo a su ficha y "Ya le informé". Encima, si sus oportunidades ya cargaron, un resumen
+// determinista ("tiene 3 apoyos posibles y solo le faltan 2 datos"); si cargan, fallan o no hay
+// apoyos, se ve solo la frase de acción. Al registrar, la memoria local pasa a la siguiente familia y
+// muestra "Hoy habló con… ✓". Las 2 siguientes quedan plegadas.
 import type { FamilySummary } from '../../api/types';
+import { useOportunidades } from '../../data/queries';
 import { benefitLabel } from '../../i18n/copy';
 import { ButtonLink } from '../../ui/Button';
 import { Expandable } from '../../ui/Expandable';
 import { QuickInformButton } from '../conversation/QuickInform';
-import { DEMO_COPY, doneLine, todayLead, todayMore, whenLabel } from '../demo-session/demoCopy';
-import { daysAgo, familyCall, familyPath, useDayPlan } from './todayAction';
+import { DEMO_COPY, doneLine, todayLead, todayMore, todaySummaryLine, whenLabel } from '../demo-session/demoCopy';
+import { daysAgo, familyCall, familyPath, todaySummary, useDayPlan } from './todayAction';
 
 const MORE = 2;
 
@@ -23,6 +26,9 @@ export function TodayCard({
   const plan = useDayPlan(families);
   const [first, ...rest] = plan.actions;
   const more = rest.slice(0, MORE);
+  // Misma query que la ficha (comparte caché). Se llama siempre (reglas de hooks), solo pide con familia.
+  const oportunidades = useOportunidades(first?.family.family_id ?? '', 'prioridad', first !== undefined);
+  const summary = first !== undefined && oportunidades.data !== undefined ? todaySummary(oportunidades.data.body.items) : null;
   return (
     <section aria-labelledby="home-today" data-today-action className="space-y-3 rounded-card border-2 border-primary bg-surface p-5 shadow-sm">
       <h2 id="home-today">{DEMO_COPY.todayTitle}</h2>
@@ -31,6 +37,11 @@ export function TodayCard({
       ) : (
         <>
           <p className="text-lg" data-today-text>
+            {summary !== null && (
+              <span data-today-summary className="mb-1 block font-semibold">
+                {todaySummaryLine(familyCall(first.family.family_id, plan.names), summary.possible, summary.missing)}
+              </span>
+            )}
             {todayLead(familyCall(first.family.family_id, plan.names))}{' '}
             <strong>{benefitLabel(first.benefitId)}</strong>
           </p>

@@ -1,8 +1,9 @@
 // Copy de la sesión demo, Inicio y chat (plan de arreglos, decisión 1: sin claves i18n nuevas para no
 // recalcular el bundle C4). Texto plano en español, sin HTML. Rol 4 lo revisa y se migra a es.json
 // cuando se recalcule el bundle. Nunca promete resultados: el motor decide, el texto solo orienta.
+import { APP_NAME } from '../../brand';
 export const DEMO_COPY = {
-  gateTitle: 'Bienvenida',
+  gateTitle: `Bienvenida a ${APP_NAME}`,
   gateIntro: 'Entre a la demo como la educadora del jardín. Verá a sus familias, sus avances y el chat de situaciones.',
   gateFictionNotice: 'Demo: personas, jardines y beneficios son ficticios.',
   gateGardenLabel: 'Jardín',
@@ -20,7 +21,7 @@ export const DEMO_COPY = {
   chatSituationsTitle: 'Situaciones',
   chatGardenTitle: 'Su jardín',
   chatYou: 'Usted',
-  chatAssistant: 'Brújula',
+  chatAssistant: APP_NAME,
   chatGardenNoData: 'Aún no tengo los datos de su jardín. Intente de nuevo en un momento.',
   chatHistoryLabel: 'Conversación',
   quickTitle: 'Preguntas rápidas',
@@ -33,7 +34,33 @@ export const DEMO_COPY = {
   statsOpen: 'Ver resumen del jardín',
   statsClose: 'Ocultar resumen',
   listClose: 'Ocultar familias',
+  // Chat de la ficha (guion de demo 2026-10-16): trato de usted como el resto de la app.
+  familyChatLabel: 'Cuénteme la situación de esta familia',
+  familyChatHint: 'No hace falta escribir nombres: si los escribe, los cambio por «el niño o la niña».',
+  familyChatSubmit: 'Pedir ideas',
+  familyChatNameBlocked: 'No pude quitar un nombre guardado del texto. Escríbalo sin nombres.',
 } as const;
+
+/** Partes del contexto que el chat de la ficha antepone a la pregunta (solo datos permitidos). */
+export const FAMILY_CONTEXT_COPY = {
+  prefix: 'Contexto de la familia:',
+  situation: 'Situación que cuenta la tía:',
+  rsh: 'tramo RSH',
+  rshNone: 'sin tramo RSH',
+  benefits: 'beneficios en la ficha:',
+  applies: 'aplica',
+  missing: 'falta dato',
+  roles: { ADULT_REFERENCE: 'adulto de referencia', CHILD: 'niño o niña', OTHER_ADULT: 'otro adulto' },
+} as const;
+
+const capitalize = (text: string): string => text.charAt(0).toLocaleUpperCase('es-CL') + text.slice(1);
+
+/** "La familia de Antonella tiene 3 apoyos posibles y solo le faltan 2 datos." (singular y sin faltantes). */
+export const todaySummaryLine = (who: string, possible: number, missing: number): string => {
+  const head = `${capitalize(who)} tiene ${possible} ${possible === 1 ? 'apoyo posible' : 'apoyos posibles'}`;
+  if (missing === 0) return `${head}.`;
+  return `${head} y solo le ${missing === 1 ? 'falta 1 dato' : `faltan ${missing} datos`}.`;
+};
 
 /** Frase de la acción del día: "Converse con la familia de Antonella sobre" + nombre del apoyo. */
 export const todayLead = (who: string): string => `Converse con ${who} sobre`;
@@ -41,7 +68,8 @@ export const todayMore = (n: number): string => `y ${n} más`;
 export const listOpen = (n: number): string => `Ver todas las familias (${n})`;
 /** Cuándo, en palabras: "hoy", "ayer", "hace 3 días". */
 export const whenLabel = (daysAgo: number): string => (daysAgo <= 0 ? 'hoy' : daysAgo === 1 ? 'ayer' : `hace ${daysAgo} días`);
-export const doneLine = (who: string, when: string): string => `Ya habló con ${who} ✓ (${when})`;
+/** "Ayer habló con la familia de Juanito ✓" ("Hoy habló…", "Hace 3 días habló…"). */
+export const doneLine = (who: string, when: string): string => `${capitalize(when)} habló con ${who} ✓`;
 /** Saludo del chat con memoria: lo último que hizo la tía y la sugerencia de hoy (ambas opcionales). */
 export const chatMemory = (
   last: { readonly who: string; readonly benefit: string | null; readonly when: string } | null,

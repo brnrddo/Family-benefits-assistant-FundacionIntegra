@@ -140,7 +140,7 @@ test('recorrido principal a 360 px', async ({ page }) => {
   await page.getByRole('link', { name: C['nav.home'], exact: true }).click();
   await expect(page.locator('[data-family-row]', { hasText: NAME_SHORT })).toHaveCount(1);
   // Memoria local (DEC-091): Inicio recuerda lo hecho hoy.
-  await expect(page.locator('[data-done-line]')).toHaveText('Ya habló con la familia de Sofía ✓ (hoy)');
+  await expect(page.locator('[data-done-line]')).toHaveText('Hoy habló con la familia de Sofía ✓');
   await expectNoHorizontalScroll(page);
   await shot(page, 'c05-inicio-memoria');
 

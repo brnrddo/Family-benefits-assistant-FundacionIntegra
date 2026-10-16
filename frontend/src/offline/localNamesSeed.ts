@@ -23,6 +23,11 @@ export interface DemoSessionSeed {
   readonly families: readonly DemoSessionFamily[];
   /** Acciones previas ficticias (DEC-091): la demo arranca con "Ya habló con… (ayer)". */
   readonly memory?: readonly DoneActionSeed[];
+  /**
+   * Familia estrella de la tarjeta Hoy (guion de demo): va primero solo si ya pasa los filtros de la
+   * acción del día; no cambia el ranking del motor.
+   */
+  readonly today_family_id?: string;
 }
 export interface LocalNamesSeed {
   readonly data_classification: string;
