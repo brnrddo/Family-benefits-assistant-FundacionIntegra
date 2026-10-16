@@ -656,7 +656,7 @@ SITUACIONES: tuple[tuple[str, re.Pattern, tuple[str, ...]], ...] = (
     ("alimentos", re.compile(r"comida|aliment|canasta|hambre"), ("BEN-007", "BEN-018")),
     ("vivienda", re.compile(r"vivienda|arriendo|desalojo|incendio|allegad|emergencia"),
      ("BEN-020",)),
-    ("recien_nacido", re.compile(r"recien nacid|nacio|guagua"), ("BEN-008", "BEN-012")),
+    ("recien_nacido", re.compile(r"recien nacid|\bnacio\b|guagua"), ("BEN-008", "BEN-012")),
 )
 _MAX_SITUACION = 4
 
