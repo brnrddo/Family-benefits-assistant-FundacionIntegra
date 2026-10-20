@@ -1,5 +1,5 @@
 // Catálogo de claves i18n del frontend (design.md §7.1, SUP-031, PREG-035).
-// Generado UNA sola vez desde .agents/tasks/frontend-pwa/i18n-catalog.json (v1.1.0, 368 claves);
+// Generado UNA sola vez desde el i18n-catalog.json del trabajo de la hackathon (ver frontend/i18n-catalog.json) (v1.1.0, 368 claves);
 // desde entonces ESTE archivo es la fuente (v1.2.0, 407 claves). `npm run export:i18n-catalog` escribe
 // frontend/i18n-catalog.json (handoff a Rol 4) y una prueba exige que sean iguales.
 // Sintaxis TS borrable (sin enums): Node lo importa directo en scripts/.

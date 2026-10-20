@@ -4,14 +4,14 @@ Punto único de entrada al **baseline documental**. No afirma que aplicación, i
 
 ## Orden de lectura
 
-- **Equipo:** este índice → [fuente funcional](../../PROYECTO_3_ESPECIFICACION_v2.md) → [spec maestro](./apoyo-inteligente-familias/requirements.md) → [privacidad](../../docs/PRIVACIDAD_DEMO.md) → [arquitectura](../../docs/ARQUITECTURA_AWS.md) → rol.
+- **Equipo:** este índice → [fuente funcional](../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md) → [spec maestro](./apoyo-inteligente-familias/requirements.md) → [privacidad](../../docs/PRIVACIDAD_DEMO.md) → [arquitectura](../../docs/ARQUITECTURA_AWS.md) → rol.
 - **Rol 1:** [requirements](./datos-motor-elegibilidad/requirements.md) → [design](./datos-motor-elegibilidad/design.md) → [tasks](./datos-motor-elegibilidad/tasks.md) → C0/C1/C2.
 - **Rol 2 (`api`):** [requirements](./api-priorizacion-genai/requirements.md) → [design](./api-priorizacion-genai/design.md) → [tasks](./api-priorizacion-genai/tasks.md) → C0–C4.
 - **Rol 3:** [requirements](./frontend-pwa/requirements.md) → [design](./frontend-pwa/design.md) → [tasks](./frontend-pwa/tasks.md) → C3/C4.
 - **Rol 4:** [requirements](./producto-contenido-demo/requirements.md) → [design](./producto-contenido-demo/design.md) → [tasks](./producto-contenido-demo/tasks.md) → C0/C4.
 - **Revisión:** [decisiones/supuestos/preguntas](./_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md) → [dependencias/gates](./_shared/DEPENDENCIAS.md) → contratos/ejemplos → tareas/evidencia.
 
-Guía para novatos: [`GUIA_KIRO_EQUIPO.md`](../../docs/GUIA_KIRO_EQUIPO.md). Glosario: [`GLOSARIO.md`](./_shared/GLOSARIO.md).
+Guía para novatos: [`GUIA_KIRO_EQUIPO.md`](../../docs/hackathon/equipo/GUIA_KIRO_EQUIPO.md). Glosario: [`GLOSARIO.md`](./_shared/GLOSARIO.md).
 
 ## Nombres conceptuales y rutas físicas
 
@@ -37,11 +37,11 @@ Guía para novatos: [`GUIA_KIRO_EQUIPO.md`](../../docs/GUIA_KIRO_EQUIPO.md). Glo
 | [Privacidad](../../docs/PRIVACIDAD_DEMO.md) | coordinación/Rol 4 | todos | baseline | DOCUMENTADA | cuatro clases, allowlist y prohibiciones |
 | [Arquitectura AWS](../../docs/ARQUITECTURA_AWS.md) | Rol 2 | todos | `api` | DOCUMENTADA; ocho servicios del núcleo VERIFICADO_EN_CUENTA (2026-10-15), el resto NO_VERIFICADO | matriz, perfiles, diagrama y transiciones trazadas a la bitácora |
 | [Evidencia AWS 2026-10-15](../../docs/arquitectura/EVIDENCIA_AWS_2026-10-15.md) | Rol 2 | todos | `api` | FECHADA | bloques A, B, D, E, F y G en `fecha \| región \| operación \| OK/FALLA \| detalle`, más cinco hallazgos operativos y lo que sigue sin verificar |
-| [Guía Kiro](../../docs/GUIA_KIRO_EQUIPO.md) | coordinación | equipo | baseline | DOCUMENTADA | recorrido por rol y adopción retroactiva |
+| [Guía Kiro](../../docs/hackathon/equipo/GUIA_KIRO_EQUIPO.md) | coordinación | equipo | baseline | DOCUMENTADA | recorrido por rol y adopción retroactiva |
 
 ## Mapa de autoridad
 
-1. [Fuente funcional original](../../PROYECTO_3_ESPECIFICACION_v2.md), inmutable.
+1. [Fuente funcional original](../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), inmutable.
 2. [Requirements maestro](./apoyo-inteligente-familias/requirements.md), interpretación con `PROD-*`.
 3. C0–C4, única autoridad entre roles.
 4. `design.md` satisface requisitos; `tasks.md` descompone sin agregar alcance.

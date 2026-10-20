@@ -636,4 +636,4 @@ Depende del contrato de `data/` y `database/`; publica un contrato estable para 
 
 No colocar aquí componentes visuales, CSV canónicos, credenciales, dumps, adaptadores de Bedrock, prompts, otro filtro previo al modelo ni lógica que permita a un LLM decidir elegibilidad o prioridad.
 
-Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/equipo/ROLES_Y_RESPONSABILIDADES.md) y [estructura](../docs/arquitectura/ESTRUCTURA_REPOSITORIO.md).
+Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/hackathon/equipo/ROLES_Y_RESPONSABILIDADES.md) y [estructura](../docs/hackathon/equipo/ESTRUCTURA_REPOSITORIO_INICIAL.md).

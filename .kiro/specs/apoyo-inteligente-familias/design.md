@@ -2,7 +2,7 @@
 
 ## Autoridad y enlaces
 
-Este spec interpreta la [fuente inmutable](../../../PROYECTO_3_ESPECIFICACION_v2.md). No duplica la [arquitectura AWS](../../../docs/ARQUITECTURA_AWS.md), la [política de privacidad](../../../docs/PRIVACIDAD_DEMO.md), las [decisiones](../_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md) ni los [contratos](../_shared/contracts/). Ante contradicción, se detiene el cambio, se registra `DEC-*` y se corrige primero la autoridad.
+Este spec interpreta la [fuente inmutable](../../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md). No duplica la [arquitectura AWS](../../../docs/ARQUITECTURA_AWS.md), la [política de privacidad](../../../docs/PRIVACIDAD_DEMO.md), las [decisiones](../_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md) ni los [contratos](../_shared/contracts/). Ante contradicción, se detiene el cambio, se registra `DEC-*` y se corrige primero la autoridad.
 
 ## Usuarios y flujo
 

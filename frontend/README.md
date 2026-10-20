@@ -130,4 +130,4 @@ applications:
 
 App Amplify o bucket/distribución reales, reescritura SPA y headers en respuesta, Cognito (callback/logout, scopes, PKCE), CORS de la API para el origen de la PWA (incluidas respuestas de error) e instalación de la PWA en un celular. Todo queda `NO_VERIFICADO` hasta un smoke test fechado (DEC-017).
 
-Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/equipo/ROLES_Y_RESPONSABILIDADES.md), [estructura](../docs/arquitectura/ESTRUCTURA_REPOSITORIO.md) y [flujo de ficha](../docs/producto/FLUJO_DE_FICHA.md).
+Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/hackathon/equipo/ROLES_Y_RESPONSABILIDADES.md), [estructura](../docs/hackathon/equipo/ESTRUCTURA_REPOSITORIO_INICIAL.md) y [flujo de ficha](../docs/producto/FLUJO_DE_FICHA.md).
