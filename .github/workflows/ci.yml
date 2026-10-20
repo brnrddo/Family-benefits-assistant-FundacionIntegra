@@ -1,6 +1,6 @@
 name: CI
 
-# CI del backend (Rol 1): lint con ruff + suite de pytest.
+# CI: backend (ruff + pytest) y frontend (typecheck, eslint, vitest y build).
 #
 # Los tests construyen su propia DB SQLite efímera desde los CSV reales de
 # data/publico/ (ver backend/tests/conftest.py), así que no necesitan e3.db
@@ -75,3 +75,37 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+  frontend:
+    name: frontend (node 22)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Build
+        run: npm run build
