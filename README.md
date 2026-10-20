@@ -119,17 +119,6 @@ npm run dev
 - El motor ejecuta reglas ya codificadas: traducir la normativa a reglas requiere criterio humano.
 - La cobertura de pruebas es sólida en el motor, pero mínima de punta a punta.
 
-## Equipo
-
-Proyecto desarrollado en el hackathon **AWS Breaking Barriers** por un equipo interdisciplinario:
-
-- **Ingeniería en Computación**: backend, motor, API e integración con Bedrock
-- **Ingeniería Mecánica**: datos, calidad y QA
-- **Ingeniería Eléctrica**: frontend e integración
-- **Ingeniería en Recursos Naturales**: producto, contenido y pitch
-
-La organización interna del equipo está en [`docs/equipo/`](docs/equipo/) y la guía para contribuir en [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Documentación
 
 - [Especificación del proyecto](docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
