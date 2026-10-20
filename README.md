@@ -1,220 +1,143 @@
-# AWS Breaking Barriers — Apoyo Inteligente para Familias
+# Apoyo Inteligente para Familias
 
-PWA para Fundación Integra creada durante un hackathon de tres días. Relaciona datos sintéticos familiares con reglas de beneficios, muestra ficha, RSH, oportunidades, datos faltantes, preguntas y recomendaciones, y ordena las conversaciones por prioridad. También mantiene información general para todas las familias.
-
-La elegibilidad, el estado de acceso y la prioridad son deterministas y trazables. Amazon Bedrock se usa únicamente para redactar explicaciones, guiones y mensajes a partir de resultados ya calculados y datos filtrados.
-
-## Documentación principal
-
-- [Especificación del proyecto](./docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
-- [Roles y responsabilidades](./docs/equipo/ROLES_Y_RESPONSABILIDADES.md)
-- [Estructura del repositorio](./docs/arquitectura/ESTRUCTURA_REPOSITORIO.md)
-- [Flujo de la ficha familiar](./docs/producto/FLUJO_DE_FICHA.md)
-- [Guía para contribuir](./CONTRIBUTING.md)
-
-## Estructura y ownership
-
-| Ruta | Contenido | Dueño principal |
-|---|---|---|
-| `backend/` | Motor determinista, backend y API | Ingeniería en Computación |
-| `data/` y `database/` | Fuente canónica, loader, características, acceso, prioridad y QA | Ingeniería Mecánica |
-| `frontend/` | PWA e integración | Ingeniería Eléctrica |
-| `ia/` | Única integración Bedrock, filtro de contexto y redacción | Ingeniería en Computación |
-| `docs/producto/` | Producto, dominio, lenguaje, privacidad, pruebas y pitch | Ingeniería en Recursos Naturales |
-| `docs/equipo/` y `docs/arquitectura/` | Acuerdos y contratos compartidos | Equipo; coordina Computación |
-
-No se usan carpetas personales. Cada tarea se realiza en el componente al que pertenece y la aprueba su dueño.
-
-## Flujo del producto
-
-```text
-CSV canónicos → base tipada → características → reglas → estado de acceso
-→ datos faltantes/preguntas → prioridad → ficha/recomendaciones
-→ conversación → KPI
-```
-
-Los beneficios personalizados provienen del motor. Los beneficios generales se muestran en una sección independiente y nunca aparentan ser una evaluación familiar. Todo resultado incluye el aviso de orientación referencial.
-
-## Ventajas y desventajas del modelo
-
-Este proyecto adopta un modelo de **reglas deterministas como fuente de verdad, con IA acotada a la redacción**. Conviene tener claro qué gana y qué limita esa decisión.
-
-### Ventajas
-
-- **Detecta la brecha de acceso, no solo la elegibilidad.** El motor cruza la elegibilidad con las gestiones reales y distingue el caso que importa: *elegible pero sin asignación* (`ELEGIBLE_SIN_ASIGNACION`), además de `SIN_CUPO` con cupo contingente. Ese es el problema social accionable, no un cálculo abstracto.
-- **Resultados trazables y auditables.** Cada evaluación trae traza regla-por-regla y lógica de tres valores (SI / NO / INDETERMINADO) con nivel CONFIRMADO o PRELIMINAR. Se puede explicar por qué una familia califica o no, regla por regla.
-- **Honestidad sobre la incertidumbre.** No se colapsa INDETERMINADO en NO: "no sabemos" se distingue de "no califica". Si la evidencia es declarada y no acreditada, el nivel baja a PRELIMINAR y nunca pisa un dato real de la base.
-- **La IA no decide, solo redacta.** Amazon Bedrock explica resultados ya calculados y datos ya filtrados. No puede inventar una elegibilidad. Si falla, degrada a plantilla determinista sin romper la respuesta (HTTP 200).
-- **Privacidad en profundidad.** Doble filtro por allowlist positiva antes del LLM, Guardrails como segunda barrera, inspección de egreso y nombres de trato que nunca salen del dispositivo. Todo "falla cerrado".
-- **Opera sin nube.** `StubProvider` y la bandera `E3_MOCK` permiten correr el sistema completo (y los tests) sin credenciales de AWS.
-
-### Desventajas y límites
-
-- **Prototipo joven.** Construido en un hackathon sobre un dataset sintético fijo; no está probado con datos reales ni en producción.
-- **Umbrales acoplados a las reglas.** Los umbrales viven junto a las reglas versionadas en vez de ser parámetros independientes con vigencia temporal explícita, lo que complica mantener cambios legislativos en el tiempo.
-- **Límites del dataset.** Campos como gestación, controles o residencia no vienen en los CSV, por lo que esos beneficios quedan INDETERMINADO salvo declaración de la familia (y entonces solo PRELIMINAR). Es correcto por diseño, pero reduce cuántos "SI confirmados" puede producir.
-- **El modelo no interpreta la ley.** Traducir la normativa a reglas requiere criterio humano; el motor ejecuta reglas ya codificadas, no las deduce.
-- **Es estático.** Calcula el estado "tal como es hoy"; no modela efectos de comportamiento ni proyecciones.
-- **Cobertura de pruebas desigual.** Sólida en el motor; mínima de punta a punta (un solo flujo e2e).
-
-## 📊 Estado del proyecto por rol
-
-> Resumen vivo para que cualquiera sepa qué está listo y qué sigue.
-
-### 🗄️ Rol 1 · Datos y motor de elegibilidad — **MUST completo**
-Backend en `backend/` (Python 3.11+, SQLite, solo stdlib para datos/motor).
-Ver detalle y comandos en [`backend/README.md`](./backend/README.md).
-
-- ✅ **M1** Loader: 23 CSV → `backend/e3.db` (500 familias, 1.700 integrantes, 20 beneficios, 41 versiones, 151 reglas).
-- ✅ **M1** Vistas de cruce: `v_familia_beneficio`, `v_oportunidades`, `v_brechas`, `v_ventanas`.
-- ✅ **Precálculo** persistido (tablas `evaluaciones` + `accesos`, 10.000 evaluaciones) en < 30 s.
-- ✅ **M2** Motor de elegibilidad determinista con traza (SI/NO/INDETERMINADO · CONFIRMADO/PRELIMINAR).
-- ✅ **M3** Estado de acceso (8 estados) + cupo BEN-018 (`SIN_CUPO`).
-- ✅ **M3b** Ficha sintética + `contexto_familia` (contrato **C2**) + filtro de privacidad hacia el LLM.
-- ✅ **Resiliencia** a datos mal ingresados: saneo + `inconsistencias` + `calidad_datos`.
-- ✅ **Base GenAI** para el Rol 2: `app/genai/` con `LLMProvider`, `StubProvider` (sin AWS) y esqueleto `BedrockProvider`.
-- ✅ Tests: **88 passed**, `ruff` limpio.
-
-**Contratos que entrega a otros roles:**
-- **C1** (salida del motor, §6.6): tabla `evaluaciones` / vista `v_familia_beneficio`.
-- **C2** (`contexto_familia`, §2.7.2): `app/context/contexto_familia.py` → filtrar con `app/context/context_filter.filtrar_para_llm` antes de ir al LLM.
-
-### ⚙️ Rol 2 · API, priorización e IA — **implementado**
-API FastAPI en `backend/app/api/` con routers bajo `/api/v1` (jardines, familias, antecedentes, tracking, genai, kpi, catalogo) y el OpenAPI del contrato **C3** como fuente de verdad. Priorización en `backend/app/priority/`. Capa GenAI en `backend/app/genai/` con `LLMProvider`, `StubProvider` (sin AWS) y `BedrockProvider` completo (Claude vía Converse, Guardrails, presupuesto de tiempo y degradación a plantilla).
-
-### 📱 Rol 3 · Frontend — **implementado**
-PWA en `frontend/` (React + TypeScript + Vite). Features en `frontend/src/features/` (inicio, ficha de familia, conversación, asistente, agregar información, mensaje, guion, KPI, sesión demo). Consume la API por el cliente generado del contrato C3 y usa MSW para el modo mock.
-
-### 🎯 Rol 4 · Producto, contenido y pitch — **implementado**
-Catálogo de contenido en `backend/app/catalog/` (contrato **C4**) que alimenta el `TemplateProvider` determinista. Documentación de producto en `docs/producto/`.
+> **English summary**
+> A progressive web app built in a three-day AWS hackathon for Fundación Integra, a Chilean early-childhood education foundation. It helps staff find families who qualify for social benefits but aren't receiving them, and ranks which conversations to have first. Eligibility, access status and priority are computed by a **deterministic, auditable rule engine** (150+ rules, three-valued logic with rule-by-rule traces). **Claude on Amazon Bedrock** is used only to explain results, write conversation scripts and power a chat assistant that captures new family information so the engine can re-evaluate it. Privacy is layered (allowlist context filter, Bedrock Guardrails, egress checks, fail-closed) and the whole system runs offline with a stub provider.
+> **Stack:** Python · FastAPI · SQLite · Amazon Bedrock (Claude Haiku 4.5) · React · TypeScript · Vite · 88 automated tests.
+> All data in this repository is synthetic.
 
 ---
 
-## 🗺️ Esquema: cómo encaja el trabajo del Rol 1 (para el equipo)
+## El problema
 
-Flujo de datos de punta a punta (spec §2.6). **Lo que ya está hecho (Rol 1) va
-marcado con ✅; lo pendiente de otros roles con ⬜.**
+Muchas familias cumplen los requisitos para recibir beneficios sociales, pero nunca llegan a solicitarlos: no saben que existen, les falta un documento o se les pasa el plazo de postulación. Las educadoras de los jardines de Fundación Integra conversan con estas familias todos los días, pero no tienen una forma simple de saber **qué beneficio conversar, con quién y con qué urgencia**.
 
-```
-  CSV del dataset E-3 (data/publico/, 23 archivos)
-         │
-         ▼
- ┌───────────────────────────────────────────────────────────┐
- │ [1] ✅ LOADER  (app/loader/load.py)                         │
- │     23 CSV ──► SQLite e3.db  (500 fam · 1.700 int · 20 ben) │
- └───────────────────────────────────────────────────────────┘
-         │
-         ▼
- ┌───────────────────────────────────────────────────────────┐
- │ [2] ✅ MOTOR DE ELEGIBILIDAD  (app/engine/)                 │
- │     ¿califica? → SI / NO / INDETERMINADO                    │
- │     nivel CONFIRMADO / PRELIMINAR + traza regla-por-regla   │
- │     → contrato C1                                           │
- └───────────────────────────────────────────────────────────┘
-         │
-         ▼
- ┌───────────────────────────────────────────────────────────┐
- │ [3] ✅ ESTADO DE ACCESO  (app/access/)                      │
- │     cruza elegibilidad + gestiones reales → 8 estados       │
- │     incl. ELEGIBLE_SIN_ASIGNACION (la brecha) y SIN_CUPO    │
- └───────────────────────────────────────────────────────────┘
-         │
-         ▼
- ┌───────────────────────────────────────────────────────────┐
- │ [4] ✅ VENTANA DE CONTEXTO  (app/context/)                  │
- │     ficha sintética + contexto_familia (C2) + sanitizer     │
- │     (resiliencia a datos sucios) + filtro de privacidad     │
- └───────────────────────────────────────────────────────────┘
-         │
-         ├─────────── PRECÁLCULO ✅ (app/db/build_views.py) ───────────┐
-         │   tablas evaluaciones + accesos (10.000 filas, < 30 s)      │
-         │   vistas: v_familia_beneficio · v_oportunidades ·           │
-         │           v_brechas · v_ventanas                            │
-         ▼                                                             │
- ┌──────────────────────────┐   ┌──────────────────────────────────┐  │
- │ [5] ✅ PRIORIZACIÓN       │   │  ✅ GENAI (app/genai/)            │  │
- │     U·B·V  (Rol 2)        │   │  LLMProvider + stub + Bedrock     │  │
- │                           │   │  (Claude). El LLM NO              │  │
- │                           │   │  decide elegibilidad.             │  │
- └──────────────────────────┘   └──────────────────────────────────┘  │
-         │                                                             │
-         ▼                                                             │
- ┌───────────────────────────────────────────────────────────┐        │
- │ [6] ✅ VISTA DE LA TÍA (Rol 3) + API (Rol 2)               │◄───────┘
- │     "3 cosas para conversar" + guion IA + marcar conversado │
- └───────────────────────────────────────────────────────────┘
+## La solución
+
+Una PWA que, para cada familia del jardín, muestra:
+
+- **Oportunidades**: beneficios para los que la familia es elegible, incluido el caso clave de *elegible pero sin asignación*.
+- **Datos faltantes y preguntas**: qué información falta para confirmar una elegibilidad y cómo pedirla.
+- **Prioridad**: qué familias atender primero, según la acción que deben tomar (postular antes de un cierre, entregar un documento, etc.), su urgencia y el valor del beneficio.
+- **Guion y mensajes**: textos redactados por IA para conversar con la familia o enviarle un recordatorio.
+- **Asistente conversacional**: la educadora puede agregar información nueva. Por ejemplo, si indica que la madre está embarazada nuevamente, el sistema reevalúa a la familia y recomienda el subsidio maternal, marcado como *preliminar* hasta que se acredite.
+
+La información general sobre beneficios se muestra en una sección aparte y nunca se presenta como una evaluación de la familia. Todo resultado incluye un aviso de orientación referencial.
+
+## Decisión de diseño principal: la IA no decide
+
+```mermaid
+flowchart LR
+    A[23 CSV sintéticos] --> B[Base SQLite tipada]
+    B --> C[Motor de elegibilidad<br/>reglas deterministas]
+    C --> D[Estado de acceso]
+    D --> E[Datos faltantes<br/>y preguntas]
+    E --> F[Priorización]
+    F --> G[Ficha y recomendaciones]
+    C -.resultados ya calculados.-> H[Filtro de privacidad]
+    H --> I[Claude en Bedrock<br/>solo redacta]
+    I --> G
+    G --> J[Conversación y KPI]
 ```
 
-### ¿Qué consume cada rol de lo que entrega el Rol 1?
+- **Motor determinista como fuente de verdad.** Cada evaluación usa lógica de tres valores (SI / NO / INDETERMINADO) con nivel CONFIRMADO o PRELIMINAR y una traza regla por regla. Así se distingue "no califica" de "no sabemos", y se puede explicar cada resultado.
+- **Brecha de acceso, no solo elegibilidad.** El motor cruza la elegibilidad con las gestiones reales de la familia y produce 8 estados de acceso, entre ellos `ELEGIBLE_SIN_ASIGNACION` (el problema accionable) y `SIN_CUPO`.
+- **IA acotada a la redacción.** El LLM recibe resultados ya calculados y datos ya filtrados. Puede explicar y conversar, pero no puede inventar una elegibilidad. Si falla, la API responde con plantillas deterministas sin romperse.
 
-| Rol | Qué toma del Rol 1 | Cómo |
-|---|---|---|
-| **Rol 2** (API/priorización) | **C1** (elegibilidad + estado) | Lee la vista `v_familia_beneficio` (o `v_oportunidades`, `v_brechas`) por SQL. No necesita re-evaluar el motor. |
-| **Rol 2** (eje Urgencia) | ventanas de inscripción | Vista `v_ventanas` (días a cierre + flag `ventana_discrimina`). Ojo caveat §8.1: mantener `usar_ventana=false` por defecto. |
-| **Rol 2** (IA) | **C2** + base GenAI | `app/context/contexto_familia.py` → **filtrar con** `context_filter.filtrar_para_llm` antes del LLM. Implementar `BedrockProvider` en `app/genai/provider.py`. |
-| **Rol 3** (frontend) | semáforo, chips, montos | Mismas vistas; cada fila trae `semaforo`, `estado_acceso`, `monto_estimado`, `requiere_accion_familia`, `canal`, `fuente_url`. |
-| **Rol 4** (contenido) | campos de catálogo | `beneficios`, `fuentes` y `politica_perdida/advertencia` (ver `ROADMAP_ROL1.md` G5). |
+## Privacidad
 
-### Contratos (congelados por el Rol 1)
-- **C1** — salida del motor por (familia × beneficio): `resultado`, `nivel`,
-  `motivos`, `datos_faltantes`, `entidad_ganadora`, `monto_estimado`, `traza`.
-  → tabla `evaluaciones` / vista `v_familia_beneficio`.
-- **C2** — `contexto_familia` (roles/edades, rsh.tramo, rango de ingreso,
-  señales, inconsistencias, calidad_datos). → `app/context/contexto_familia.py`.
-  Lo que puede ver el LLM lo decide **solo** `context_filter.filtrar_para_llm`.
+Aunque todos los datos son sintéticos, el sistema se diseñó como si trabajara con familias reales:
 
-### Qué falta / mejoras del Rol 1
-Ver [`backend/ROADMAP_ROL1.md`](./backend/ROADMAP_ROL1.md): ganchos documentados
-(bindings ACCESO para BEN-004, montos por fórmula/tramo, exponer política de
-pérdida) con su utilidad y esfuerzo.
+1. **Filtro por allowlist** antes del LLM: solo pasan los campos explícitamente permitidos (`context_filter.filtrar_para_llm`).
+2. **Bedrock Guardrails** como segunda barrera.
+3. **Inspección de egreso** de las respuestas del modelo.
+4. **Nombres de trato locales**: nunca salen del dispositivo.
+5. **Falla cerrado**: ante cualquier duda, no se envía información.
 
----
+## Stack
 
-## ⚡ Backend en 30 segundos (Rol 1)
+| Capa | Tecnología |
+| --- | --- |
+| Datos y motor | Python 3.11+, SQLite (solo stdlib) |
+| API | FastAPI, contrato OpenAPI como fuente de verdad |
+| IA generativa | Amazon Bedrock (Claude Haiku 4.5 vía Converse API), Guardrails |
+| Frontend | React, TypeScript, Vite, PWA, MSW para modo mock |
+| Calidad | pytest (88 tests), ruff, GitHub Actions |
+
+## Estructura del repositorio
+
+```
+backend/
+  app/loader/     # carga de los 23 CSV a SQLite
+  app/engine/     # motor de elegibilidad con traza
+  app/access/     # estado de acceso (8 estados)
+  app/context/    # ficha, contexto de familia y filtro de privacidad
+  app/priority/   # priorización
+  app/genai/      # LLMProvider, StubProvider y BedrockProvider
+  app/api/        # routers FastAPI bajo /api/v1
+  app/catalog/    # catálogo de contenido y plantillas
+frontend/         # PWA (features en src/features/)
+data/publico/     # dataset sintético canónico (23 CSV)
+docs/             # especificación, arquitectura, producto y privacidad
+```
+
+## Cómo ejecutarlo
+
+### Backend
 
 ```bash
 cd backend
 python -m app.loader.load          # genera e3.db desde los CSV
-python -m app.db.build_views       # precálculo + vistas de cruce (< 30 s)
+python -m app.db.build_views       # precálculo: 10.000 evaluaciones en < 30 s
 pip install -r requirements-dev.txt
 pytest                             # 88 tests
 ```
 
-Nota: `e3.db` es efímera (no se versiona); se regenera con esos dos comandos.
+Por defecto la API responde con mocks y usa plantillas locales, así que **no necesita credenciales de AWS**. Para usar Bedrock, exporta las variables en la misma terminal que levanta el servidor (el backend no lee archivos `.env`):
+
+```bash
+export E3_MOCK=0
+export E3_LLM_PROVIDER=bedrock
+export E3_BEDROCK_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0
+export E3_BEDROCK_REGION=us-east-1
+```
+
+Revisa [`.env.example`](.env.example) para la lista completa de variables. Las credenciales de AWS nunca van en archivos.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Limitaciones conocidas
+
+- Prototipo construido en tres días sobre un dataset sintético fijo; no se ha probado con datos reales.
+- Algunos campos (gestación, controles de salud, residencia) no vienen en el dataset, por lo que esos beneficios quedan INDETERMINADO salvo que la familia los declare, y en ese caso solo llegan a PRELIMINAR.
+- Los umbrales viven junto a las reglas versionadas, lo que complica mantener cambios legislativos en el tiempo.
+- El motor ejecuta reglas ya codificadas: traducir la normativa a reglas requiere criterio humano.
+- La cobertura de pruebas es sólida en el motor, pero mínima de punta a punta.
+
+## Equipo
+
+Proyecto desarrollado en el hackathon **AWS Breaking Barriers** por un equipo interdisciplinario:
+
+- **Ingeniería en Computación**: backend, motor, API e integración con Bedrock
+- **Ingeniería Mecánica**: datos, calidad y QA
+- **Ingeniería Eléctrica**: frontend e integración
+- **Ingeniería en Recursos Naturales**: producto, contenido y pitch
+
+La organización interna del equipo está en [`docs/equipo/`](docs/equipo/) y la guía para contribuir en [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Documentación
+
+- [Especificación del proyecto](docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
+- [Arquitectura AWS](docs/ARQUITECTURA_AWS.md)
+- [Política de privacidad y anonimización](docs/PRIVACIDAD_DEMO.md)
+- [Flujo de la ficha familiar](docs/producto/FLUJO_DE_FICHA.md)
+- [Documentación del dataset sintético](data/README.md)
 
 ---
 
-## Empezar en Kiro
-
-1. Clone el repositorio con `Git: Clone` desde la paleta de comandos (`Ctrl+Shift+P`).
-2. Lea la especificación y el documento de roles.
-3. En **Source Control**, ejecute **Pull**.
-4. Cree una rama para una tarea concreta y coordine si tocará un archivo compartido.
-5. Trabaje en el componente correspondiente; use mocks acordados si depende de otra área.
-6. Revise el diff y la validación del componente, haga un commit claro y luego **Push**.
-
-Los detalles están en [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## Datos
-
-Los 23 CSV de `data/publico/` son la fuente canónica. `data/publico/dataset_e3.json` no debe usarse como única fuente porque omite `condiciones_integrante.csv`. Todo el dataset es sintético.
-
-## Seguridad y privacidad
-
-- ❌ **Nunca** subas claves, contraseñas o el archivo `.env`.
-- ❌ **Nunca** pegues una API key o secret dentro del código.
-- ✅ Todo secreto va en tu `.env` local (protegido por `.gitignore`).
-- ✅ Si vas a compartir una clave con el equipo, hazlo por mensaje privado, no por el repo.
-- 🚨 Si por error subes un secreto, **avisa de inmediato** para rotar/invalidar esa clave.
-
----
-
-## 📚 Documentación del proyecto
-
-- [Índice navegable de Specs Kiro](./.kiro/specs/INDICE.md)
-- [Spec maestro del producto](./.kiro/specs/apoyo-inteligente-familias/requirements.md)
-- [Guía Kiro para el equipo](./docs/GUIA_KIRO_EQUIPO.md)
-- [Arquitectura AWS-first](./docs/ARQUITECTURA_AWS.md)
-- [Política de privacidad y anonimización](./docs/PRIVACIDAD_DEMO.md)
-- [Especificación funcional inmutable](./PROYECTO_3_ESPECIFICACION_v2.md)
-- [Documentación del dataset sintético](./data/README.md)
+*Todos los datos de este repositorio son sintéticos. Los resultados son orientación referencial y no constituyen una evaluación oficial de beneficios.*
