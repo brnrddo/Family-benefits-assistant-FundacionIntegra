@@ -13,8 +13,6 @@ Una PWA pensada para el celular que ayuda a las educadoras de **Fundación Integ
 
 Construida por un equipo de cuatro personas en una **hackathon de AWS de tres días** (*AWS Breaking Barriers*, octubre de 2026) y desplegada de punta a punta en AWS.
 
-![Ficha familiar en escritorio: beneficios por estado, qué hacer ahora y el chat de la familia en la columna lateral](docs/images/family-profile-desktop.png)
-
 ---
 
 ## El problema

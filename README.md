@@ -13,8 +13,6 @@ A mobile-first web app that helps early-childhood educators at **Fundación Inte
 
 Built by a team of four in a **3-day AWS hackathon** (*AWS Breaking Barriers*, October 2026) and deployed end to end on AWS.
 
-![Family profile on desktop: benefits by status, what to do now, and the family chat side panel](docs/images/family-profile-desktop.png)
-
 ---
 
 ## The problem
