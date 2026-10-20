@@ -66,4 +66,4 @@ Bedrock nunca decide elegibilidad, inventa requisitos, completa datos faltantes 
 
 La educadora confirma qué beneficios mencionó, canal y siguiente paso. El KPI principal es familias con al menos una conversación sobre el total; para familias nuevas se mide si fueron informadas dentro de 30 días. Los indicadores agregados no exponen datos personales.
 
-Véanse la [especificación](../especificacion/PROYECTO_3_ESPECIFICACION_v2.md) y los [roles del equipo](../equipo/ROLES_Y_RESPONSABILIDADES.md).
+Véanse la [especificación](../especificacion/PROYECTO_3_ESPECIFICACION_v2.md) y los [roles del equipo](../hackathon/equipo/ROLES_Y_RESPONSABILIDADES.md).

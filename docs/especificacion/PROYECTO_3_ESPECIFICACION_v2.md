@@ -16,7 +16,7 @@
 >
 > **Convención de rutas:** todas las rutas de este documento se interpretan desde la raíz del repositorio, aunque este archivo viva en `docs/especificacion/`.
 >
-> Navegación: [roles y responsabilidades](../equipo/ROLES_Y_RESPONSABILIDADES.md) · [estructura del repositorio](../arquitectura/ESTRUCTURA_REPOSITORIO.md) · [flujo de la ficha](../producto/FLUJO_DE_FICHA.md)
+> Navegación: [roles y responsabilidades](../hackathon/equipo/ROLES_Y_RESPONSABILIDADES.md) · [estructura del repositorio](../hackathon/equipo/ESTRUCTURA_REPOSITORIO_INICIAL.md) · [flujo de la ficha](../producto/FLUJO_DE_FICHA.md)
 
 ---
 
@@ -798,4 +798,4 @@ El repositorio se organiza por componentes, no por carpetas personales. Ser due�
 - Si algo bloquea a otra persona por más de 30 minutos, se avisa en el chat y se acuerda un mock que preserve el contrato.
 - Computación y Mecánica hacen revisión cruzada de motor/datos; Eléctrica y Recursos Naturales revisan juntas la experiencia visible.
 - Recursos Naturales conduce la demo interna de las 19:00: si el flujo no se puede mostrar, aún no está terminado.
-- El detalle operativo y ownership por componente está en [Roles y responsabilidades](../equipo/ROLES_Y_RESPONSABILIDADES.md).
+- El detalle operativo y ownership por componente está en [Roles y responsabilidades](../hackathon/equipo/ROLES_Y_RESPONSABILIDADES.md).

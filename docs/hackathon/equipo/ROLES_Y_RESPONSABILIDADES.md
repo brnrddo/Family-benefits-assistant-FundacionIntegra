@@ -83,4 +83,4 @@ Los contratos se cambian por acuerdo entre quien entrega y quien consume. Si fal
 - Antes de integrar, el dueño revisa su componente y otra ingeniería hace revisión cruzada: Computación↔Mecánica, Eléctrica↔Recursos Naturales.
 - Los archivos compartidos (`README.md`, contratos y documentos de arquitectura) se coordinan antes de editar.
 
-Véanse la [estructura del repositorio](../arquitectura/ESTRUCTURA_REPOSITORIO.md), el [flujo de la ficha](../producto/FLUJO_DE_FICHA.md) y la [especificación](../especificacion/PROYECTO_3_ESPECIFICACION_v2.md).
+Véanse la [estructura del repositorio](ESTRUCTURA_REPOSITORIO_INICIAL.md), el [flujo de la ficha](../../producto/FLUJO_DE_FICHA.md) y la [especificación](../../especificacion/PROYECTO_3_ESPECIFICACION_v2.md).

@@ -2,7 +2,7 @@
 
 ## Autoridades
 
-1. [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../PROYECTO_3_ESPECIFICACION_v2.md) es la fuente funcional original e inmutable.
+1. [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md) es la fuente funcional original e inmutable.
 2. El [spec maestro](../apoyo-inteligente-familias/requirements.md) interpreta la fuente con requisitos `PROD-*`.
 3. Los contratos de [`contracts/`](./contracts/) son la única autoridad de interfaces C0–C4.
 4. Cada `design.md` decide cómo satisfacer requisitos; cada `tasks.md` descompone trabajo futuro sin ampliar alcance.

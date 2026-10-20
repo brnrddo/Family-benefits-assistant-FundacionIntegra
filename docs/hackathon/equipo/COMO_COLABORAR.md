@@ -1,13 +1,13 @@
 # Cómo colaborar desde Kiro
 
-Trabajamos por componente y tarea, no “cada quien en su carpeta”. El ownership, los handoffs y los horarios de integración están en [Roles y responsabilidades](./docs/equipo/ROLES_Y_RESPONSABILIDADES.md).
+Trabajamos por componente y tarea, no “cada quien en su carpeta”. El ownership, los handoffs y los horarios de integración están en [Roles y responsabilidades](ROLES_Y_RESPONSABILIDADES.md).
 
 Antes de cambiar algo, consulte:
 
-- [Especificación](./docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
-- [Estructura del repositorio](./docs/arquitectura/ESTRUCTURA_REPOSITORIO.md)
-- [Flujo de la ficha](./docs/producto/FLUJO_DE_FICHA.md)
-- [README principal](./README.md)
+- [Especificación](../../especificacion/PROYECTO_3_ESPECIFICACION_v2.md)
+- [Estructura del repositorio](ESTRUCTURA_REPOSITORIO_INICIAL.md)
+- [Flujo de la ficha](../../producto/FLUJO_DE_FICHA.md)
+- [README principal](../../../README.md)
 
 ## Flujo simple
 

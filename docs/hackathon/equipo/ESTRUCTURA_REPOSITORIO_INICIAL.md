@@ -78,7 +78,7 @@ La organización es por componentes con ownership funcional. No se crean carpeta
 | `docs/producto/` | Flujo, dominio, lenguaje y pruebas | Ingeniería en Recursos Naturales | Eléctrica y Computación validan viabilidad |
 | `docs/arquitectura/` | Límites, contratos y decisiones técnicas | Ingeniería en Computación | Mecánica y Eléctrica |
 
-El detalle de entregables está en [Roles y responsabilidades](../equipo/ROLES_Y_RESPONSABILIDADES.md).
+El detalle de entregables está en [Roles y responsabilidades](ROLES_Y_RESPONSABILIDADES.md).
 
 ## Dónde crear archivos
 

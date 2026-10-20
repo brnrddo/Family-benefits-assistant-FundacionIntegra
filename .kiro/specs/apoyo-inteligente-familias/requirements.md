@@ -1,6 +1,6 @@
 # Requisitos — Apoyo Inteligente para Familias
 
-Fuente funcional inmutable: [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../PROYECTO_3_ESPECIFICACION_v2.md). Prioridades RFC 2119. Cada criterio es verificable y toda persona/hogar de Demo es sintético.
+Fuente funcional inmutable: [`PROYECTO_3_ESPECIFICACION_v2.md`](../../../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md). Prioridades RFC 2119. Cada criterio es verificable y toda persona/hogar de Demo es sintético.
 
 ## MUST
 

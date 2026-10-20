@@ -3,7 +3,7 @@
 // sembrados, DEC-047/DEC-091) → buscar un nombre deja una fila → Ficha (secciones y filtro; "Datos del hogar" plegada)
 // → nombre de trato local (DEC-038) → Agregar información (operación propuesta, DEC-039) → Marcar conversado (3 toques) →
 // Inicio → Preguntar → chip de situación → respuesta con fuentes. Guarda capturas PNG en
-// SCREENSHOT_DIR (por defecto .agents/tasks/frontend-pwa/screenshots), también a escritorio, y corre
+// SCREENSHOT_DIR (por defecto test-results/screenshots), también a escritorio, y corre
 // axe en Inicio, Ficha y Preguntar (0 violaciones critical/serious). El nombre inventado nunca aparece
 // en la consola ni en URLs de requests. Sin llamadas de red reales: el mock vive en la página.
 /// <reference lib="dom" />
@@ -18,7 +18,7 @@ import { FAMILY_COPY } from '../src/features/family/familyCopy.ts';
 import { MOCK_COPY } from '../src/i18n/es.mock.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const SHOTS = process.env.SCREENSHOT_DIR ?? path.resolve(here, '../../.agents/tasks/frontend-pwa/screenshots');
+const SHOTS = process.env.SCREENSHOT_DIR ?? path.resolve(here, '../test-results/screenshots');
 // El build e2e usa el copy canónico de Rol 4 si existe (misma resolución que vite.config.ts);
 // si no, el mock. La prueba lee la misma fuente para no depender de la rama.
 const CANONICAL_I18N = path.resolve(here, '..', process.env.BRUJULA_CONTENT_DIR ?? '../content', 'i18n', 'es.json');

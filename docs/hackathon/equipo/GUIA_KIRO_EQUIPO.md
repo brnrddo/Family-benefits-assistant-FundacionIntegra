@@ -1,6 +1,6 @@
 # Guía Kiro para el equipo
 
-Empiece siempre en el [índice de Specs](../.kiro/specs/INDICE.md). Esta guía distingue el baseline documental actual de la implementación futura: hoy los contratos y tareas existen, pero aplicación, infraestructura y pruebas aún no.
+Empiece siempre en el [índice de Specs](../../../.kiro/specs/INDICE.md). Esta guía distingue el baseline documental actual de la implementación futura: hoy los contratos y tareas existen, pero aplicación, infraestructura y pruebas aún no.
 
 ## 1. Elija modo y autonomía
 
@@ -29,18 +29,18 @@ Audita FE-T02 contra el código. Devuelve CONFORME/PARCIAL/DIVERGE/NO_VERIFICADO
 
 | Rol | Rama | Spec | Ownership futuro |
 |---|---|---|---|
-| Rol 1 Datos | `datos` | [triada](../.kiro/specs/datos-motor-elegibilidad/requirements.md) | `backend/app/{loader,db,engine,access,context}`, `backend/tests` |
-| Rol 2 API/AWS | `api` | [triada](../.kiro/specs/api-priorizacion-genai/requirements.md) | `backend/app/{api,auth,priority,genai,tracking}`, `infrastructure/` |
-| Rol 3 Front | `front` | [triada](../.kiro/specs/frontend-pwa/requirements.md) | `frontend/` |
-| Rol 4 Contenido | `contenido` | [triada](../.kiro/specs/producto-contenido-demo/requirements.md) | `content/`, demo y pitch; sin Python/TypeScript |
+| Rol 1 Datos | `datos` | [triada](../../../.kiro/specs/datos-motor-elegibilidad/requirements.md) | `backend/app/{loader,db,engine,access,context}`, `backend/tests` |
+| Rol 2 API/AWS | `api` | [triada](../../../.kiro/specs/api-priorizacion-genai/requirements.md) | `backend/app/{api,auth,priority,genai,tracking}`, `infrastructure/` |
+| Rol 3 Front | `front` | [triada](../../../.kiro/specs/frontend-pwa/requirements.md) | `frontend/` |
+| Rol 4 Contenido | `contenido` | [triada](../../../.kiro/specs/producto-contenido-demo/requirements.md) | `content/`, demo y pitch; sin Python/TypeScript |
 
-El dueño aprueba cambios de su área. Ayudar no transfiere ownership. Los contratos [C0–C4](../.kiro/specs/_shared/contracts/) se cambian coordinadamente, no desde una sola rama.
+El dueño aprueba cambios de su área. Ayudar no transfiere ownership. Los contratos [C0–C4](../../../.kiro/specs/_shared/contracts/) se cambian coordinadamente, no desde una sola rama.
 
 ## 3. Rutina diaria para personas nuevas
 
 1. Abra el índice y el spec de su rol: `requirements.md` → `design.md` → `tasks.md`.
 2. Verifique que está en la rama del rol. Rol 2 trabaja en `api`.
-3. Haga **Pull** del baseline aprobado como indica [`CONTRIBUTING.md`](../CONTRIBUTING.md), preservando cambios locales.
+3. Haga **Pull** del baseline aprobado como indica [`CONTRIBUTING.md`](COMO_COLABORAR.md), preservando cambios locales.
 4. Elija la primera tarea no bloqueada y lea requisitos, contratos y dependencias citados.
 5. Pida a Kiro el cambio mínimo dentro del ownership; no permita refactors ajenos.
 6. Ejecute la validación existente indicada. No marque `[x]` sin evidencia real.
@@ -79,7 +79,7 @@ Orden: privacidad/fixtures → C0–C4 → motor/datos → API/auth/snapshot →
 - **Snapshot:** `CONTROL/ACTIVE` es única autoridad y sus seis campos se actualizan juntos.
 - **AWS:** estado cambia solo con smoke test fechado/sanitizado; fallback seguro disponible.
 
-Si algo contradice la [fuente inmutable](../PROYECTO_3_ESPECIFICACION_v2.md), deténgase. Registre la decisión en [`DECISIONES_SUPUESTOS_PREGUNTAS.md`](../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md), corrija maestro/contrato y luego consumidores.
+Si algo contradice la [fuente inmutable](../../especificacion/PROYECTO_3_ESPECIFICACION_v2.md), deténgase. Registre la decisión en [`DECISIONES_SUPUESTOS_PREGUNTAS.md`](../../../.kiro/specs/_shared/DECISIONES_SUPUESTOS_PREGUNTAS.md), corrija maestro/contrato y luego consumidores.
 
 ## 6. Prompts seguros copiables
 

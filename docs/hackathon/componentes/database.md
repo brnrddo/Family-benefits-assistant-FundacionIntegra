@@ -15,8 +15,8 @@ Definir el esquema, las vistas y las migraciones de la base derivada que relacio
 
 ## Dependencias y límites
 
-Depende de [data](../data/README.md). Toda base debe poder reconstruirse desde los CSV; vacío, `false` y cero conservan significados distintos.
+Depende de [data](../../../data/README.md). Toda base debe poder reconstruirse desde los CSV; vacío, `false` y cero conservan significados distintos.
 
 No colocar aquí CSV canónicos, archivos `.db`/`.sqlite`, dumps, credenciales, reglas en texto libre ni datos reales. Tampoco crear un motor de elegibilidad paralelo al backend.
 
-Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/equipo/ROLES_Y_RESPONSABILIDADES.md) y [estructura](../docs/arquitectura/ESTRUCTURA_REPOSITORIO.md).
+Contexto: [especificación](../../especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../equipo/ROLES_Y_RESPONSABILIDADES.md) y [estructura](../equipo/ESTRUCTURA_REPOSITORIO_INICIAL.md).

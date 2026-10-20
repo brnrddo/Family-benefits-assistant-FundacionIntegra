@@ -44,7 +44,7 @@ export const MISSING_CODE_FIELD: Readonly<Partial<Record<string, AddInfoField>>>
   employment_or_pension: 'household_formal_employment_or_pension',
   water_difficulty: 'household_water_payment_difficulty',
   food_difficulty: 'household_food_purchase_difficulty',
-  // Códigos del motor (.agents/tasks/arreglos-ficha/codigos-motor.md).
+  // Códigos del motor (docs/hackathon/agent-tasks/tasks/arreglos-ficha/).
   semanas_gestacion: 'household_pregnancy',
   cobertura_incompatible: 'has_incompatible_coverage',
   parto_red_publica: 'pregnancy_public_network_delivery',

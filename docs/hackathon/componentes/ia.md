@@ -19,4 +19,4 @@ Depende del contrato de `backend/` y de los criterios de producto. Aquí viven e
 
 No colocar aquí elegibilidad, estado de acceso, prioridad, datos personales, credenciales ni prompts con nombres, RUT, folio RSH, teléfono, nacionalidad, diagnósticos, salud o antecedentes judiciales. Bedrock no completa datos faltantes ni inventa beneficios.
 
-Contexto: [especificación](../docs/especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../docs/equipo/ROLES_Y_RESPONSABILIDADES.md), [estructura](../docs/arquitectura/ESTRUCTURA_REPOSITORIO.md) y [flujo de ficha](../docs/producto/FLUJO_DE_FICHA.md).
+Contexto: [especificación](../../especificacion/PROYECTO_3_ESPECIFICACION_v2.md), [roles](../equipo/ROLES_Y_RESPONSABILIDADES.md), [estructura](../equipo/ESTRUCTURA_REPOSITORIO_INICIAL.md) y [flujo de ficha](../../producto/FLUJO_DE_FICHA.md).
