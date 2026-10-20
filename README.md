@@ -13,7 +13,7 @@ A mobile-first web app that helps early-childhood educators at **Fundación Inte
 
 Built by a team of four in a **3-day AWS hackathon** (*AWS Breaking Barriers*, October 2026) and deployed end to end on AWS.
 
-![Kimün IA on mobile: today's suggested family, a family's benefits grouped by status, and the assistant answering a situation](docs/images/mobile-flow.png)
+![Kimün IA on mobile: today's suggested family, a family's benefits grouped by status, and the assistant recommending benefits for a situation](docs/images/mobile-flow.png)
 
 ---
 
